@@ -1,6 +1,5 @@
 package com.devsejong.util;
 
-import com.devsejong.util.ExcelIOUtil;
 import org.junit.Test;
 
 import java.io.*;
@@ -11,13 +10,13 @@ public class ExcelIOUtilTest {
     @Test
     public void testReadXLSFile() throws Exception {
         InputStream inputStream = new FileInputStream(getTestFolderPath() + "sample.xls");
-        ExcelIOUtil.readXLSInputStream(inputStream);
+        ExcelIOUtil.readXls(inputStream);
     }
 
     @Test
     public void testReadXLSXFile() throws Exception {
         InputStream inputStream = new FileInputStream(getTestFolderPath() + "sample.xlsx");
-        ExcelIOUtil.readXLSXFile(inputStream);
+        ExcelIOUtil.readXlsx(inputStream);
     }
 
     @Test
@@ -29,7 +28,7 @@ public class ExcelIOUtilTest {
 
         System.out.println(file.getAbsolutePath());
         OutputStream outputStream = new FileOutputStream(file);
-        ExcelIOUtil.writeXLSFile(outputStream);
+        ExcelIOUtil.writeXls(outputStream);
     }
 
     @Test
@@ -40,7 +39,7 @@ public class ExcelIOUtilTest {
         }
 
         OutputStream outputStream = new FileOutputStream(file);
-        ExcelIOUtil.writeXLSFile(outputStream);
+        ExcelIOUtil.writeXls(outputStream);
     }
 
 

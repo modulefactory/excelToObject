@@ -2,7 +2,6 @@ package com.devsejong.service;
 
 import com.devsejong.model.ExcelColumn;
 import com.devsejong.model.ExcelProperty;
-import junit.framework.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,6 +32,7 @@ public class ExcelServiceImplTest {
 
     @Before
     public void setup() throws FileNotFoundException {
+        excelProperty = new ExcelProperty();
         excelProperty.setWorkbook("sheet1");
         List<ExcelColumn> excelColumnList = new ArrayList<ExcelColumn>();
         excelColumnList.add(new ExcelColumn("나이", "age"));
@@ -40,21 +40,20 @@ public class ExcelServiceImplTest {
 
         excelProperty.setExcelColumns(excelColumnList);
 
-
         //set inputStream
         xlsInputStream = new FileInputStream(getTestFolderPath() + File.separator + "sample.xls");
         xlsInputStream = new FileInputStream(getTestFolderPath() + File.separator + "sample.xlsx");
     }
 
     @Test
-    public void testConvertExcelToModelList() {
+    public void testConvertXlsToModelList() {
         //excelService.convertExcelToModelList(inputStream, excelProperty);
     }
 
     @Test
-    public void testConvertExcelToModelList_checkInputStreamIsNull(){
+    public void testConvertXlsToDomainList_checkInputStreamIsNull(){
         try{
-            excelService.convertExcelToModelList(null, excelProperty);
+            excelService.convertXlsToDomainList(null, excelProperty);
             fail();
         }catch(Exception e){
             System.out.println("성공");
@@ -62,14 +61,18 @@ public class ExcelServiceImplTest {
     }
 
     @Test
-    public void testConvertExcelToModelList_checkExcelPropertyIsNull(){
+    public void testConvertXlsToDomainList_checkExcelPropertyIsNull(){
         try{
-            excelService.convertExcelToModelList(xlsInputStream, null);
+            excelService.convertXlsToDomainList(xlsInputStream, null);
             fail();
         }catch(Exception e){
             System.out.println("성공");
         }
     }
+
+
+
+
 
     private String getTestFolderPath(){
         return this.getClass().getResource("/excelIOUtil").getPath() + File.separator;
