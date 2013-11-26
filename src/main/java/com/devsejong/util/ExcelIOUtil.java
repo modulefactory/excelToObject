@@ -28,7 +28,7 @@ import java.util.*;
 // 엑셀 업로더 다운로더
 public class ExcelIOUtil {
     /**
-     * 와 딥따 무식하게 짰다.. 이게 인간이뇨??
+     * 와 딥따 무식하게 짰다.. 이게 사람이 짠 코드뇨??
      * @param inputStream
      * @return
      * @throws IOException

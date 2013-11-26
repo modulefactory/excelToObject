@@ -3,6 +3,8 @@ package com.devsejong.util;
 import org.junit.Test;
 
 import java.io.*;
+import java.util.List;
+import java.util.Map;
 
 
 public class ExcelIOUtilTest {
@@ -10,13 +12,17 @@ public class ExcelIOUtilTest {
     @Test
     public void testReadXLSFile() throws Exception {
         InputStream inputStream = new FileInputStream(getTestFolderPath() + "sample.xls");
-        ExcelIOUtil.readXls(inputStream);
+        List<Map<String, Object>> result = ExcelIOUtil.readXls(inputStream);
+        System.out.println("testReadXLSFile");
+        System.out.println(result);
     }
 
     @Test
     public void testReadXLSXFile() throws Exception {
         InputStream inputStream = new FileInputStream(getTestFolderPath() + "sample.xlsx");
-        ExcelIOUtil.readXlsx(inputStream);
+        List<Map<String, Object>> result = ExcelIOUtil.readXlsx(inputStream);
+        System.out.println("testReadXLSXFile");
+        System.out.println(result);
     }
 
     @Test
