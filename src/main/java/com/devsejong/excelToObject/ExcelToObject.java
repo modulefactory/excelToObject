@@ -52,6 +52,7 @@ public class ExcelToObject<T> {
 
             Object value = null;
 
+            //System.out.println(cell.getStringCellValue());
             if (column.getClassType() == ClassType.STRING) {
                 value = cell.getStringCellValue();
             } else if (column.getClassType() == ClassType.INTEGER) {
