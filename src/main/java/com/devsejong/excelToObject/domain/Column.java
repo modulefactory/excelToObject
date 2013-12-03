@@ -6,10 +6,13 @@ public class Column {
     private String aliasName;
     private ClassType classType;
 
-    public Column(String propertyName, String aliasName, ClassType classType) {
+    public Column(String propertyName, String aliasName) {
         this.propertyName = propertyName;
         this.aliasName = aliasName;
-        this.classType = classType;
+    }
+
+    public Column(String propertyName) {
+        this.propertyName = propertyName;
     }
 
     public String getPropertyName() {
@@ -34,5 +37,15 @@ public class Column {
 
     public void setClassType(ClassType classType) {
         this.classType = classType;
+    }
+
+
+    @Override
+    public String toString() {
+        return "Column{" +
+                "propertyName='" + propertyName + '\'' +
+                ", aliasName='" + aliasName + '\'' +
+                ", classType=" + classType +
+                '}';
     }
 }

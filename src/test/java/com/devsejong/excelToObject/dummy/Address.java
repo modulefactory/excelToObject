@@ -1,8 +1,8 @@
 package com.devsejong.excelToObject.dummy;
 
 public class Address {
-    String zipcode;
-    String address;
+    private String zipcode;
+    private String address;
 
     public String getZipcode() {
         return zipcode;
