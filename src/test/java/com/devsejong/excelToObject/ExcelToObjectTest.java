@@ -36,6 +36,7 @@ public class ExcelToObjectTest {
         for(Address obj : objList){
             System.out.println(obj.toString());
         }
+
     }
 
 
