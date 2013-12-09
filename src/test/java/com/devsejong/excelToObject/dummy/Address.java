@@ -1,7 +1,13 @@
 package com.devsejong.excelToObject.dummy;
 
+import com.devsejong.excelToObject.anno.ExcelColumn;
+import com.devsejong.excelToObject.anno.ExcelMapping;
+
+@ExcelMapping
 public class Address {
+    @ExcelColumn("우편번호")
     private String zipcode;
+    @ExcelColumn("주소")
     private String address;
 
     public String getZipcode() {

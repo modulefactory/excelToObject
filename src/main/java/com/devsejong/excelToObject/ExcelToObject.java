@@ -3,6 +3,7 @@ package com.devsejong.excelToObject;
 import com.devsejong.excelToObject.domain.ClassType;
 import com.devsejong.excelToObject.domain.Column;
 import com.devsejong.excelToObject.domain.ExcelMapping;
+import com.devsejong.excelToObject.except.ExcelToObjectException;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -17,11 +18,33 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
+/**
+ * 엑셀데이터를 객체로 변환한다.
+ * 보통 복수의 데이터를 변환하므로 List형식을 먼저 진행하고, 필요에 따라 메서드를 추가시켜나간다.
+ * @param <T>
+ */
 public class ExcelToObject<T> {
     private static Logger logger = LoggerFactory.getLogger(ExcelToObject.class);
 
+    /**
+     * 엑셀데이터를 기준으로 List값을 반환한다.
+     *
+     * <br/></><b>리팩토링 필요</b>
+     * @param inputStream
+     * @param excelMapping
+     * @param clazz
+     * @return
+     */
     public List<T> getObjectList(InputStream inputStream, ExcelMapping excelMapping, Class<T> clazz) {
-        List<T> objectList = new ArrayList<T>();
+        if(inputStream == null){
+            throw new ExcelToObjectException("inputStream is null!!");
+        }else if(excelMapping == null){
+            throw new ExcelToObjectException("excelMapping is null!!");
+        }else if(clazz ==null){
+            throw new ExcelToObjectException("class is null!!");
+        }
+
+        List<T> objectList = new ArrayList<>();
 
         //inputStream을 기준으로 데이터를 가져온다.
         Workbook wb = null;
