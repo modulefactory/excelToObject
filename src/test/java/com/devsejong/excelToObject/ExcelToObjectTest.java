@@ -16,12 +16,12 @@ import java.util.List;
 import static junit.framework.Assert.fail;
 
 public class ExcelToObjectTest {
-    ExcelToObject<Address> dummyObjectExcelToObject;
+    ExcelToObject dummyObjectExcelToObject;
     ExcelProperty excelProperty;
 
     @Before
     public void setup() {
-        dummyObjectExcelToObject = new ExcelToObject<>();
+        dummyObjectExcelToObject = new ExcelToObject();
 
         excelProperty = new ExcelProperty();
 

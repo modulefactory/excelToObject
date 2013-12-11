@@ -22,9 +22,9 @@ import java.util.*;
  * 엑셀데이터를 객체로 변환한다.
  * 보통 복수의 데이터를 변환하므로 List형식을 먼저 진행하고, 필요에 따라 메서드를 추가시켜나간다.
  * 여기서 T는 필요없는 구문이다 어떻게 제거해야 하는지 파악한다.
- * @param <T>
+ * @param
  */
-public class ExcelToObject<T> {
+public class ExcelToObject {
     private static Logger logger = LoggerFactory.getLogger(ExcelToObject.class);
 
     /**
@@ -36,7 +36,7 @@ public class ExcelToObject<T> {
      * @param clazz
      * @return
      */
-    public List<T> getObjectList(InputStream inputStream, ExcelProperty excelProperty, Class<T> clazz) {
+    public <T> List<T> getObjectList(InputStream inputStream, ExcelProperty excelProperty, Class<T> clazz) {
         if(inputStream == null){
             throw new ExcelToObjectException("inputStream is null!!");
         }else if(excelProperty == null){
@@ -99,7 +99,7 @@ public class ExcelToObject<T> {
         return objectList;
     }
 
-    private T createObject(Row row, Map<Integer, Column> columnMap, Class<T> className) throws ClassNotFoundException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
+    private <T> T createObject(Row row, Map<Integer, Column> columnMap, Class<T> className) throws ClassNotFoundException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
         Class<T> obj = (Class<T>) Class.forName(className.getName());
         T objInstance = obj.newInstance();
 
