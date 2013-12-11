@@ -1,5 +1,7 @@
 package com.devsejong.excelToObject;
 
+import com.devsejong.excelToObject.anno.ExcelColumn;
+import com.devsejong.excelToObject.anno.ExcelMapping;
 import com.devsejong.excelToObject.domain.ClassType;
 import com.devsejong.excelToObject.domain.Column;
 import com.devsejong.excelToObject.domain.ExcelProperty;
@@ -15,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
@@ -99,6 +102,19 @@ public class ExcelToObject {
         return objectList;
     }
 
+    /**
+     * 어노테이션 값을 기반으로 데이터를 가져옵니다.
+     * @param row
+     * @param columnMap
+     * @param className
+     * @param <T>
+     * @return
+     * @throws ClassNotFoundException
+     * @throws IllegalAccessException
+     * @throws InstantiationException
+     * @throws InvocationTargetException
+     * @throws NoSuchMethodException
+     */
     private <T> T createObject(Row row, Map<Integer, Column> columnMap, Class<T> className) throws ClassNotFoundException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
         Class<T> obj = (Class<T>) Class.forName(className.getName());
         T objInstance = obj.newInstance();
@@ -136,5 +152,36 @@ public class ExcelToObject {
 
         }
         return objInstance;
+    }
+
+    public <T> List<T> getObjectList(InputStream inputStream, Class<T> clazz){
+        //검증과정.
+        //@ExcelMapping이 parent class로 있는지 여부를 판단한다.
+        if(clazz.isAnnotationPresent(ExcelMapping.class) == false){
+            throw new ExcelToObjectException(clazz.getName() + "은 어노테이션 를 가지고 있지 않습니다.");
+        }
+
+        List<Column> columnList = new ArrayList<>();
+
+        Field[] fields = clazz.getDeclaredFields();
+        for(Field field : fields){
+            if(field.isAnnotationPresent(ExcelColumn.class)){
+                ExcelColumn excelColumn = field.getAnnotation(ExcelColumn.class);
+                Column column = new Column();
+                column.setPropertyName(field.getName());
+                column.setAliasName(excelColumn.value());
+                column.setClassType(ClassType.getClassType(field.getType()));
+
+                columnList.add(column);
+            }
+        };
+
+        //어노테이션 값을 기반으로 excelProperty를 가져온다.
+        ExcelProperty excelProperty = new ExcelProperty();
+        excelProperty.setColumnList(columnList);
+
+        ExcelToObject excelToObject = new ExcelToObject();
+
+        return excelToObject.getObjectList(inputStream, excelProperty, clazz);
     }
 }
