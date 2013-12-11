@@ -2,7 +2,7 @@ package com.devsejong.excelToObject;
 
 import com.devsejong.excelToObject.domain.ClassType;
 import com.devsejong.excelToObject.domain.Column;
-import com.devsejong.excelToObject.domain.ExcelMapping;
+import com.devsejong.excelToObject.domain.ExcelProperty;
 import com.devsejong.excelToObject.except.ExcelToObjectException;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -32,15 +32,15 @@ public class ExcelToObject<T> {
      *
      * <br/></><b>리팩토링 필요</b>
      * @param inputStream
-     * @param excelMapping
+     * @param excelProperty
      * @param clazz
      * @return
      */
-    public List<T> getObjectList(InputStream inputStream, ExcelMapping excelMapping, Class<T> clazz) {
+    public List<T> getObjectList(InputStream inputStream, ExcelProperty excelProperty, Class<T> clazz) {
         if(inputStream == null){
             throw new ExcelToObjectException("inputStream is null!!");
-        }else if(excelMapping == null){
-            throw new ExcelToObjectException("excelMapping is null!!");
+        }else if(excelProperty == null){
+            throw new ExcelToObjectException("excelProperty is null!!");
         }else if(clazz ==null){
             throw new ExcelToObjectException("class is null!!");
         }
@@ -58,7 +58,7 @@ public class ExcelToObject<T> {
             // 첫번째 헤더 로우을 기반으로 column속성값을 가져간다.
             Row row = sheet.getRow(0);
             Map<Integer, Column> columnMap = new HashMap<>();
-            List<Column> columnList = excelMapping.getColumnList();
+            List<Column> columnList = excelProperty.getColumnList();
 
             //상단의 컬럼을 순환하면서 셀값과 매칭되는 객체속성을 가져올 수 있도록 한다.
             //복잡도가 크게 높지 않으므로, 단순 for문을 사용하여 진행하도록 한다.(속도 이슈시 개선.)

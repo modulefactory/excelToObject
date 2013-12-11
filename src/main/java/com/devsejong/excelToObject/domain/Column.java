@@ -15,6 +15,9 @@ public class Column {
         this.propertyName = propertyName;
     }
 
+    public Column() {
+    }
+
     public String getPropertyName() {
         return propertyName;
     }

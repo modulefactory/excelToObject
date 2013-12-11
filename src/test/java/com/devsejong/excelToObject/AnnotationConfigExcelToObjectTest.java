@@ -1,6 +1,7 @@
 package com.devsejong.excelToObject;
 
 import com.devsejong.excelToObject.dummy.Address;
+import com.devsejong.excelToObject.except.ExcelToObjectException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,8 +36,10 @@ public class AnnotationConfigExcelToObjectTest {
             );
             //어노테이션이 없으므로 에러처리가 되어야지 정상이다.
             fail();
-        } catch (FileNotFoundException e) {
+        } catch (ExcelToObjectException e) {
             //성공!!^___^
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
     }
 

@@ -1,7 +1,7 @@
 package com.devsejong.excelToObject;
 
 import com.devsejong.excelToObject.domain.Column;
-import com.devsejong.excelToObject.domain.ExcelMapping;
+import com.devsejong.excelToObject.domain.ExcelProperty;
 import com.devsejong.excelToObject.dummy.Address;
 import com.devsejong.excelToObject.except.ExcelToObjectException;
 import org.junit.Before;
@@ -10,7 +10,6 @@ import org.junit.Test;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,24 +17,24 @@ import static junit.framework.Assert.fail;
 
 public class ExcelToObjectTest {
     ExcelToObject<Address> dummyObjectExcelToObject;
-    ExcelMapping excelMapping;
+    ExcelProperty excelProperty;
 
     @Before
     public void setup() {
         dummyObjectExcelToObject = new ExcelToObject<>();
 
-        excelMapping = new ExcelMapping();
+        excelProperty = new ExcelProperty();
 
         List<Column> addressColumnList = new ArrayList<>();
         addressColumnList.add(new Column("zipcode", "우편번호"));
         addressColumnList.add(new Column("address", "주소"));
-        excelMapping.setColumnList(addressColumnList);
+        excelProperty.setColumnList(addressColumnList);
     }
 
     @Test
     public void testGetObjectList() throws Exception {
         List<Address> objList = dummyObjectExcelToObject.getObjectList(
-                new FileInputStream(getTestFolderPath() + "test.xls"), excelMapping, Address.class
+                new FileInputStream(getTestFolderPath() + "test.xls"), excelProperty, Address.class
         );
 
         System.out.println(objList.size());
@@ -47,7 +46,7 @@ public class ExcelToObjectTest {
     @Test
     public void testGetObjectList_inputStreamIsNull() {
         try {
-            dummyObjectExcelToObject.getObjectList(null, excelMapping, Address.class);
+            dummyObjectExcelToObject.getObjectList(null, excelProperty, Address.class);
             fail();
         } catch (ExcelToObjectException e) {
             //성공!
@@ -69,7 +68,7 @@ public class ExcelToObjectTest {
     @Test
     public void testGetObjectList_classIsNull() throws FileNotFoundException {
         try {
-            dummyObjectExcelToObject.getObjectList(new FileInputStream(getTestFolderPath() + "test.xls"), excelMapping, null);
+            dummyObjectExcelToObject.getObjectList(new FileInputStream(getTestFolderPath() + "test.xls"), excelProperty, null);
             fail();
         } catch (ExcelToObjectException e) {
             //성공!
