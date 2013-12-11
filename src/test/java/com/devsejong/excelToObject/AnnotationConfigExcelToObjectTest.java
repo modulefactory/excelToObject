@@ -15,37 +15,34 @@ public class AnnotationConfigExcelToObjectTest {
     AnnotationConfigExcelToObject<NotAnnotatedObject> excelToObjectNotAnnotated;
 
     @Before
-    public void setup(){
+    public void setup() {
         excelToObject = new AnnotationConfigExcelToObject<>();
         excelToObjectNotAnnotated = new AnnotationConfigExcelToObject<>();
     }
 
     @Test
-    public void getObjectList() throws FileNotFoundException {
+    public void getObjectList() throws FileNotFoundException, ClassNotFoundException {
         excelToObject.getObjectList(new FileInputStream(getTestFolderPath() + "test.xls"), Address.class);
     }
 
 
-    //옳바르게 데이터가 들어가 있지 않은 경우
+    //어노테이션이 들어가지 않은 객체 조회
     @Test
-    public void getObjectList_hasNoAnnotatedClass() throws FileNotFoundException {
+    public void getObjectList_hasNoAnnotatedClass() {
         try {
             excelToObjectNotAnnotated.getObjectList(
                     new FileInputStream(getTestFolderPath() + "test.xls"), NotAnnotatedObject.class
             );
-
             //어노테이션이 없으므로 에러처리가 되어야지 정상이다.
             fail();
         } catch (FileNotFoundException e) {
-            //성공!!
+            //성공!!^___^
         }
     }
 
-
-    private String getTestFolderPath(){
+    private String getTestFolderPath() {
         return this.getClass().getResource(File.separator + "testExcelFile").getPath() + File.separator;
     }
-
 
 }
 

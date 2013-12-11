@@ -1,30 +1,36 @@
 package com.devsejong.excelToObject;
 
 
-import com.devsejong.excelToObject.anno.ExcelColumn;
-import sun.management.MethodInfo;
+import com.devsejong.excelToObject.anno.ExcelMapping;
+import com.devsejong.excelToObject.except.ExcelToObjectException;
 
 import java.io.FileInputStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Set;
 
 /**
  *  어노테이션을 기반으로 도메인 데이터를 가져올 수 있다.
  */
 public class AnnotationConfigExcelToObject<T> extends ExcelToObject<T> {
-    public List<T> getObjectList(FileInputStream fileInputStream, Class<T> clazz) {
+    public List<T> getObjectList(FileInputStream fileInputStream, Class<T> clazz){
+
         //검증과정.
         //@ExcelMapping이 parent class로 있는지 여부를 판단한다.
-
-        //클래스가 초기화되지 않은 상태이므로 초기화를 시킨 뒤 어노테이션이 있는지 판별한다.
-        Annotation[] annotations = clazz.getAnnotations();
-        for(Annotation annotation : annotations){
-            System.out.println(annotation.annotationType());
+        if(clazz.isAnnotationPresent(ExcelMapping.class)){
+            throw new ExcelToObjectException(clazz.getName() + "은 어노테이션 를 가지고 있지 않습니다.");
         }
 
+
+        /*
+        Field[] fields = clazz.getDeclaredFields();
+        System.out.println(fields.length);
+        for(Field field : fields){
+            System.out.println("test");
+            System.out.println(field.isAnnotationPresent(ExcelColumn.class));
+        };
+        */
+
+
+        /*
         //객체 초기화 필요.
         Field[] fields = clazz.getFields();
         System.out.println(fields.length);
@@ -35,9 +41,7 @@ public class AnnotationConfigExcelToObject<T> extends ExcelToObject<T> {
                 System.out.println(annotation.annotationType());
             }
         }
-
-
-
+        */
 
         /*
         for (Method method : AnnotationParsing.class
