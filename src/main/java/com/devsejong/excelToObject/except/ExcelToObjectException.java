@@ -7,4 +7,8 @@ public class ExcelToObjectException extends RuntimeException{
     public ExcelToObjectException(String message) {
         super(message);
     }
+
+    public ExcelToObjectException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

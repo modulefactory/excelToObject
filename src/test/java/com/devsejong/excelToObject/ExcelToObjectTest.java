@@ -1,5 +1,6 @@
 package com.devsejong.excelToObject;
 
+import com.devsejong.excelToObject.domain.ClassType;
 import com.devsejong.excelToObject.domain.Column;
 import com.devsejong.excelToObject.domain.ExcelProperty;
 import com.devsejong.excelToObject.dummy.Address;
@@ -27,8 +28,8 @@ public class ExcelToObjectTest {
         excelProperty = new ExcelProperty();
 
         List<Column> addressColumnList = new ArrayList<>();
-        addressColumnList.add(new Column("zipcode", "우편번호"));
-        addressColumnList.add(new Column("address", "주소"));
+        addressColumnList.add(new Column("zipcode", "우편번호", ClassType.STRING));
+        addressColumnList.add(new Column("address", "주소", ClassType.STRING));
         excelProperty.setColumnList(addressColumnList);
     }
 
@@ -83,7 +84,13 @@ public class ExcelToObjectTest {
 
     @Test
     public void getObjectList() throws FileNotFoundException, ClassNotFoundException {
-        excelToObject.getObjectList(new FileInputStream(getTestFolderPath() + "test.xls"), Address.class);
+        List<Address> addr = excelToObject.getObjectList(new FileInputStream(getTestFolderPath() + "test.xls"), Address.class);
+        System.out.println("###############");
+        System.out.println("###############");
+        System.out.println("###############");
+        System.out.println("###############");
+        System.out.println(addr);
+
     }
 
 

@@ -6,13 +6,10 @@ public class Column {
     private String aliasName;
     private ClassType classType;
 
-    public Column(String propertyName, String aliasName) {
+    public Column(String propertyName, String aliasName, ClassType classType) {
         this.propertyName = propertyName;
         this.aliasName = aliasName;
-    }
-
-    public Column(String propertyName) {
-        this.propertyName = propertyName;
+        this.classType  = classType;
     }
 
     public Column() {
