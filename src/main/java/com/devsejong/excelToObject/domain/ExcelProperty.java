@@ -9,6 +9,10 @@ import java.util.List;
 public class ExcelProperty {
     private List<Column> columnList;
 
+    public ExcelProperty(List<Column> columnList) {
+        this.columnList = columnList;
+    }
+
     public List<Column> getColumnList() {
         return columnList;
     }
