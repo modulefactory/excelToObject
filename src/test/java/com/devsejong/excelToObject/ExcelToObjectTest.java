@@ -25,11 +25,10 @@ public class ExcelToObjectTest {
     public void setup() {
         excelToObject = new ExcelToObject();
 
-        excelProperty = new ExcelProperty();
-
         List<Column> addressColumnList = new ArrayList<>();
         addressColumnList.add(new Column("zipcode", "우편번호", ClassType.STRING));
         addressColumnList.add(new Column("address", "주소", ClassType.STRING));
+        excelProperty = new ExcelProperty();
         excelProperty.setColumnList(addressColumnList);
     }
 
