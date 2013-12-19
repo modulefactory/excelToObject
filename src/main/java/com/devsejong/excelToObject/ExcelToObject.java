@@ -12,6 +12,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.util.IOUtils;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +25,7 @@ import java.util.*;
 /**
  * 엑셀데이터를 객체로 변환한다.
  * 보통 복수의 데이터를 변환하므로 List형식을 먼저 진행하고, 필요에 따라 메서드를 추가시켜나간다.
- * 여기서 T는 필요없는 구문이다 어떻게 제거해야 하는지 파악한다.
+ * 여기서 T는 필요없는 구문이다 어떻게 제거해야 하는지 파악한다.<br/>
  *
  * @param
  */
@@ -35,59 +36,141 @@ public class ExcelToObject {
      * 엑셀데이터를 기준으로 List값을 반환한다.
      * <b>리팩토링 필요</b>
      *
-     * @param inputStream
      * @param excelProperty
      * @param clazz
      * @return
      */
-    public <T> List<T> getObjectList(InputStream inputStream, ExcelProperty excelProperty, Class<T> clazz) {
-        excelToObjectValidate(inputStream, excelProperty, clazz);
+    public <T> List<T> getObjectList(Sheet sheet, ExcelProperty excelProperty, Class<T> clazz) {
         //최종 결과가 여기 저장된다.
         List<T> resultObjectList = new ArrayList<>();
 
-        try {
-            // 첫번째 시트만 가져온다.
-            Sheet sheet = (new HSSFWorkbook(inputStream)).getSheetAt(0);
-            // 첫번째 시트의 헤더 로우을 기반으로 column을 가져온다.
-            Row row = sheet.getRow(0);
-            Map<Integer, Column> columnMap = getColumnMap(excelProperty, row);
+        // 첫번째 시트의 헤더 로우을 기반으로 column을 가져온다.
+        Row row = sheet.getRow(0);
+        Map<Integer, Column> columnMap = getColumnMap(excelProperty, row);
 
-            //만들어진 컬럼 맵을 기반으로 데이터를 가져온다.
-            for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
-                T t = createObject(sheet.getRow(i), columnMap, clazz);
-                resultObjectList.add(t);
-            }
-            //예외처리는 어떻게 삭제하여야 하는가?? 해당 부분때문에 로직이 지나치게 복잡해 보인다.
-        } catch (IOException e) {
-            throw new ExcelToObjectException("excelToObject Error.", e);
-        } finally {
-            IOUtils.closeQuietly(inputStream);
+        //만들어진 컬럼 맵을 기반으로 데이터를 가져온다.
+        for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
+            T t = createObject(sheet.getRow(i), columnMap, clazz);
+            resultObjectList.add(t);
         }
+        //예외처리는 어떻게 삭제하여야 하는가?? 해당 부분때문에 로직이 지나치게 복잡해 보인다.
 
         return resultObjectList;
     }
 
 
     /**
-     * 어노테이션을 기준으로 데이터를 가져온다.
+     * 엑셀데이터를 기준으로 엑셀 데이터를 가져온다.
+     * <b>리팩토링 필요</b>
+     *
+     * @param excelProperty
+     * @param clazz
+     * @return
+     */
+    public <T> List<T> getXlsObjectList(HSSFWorkbook hssfWorkbook, ExcelProperty excelProperty, Class<T> clazz) {
+        // 첫번째 시트만 가져온다.
+        Sheet sheet = hssfWorkbook.getSheetAt(0);
+        return getObjectList(sheet, excelProperty, clazz);
+    }
+
+    public <T> List<T> getXlsObjectList(InputStream inputStream, ExcelProperty excelProperty, Class<T> clazz) {
+        excelToObjectValidate(inputStream, excelProperty, clazz);
+        List<T> objectList = null;
+        try {
+            HSSFWorkbook hssfWorkbook = new HSSFWorkbook(inputStream);
+            objectList =  getXlsObjectList(hssfWorkbook, excelProperty, clazz);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            IOUtils.closeQuietly(inputStream);
+        }
+
+        return objectList;
+    }
+
+    public <T> List<T> getXlsxObjectList(XSSFWorkbook xssfWorkbook, ExcelProperty excelProperty, Class<T> clazz) {
+        // 첫번째 시트만 가져온다.
+        Sheet sheet = xssfWorkbook.getSheetAt(0);
+        return getObjectList(sheet, excelProperty, clazz);
+    }
+
+    public <T> List<T> getXlsxObjectList(InputStream inputStream, ExcelProperty excelProperty, Class<T> clazz) {
+        excelToObjectValidate(inputStream, excelProperty, clazz);
+        List<T> objectList = null;
+        try {
+            XSSFWorkbook xssfWorkbook = new XSSFWorkbook(inputStream);
+            objectList =  getXlsxObjectList(xssfWorkbook, excelProperty, clazz);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            IOUtils.closeQuietly(inputStream);
+        }
+
+        return objectList;
+    }
+
+
+
+    /**
+     * 어노테이션을 기준으로 엑셀 데이터를 가져온다.
+     *
      * @param inputStream
      * @param clazz
      * @param <T>
      * @return
      */
-    public <T> List<T> getObjectList(InputStream inputStream, Class<T> clazz) {
+    public <T> List<T> getXlsObjectList(InputStream inputStream, Class<T> clazz) {
         //검증과정.
         //@ExcelMapping이 parent class로 있는지 여부를 판단한다.
         if (clazz.isAnnotationPresent(ExcelMapping.class) == false) {
             throw new ExcelToObjectException(clazz.getName() + "은 어노테이션 를 가지고 있지 않습니다.");
         }
 
+        Sheet sheet = null;
+        try {
+            sheet = (new HSSFWorkbook(inputStream)).getSheetAt(0);
+        } catch (IOException e) {
+            throw new ExcelToObjectException("xls파일을 가져올 수 없습니다.", e);
+        }
+
+        List<Column> columnList = genColumnListBaseOnAnnotation(clazz);
+        //어노테이션 값을 기반으로 excelProperty를 가져온다.
+        ExcelProperty excelProperty = new ExcelProperty(columnList);
+        return getObjectList(sheet, excelProperty, clazz);
+    }
+
+    /**
+     * 완죤 중복됨!!! 리팩토링 필요.
+     *
+     * @param inputStream
+     * @param clazz
+     * @param <T>
+     * @return
+     */
+    public <T> List<T> getXlsxObjectList(InputStream inputStream, Class<T> clazz) {
+        //검증과정.
+        //@ExcelMapping이 parent class로 있는지 여부를 판단한다.
+        if (clazz.isAnnotationPresent(ExcelMapping.class) == false) {
+            throw new ExcelToObjectException(clazz.getName() + "은 어노테이션 를 가지고 있지 않습니다.");
+        }
+
+        Sheet sheet = null;
+        try {
+            sheet = (new XSSFWorkbook(inputStream)).getSheetAt(0);
+        } catch (IOException e) {
+            throw new ExcelToObjectException("xlsx파일을 가져올 수 없습니다.", e);
+        }
+
         List<Column> columnList = genColumnListBaseOnAnnotation(clazz);
 
         //어노테이션 값을 기반으로 excelProperty를 가져온다.
         ExcelProperty excelProperty = new ExcelProperty(columnList);
-        return getObjectList(inputStream, excelProperty, clazz);
+        return getObjectList(sheet, excelProperty, clazz);
     }
+
+
+
+
 
     //어노테이션을 읽어 정상적으로 데이터를 가져올 수 있는지 확인.
     private <T> List<Column> genColumnListBaseOnAnnotation(Class<T> clazz) {
@@ -171,6 +254,13 @@ public class ExcelToObject {
         return objInstance;
     }
 
+    /**
+     * className.... 을 기준으로 객체를 생성한다.
+     *
+     * @param className
+     * @param <T>
+     * @return
+     */
     private <T> T getObjectInstance(Class<T> className) {
         Class<T> obj;
         try {
@@ -187,6 +277,7 @@ public class ExcelToObject {
         }
         return objInstance;
     }
+
     //CellValue를 기반으로 데이터를 가져옵니다.
     private Object generateObjectBaseOnProperty(Column column, Cell cell) {
         Object cellValue = null;
