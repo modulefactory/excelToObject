@@ -34,7 +34,7 @@ public class ExcelToObjectTest {
 
     @Test
     public void testGetObjectList() throws Exception {
-        List<Address> objList = excelToObject.getObjectList(
+        List<Address> objList = excelToObject.getXlsObjectList(
                 new FileInputStream(getTestFolderPath() + "test.xls"), excelProperty, Address.class
         );
 
@@ -43,6 +43,20 @@ public class ExcelToObjectTest {
             System.out.println(obj.toString());
         }
     }
+
+    @Test
+    public void getObjectList() throws FileNotFoundException, ClassNotFoundException {
+        List<Address> addr = excelToObject.getXlsObjectList(new FileInputStream(getTestFolderPath() + "test.xls"), Address.class);
+        System.out.println(addr);
+    }
+
+
+
+
+
+
+
+
 
     @Test
     public void testGetObjectList_inputStreamIsNull() {
@@ -58,7 +72,7 @@ public class ExcelToObjectTest {
     @Test
     public void testGetObjectList_propIsNull() throws FileNotFoundException {
         try {
-            excelToObject.getObjectList(new FileInputStream(getTestFolderPath() + "test.xls"), null, Address.class);
+            excelToObject.getXlsObjectList(new FileInputStream(getTestFolderPath() + "test.xls"), null, Address.class);
             fail();
         } catch (ExcelToObjectException e) {
             //성공!
@@ -69,7 +83,7 @@ public class ExcelToObjectTest {
     @Test
     public void testGetObjectList_classIsNull() throws FileNotFoundException {
         try {
-            excelToObject.getObjectList(new FileInputStream(getTestFolderPath() + "test.xls"), excelProperty, null);
+            excelToObject.getXlsObjectList(new FileInputStream(getTestFolderPath() + "test.xls"), excelProperty, null);
             fail();
         } catch (ExcelToObjectException e) {
             //성공!
@@ -81,23 +95,14 @@ public class ExcelToObjectTest {
         return this.getClass().getResource(File.separator + "testExcelFile").getPath() + File.separator;
     }
 
-    @Test
-    public void getObjectList() throws FileNotFoundException, ClassNotFoundException {
-        List<Address> addr = excelToObject.getObjectList(new FileInputStream(getTestFolderPath() + "test.xls"), Address.class);
-        System.out.println("###############");
-        System.out.println("###############");
-        System.out.println("###############");
-        System.out.println("###############");
-        System.out.println(addr);
 
-    }
 
 
     //어노테이션이 들어가지 않은 객체 조회
     @Test
     public void getObjectList_hasNoAnnotatedClass() {
         try {
-            excelToObject.getObjectList(
+            excelToObject.getXlsObjectList(
                     new FileInputStream(getTestFolderPath() + "test.xls"), NotAnnotatedObject.class
             );
             //어노테이션이 없으므로 에러처리가 되어야지 정상이다.

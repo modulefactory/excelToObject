@@ -109,8 +109,6 @@ public class ExcelToObject {
         return objectList;
     }
 
-
-
     /**
      * 어노테이션을 기준으로 엑셀 데이터를 가져온다.
      *
@@ -167,10 +165,6 @@ public class ExcelToObject {
         ExcelProperty excelProperty = new ExcelProperty(columnList);
         return getObjectList(sheet, excelProperty, clazz);
     }
-
-
-
-
 
     //어노테이션을 읽어 정상적으로 데이터를 가져올 수 있는지 확인.
     private <T> List<Column> genColumnListBaseOnAnnotation(Class<T> clazz) {
