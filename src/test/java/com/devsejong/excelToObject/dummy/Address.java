@@ -1,7 +1,7 @@
 package com.devsejong.excelToObject.dummy;
 
-import com.devsejong.excelToObject.anno.ExcelColumn;
-import com.devsejong.excelToObject.anno.ExcelMapping;
+import com.devsejong.excelToObject.annotation.ExcelColumn;
+import com.devsejong.excelToObject.annotation.ExcelMapping;
 
 @ExcelMapping
 public class Address {

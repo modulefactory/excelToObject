@@ -1,12 +1,12 @@
 package com.devsejong.excelToObject;
 
 
-import com.devsejong.excelToObject.anno.ExcelColumn;
-import com.devsejong.excelToObject.anno.ExcelMapping;
-import com.devsejong.excelToObject.domain.ClassType;
-import com.devsejong.excelToObject.domain.Column;
-import com.devsejong.excelToObject.domain.ExcelProperty;
-import com.devsejong.excelToObject.except.ExcelToObjectException;
+import com.devsejong.excelToObject.annotation.ExcelColumn;
+import com.devsejong.excelToObject.annotation.ExcelMapping;
+import com.devsejong.excelToObject.exception.ExcelToObjectException;
+import com.devsejong.excelToObject.model.ClassType;
+import com.devsejong.excelToObject.model.ExcelHeaderProperty;
+import com.devsejong.excelToObject.model.HeaderColumn;
 
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -24,13 +24,13 @@ public class AnnotationConfigExcelToObject<T> extends ExcelToObject<T> {
             throw new ExcelToObjectException(clazz.getName() + "은 어노테이션 를 가지고 있지 않습니다.");
         }
 
-        List<Column> columnList = new ArrayList<>();
+        List<HeaderColumn> columnList = new ArrayList<>();
 
         Field[] fields = clazz.getDeclaredFields();
         for(Field field : fields){
             if(field.isAnnotationPresent(ExcelColumn.class)){
                 ExcelColumn excelColumn = field.getAnnotation(ExcelColumn.class);
-                Column column = new Column();
+                HeaderColumn column = new HeaderColumn();
                 column.setPropertyName(field.getName());
                 column.setAliasName(excelColumn.value());
                 column.setClassType(ClassType.getClassType(field.getType()));
@@ -40,7 +40,7 @@ public class AnnotationConfigExcelToObject<T> extends ExcelToObject<T> {
         };
 
         //어노테이션 값을 기반으로 excelProperty를 가져온다.
-        ExcelProperty excelProperty = new ExcelProperty();
+        ExcelHeaderProperty excelProperty = new ExcelHeaderProperty();
         excelProperty.setColumnList(columnList);
 
         ExcelToObject<T> excelToObject = new ExcelToObject<>();

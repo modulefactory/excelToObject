@@ -1,8 +1,10 @@
-package com.devsejong.excelToObject.domain;
+package com.devsejong.excelToObject.exception;
 
 public class CellValueConvertException extends RuntimeException{
 
-    public CellValueConvertException() {
+	private static final long serialVersionUID = -1082575998236962490L;
+
+	public CellValueConvertException() {
 
     }
 

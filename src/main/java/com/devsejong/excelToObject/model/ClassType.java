@@ -1,11 +1,10 @@
-package com.devsejong.excelToObject.domain;
+package com.devsejong.excelToObject.model;
 
-import static java.lang.Class.*;
 
 public enum ClassType {
     STRING, INTEGER, LONG, FLOAT, DOUBLE, DATE;
 
-    public static ClassType getClassType(Class clazz) {
+    public static ClassType getClassType(Class<?> clazz) {
         String className = clazz.getName();
         ClassType resultClassType = null;
         switch (className) {

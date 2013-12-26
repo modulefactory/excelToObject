@@ -1,21 +1,21 @@
-package com.devsejong.excelToObject.domain;
+package com.devsejong.excelToObject.model;
 
 
-public class Column {
+public class HeaderColumn {
     private String propertyName;
     private String aliasName;
     private ClassType classType;
 
-    public Column(String propertyName, String aliasName) {
+    public HeaderColumn(String propertyName, String aliasName) {
         this.propertyName = propertyName;
         this.aliasName = aliasName;
     }
 
-    public Column(String propertyName) {
+    public HeaderColumn(String propertyName) {
         this.propertyName = propertyName;
     }
 
-    public Column() {
+    public HeaderColumn() {
     }
 
     public String getPropertyName() {

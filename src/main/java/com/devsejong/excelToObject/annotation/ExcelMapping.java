@@ -1,4 +1,4 @@
-package com.devsejong.excelToObject.anno;
+package com.devsejong.excelToObject.annotation;
 
 import java.lang.annotation.*;
 

@@ -1,9 +1,10 @@
 package com.devsejong.excelToObject;
 
-import com.devsejong.excelToObject.domain.ClassType;
-import com.devsejong.excelToObject.domain.Column;
-import com.devsejong.excelToObject.domain.ExcelProperty;
-import com.devsejong.excelToObject.except.ExcelToObjectException;
+import com.devsejong.excelToObject.exception.ExcelToObjectException;
+import com.devsejong.excelToObject.model.ClassType;
+import com.devsejong.excelToObject.model.ExcelHeaderProperty;
+import com.devsejong.excelToObject.model.HeaderColumn;
+
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -36,7 +37,7 @@ public class ExcelToObject<T> {
      * @param clazz
      * @return
      */
-    public List<T> getObjectList(InputStream inputStream, ExcelProperty excelProperty, Class<T> clazz) {
+    public List<T> getObjectList(InputStream inputStream, ExcelHeaderProperty excelProperty, Class<T> clazz) {
         if(inputStream == null){
             throw new ExcelToObjectException("inputStream is null!!");
         }else if(excelProperty == null){
@@ -57,18 +58,18 @@ public class ExcelToObject<T> {
 
             // 첫번째 헤더 로우을 기반으로 column속성값을 가져간다.
             Row row = sheet.getRow(0);
-            Map<Integer, Column> columnMap = new HashMap<>();
-            List<Column> columnList = excelProperty.getColumnList();
+            Map<Integer, HeaderColumn> columnMap = new HashMap<>();
+            List<HeaderColumn> columnList = excelProperty.getColumnList();
 
             //상단의 컬럼을 순환하면서 셀값과 매칭되는 객체속성을 가져올 수 있도록 한다.
             //복잡도가 크게 높지 않으므로, 단순 for문을 사용하여 진행하도록 한다.(속도 이슈시 개선.)
             Object objectForPropertyUtils = clazz.newInstance();
             for (int i = 0; i < row.getPhysicalNumberOfCells(); i++) {
                 String cellValue = row.getCell(i).getStringCellValue();
-                for (Column column : columnList) {
+                for (HeaderColumn column : columnList) {
                     if (column.getAliasName().equals(cellValue)) {
                         //컬럼형식을 가져온다.
-                        Class propType = PropertyUtils.getPropertyType(objectForPropertyUtils, column.getPropertyName());
+                        Class<?> propType = PropertyUtils.getPropertyType(objectForPropertyUtils, column.getPropertyName());
                         ClassType classType = ClassType.getClassType(propType);
                         column.setClassType(classType);
                         columnMap.put(new Integer(i), column);
@@ -99,14 +100,17 @@ public class ExcelToObject<T> {
         return objectList;
     }
 
-    private T createObject(Row row, Map<Integer, Column> columnMap, Class<T> className) throws ClassNotFoundException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
-        Class<T> obj = (Class<T>) Class.forName(className.getName());
+    private T createObject(Row row, Map<Integer, HeaderColumn> columnMap, Class<T> className) 
+    		throws ClassNotFoundException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
+    	
+        @SuppressWarnings("unchecked")
+		Class<T> obj = (Class<T>) Class.forName(className.getName());
         T objInstance = obj.newInstance();
 
         Iterator<Integer> columnMapIter = columnMap.keySet().iterator();
         while (columnMapIter.hasNext()) {
             int cellIndex = columnMapIter.next();
-            Column column = columnMap.get(cellIndex);
+            HeaderColumn column = columnMap.get(cellIndex);
             logger.debug("작업 대상 셀 : " + cellIndex);
 
             String propertyName = column.getPropertyName();

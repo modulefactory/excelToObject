@@ -1,9 +1,10 @@
 package com.devsejong.excelToObject;
 
-import com.devsejong.excelToObject.domain.Column;
-import com.devsejong.excelToObject.domain.ExcelProperty;
 import com.devsejong.excelToObject.dummy.Address;
-import com.devsejong.excelToObject.except.ExcelToObjectException;
+import com.devsejong.excelToObject.exception.ExcelToObjectException;
+import com.devsejong.excelToObject.model.ExcelHeaderProperty;
+import com.devsejong.excelToObject.model.HeaderColumn;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -17,17 +18,17 @@ import static junit.framework.Assert.fail;
 
 public class ExcelToObjectTest {
     ExcelToObject<Address> dummyObjectExcelToObject;
-    ExcelProperty excelProperty;
+    ExcelHeaderProperty excelProperty;
 
     @Before
     public void setup() {
         dummyObjectExcelToObject = new ExcelToObject<>();
 
-        excelProperty = new ExcelProperty();
+        excelProperty = new ExcelHeaderProperty();
 
-        List<Column> addressColumnList = new ArrayList<>();
-        addressColumnList.add(new Column("zipcode", "우편번호"));
-        addressColumnList.add(new Column("address", "주소"));
+        List<HeaderColumn> addressColumnList = new ArrayList<>();
+        addressColumnList.add(new HeaderColumn("zipcode", "우편번호"));
+        addressColumnList.add(new HeaderColumn("address", "주소"));
         excelProperty.setColumnList(addressColumnList);
     }
 

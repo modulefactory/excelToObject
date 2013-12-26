@@ -1,7 +1,8 @@
 package com.devsejong.excelToObject;
 
 import com.devsejong.excelToObject.dummy.Address;
-import com.devsejong.excelToObject.except.ExcelToObjectException;
+import com.devsejong.excelToObject.exception.ExcelToObjectException;
+
 import org.junit.Before;
 import org.junit.Test;
 
