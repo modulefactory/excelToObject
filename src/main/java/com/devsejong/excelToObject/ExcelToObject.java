@@ -48,19 +48,17 @@ public class ExcelToObject {
         Row row = sheet.getRow(0);
         Map<Integer, Column> columnMap = getColumnMap(excelProperty, row);
 
-        //만들어진 컬럼 맵을 기반으로 데이터를 가져온다.
         for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
-            T t = createObject(sheet.getRow(i), columnMap, clazz);
-            resultObjectList.add(t);
+            T resultObject = createObject(sheet.getRow(i), columnMap, clazz);
+            resultObjectList.add(resultObject);
         }
-        //예외처리는 어떻게 삭제하여야 하는가?? 해당 부분때문에 로직이 지나치게 복잡해 보인다.
 
         return resultObjectList;
     }
 
 
     /**
-     * 엑셀데이터를 기준으로 엑셀 데이터를 가져온다.
+     * 엑셀 데이터를 가져온다.
      * <b>리팩토링 필요</b>
      *
      * @param excelProperty
@@ -73,21 +71,35 @@ public class ExcelToObject {
         return getObjectList(sheet, excelProperty, clazz);
     }
 
+    /**
+     * inputStream을 추출 데이터를 가지고 온다.
+     *
+     * @param inputStream
+     * @param excelProperty
+     * @param clazz
+     * @param <T>
+     * @return
+     */
     public <T> List<T> getXlsObjectList(InputStream inputStream, ExcelProperty excelProperty, Class<T> clazz) {
         excelToObjectValidate(inputStream, excelProperty, clazz);
-        List<T> objectList = null;
         try {
             HSSFWorkbook hssfWorkbook = new HSSFWorkbook(inputStream);
-            objectList =  getXlsObjectList(hssfWorkbook, excelProperty, clazz);
+            return getXlsObjectList(hssfWorkbook, excelProperty, clazz);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new ExcelToObjectException("IOException발생", e);
         } finally {
             IOUtils.closeQuietly(inputStream);
         }
-
-        return objectList;
     }
 
+    /**
+     *
+     * @param xssfWorkbook
+     * @param excelProperty
+     * @param clazz
+     * @param <T>
+     * @return
+     */
     public <T> List<T> getXlsxObjectList(XSSFWorkbook xssfWorkbook, ExcelProperty excelProperty, Class<T> clazz) {
         // 첫번째 시트만 가져온다.
         Sheet sheet = xssfWorkbook.getSheetAt(0);
@@ -96,17 +108,14 @@ public class ExcelToObject {
 
     public <T> List<T> getXlsxObjectList(InputStream inputStream, ExcelProperty excelProperty, Class<T> clazz) {
         excelToObjectValidate(inputStream, excelProperty, clazz);
-        List<T> objectList = null;
         try {
             XSSFWorkbook xssfWorkbook = new XSSFWorkbook(inputStream);
-            objectList =  getXlsxObjectList(xssfWorkbook, excelProperty, clazz);
+            return  getXlsxObjectList(xssfWorkbook, excelProperty, clazz);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new ExcelToObjectException("IOException발생", e);
         } finally {
             IOUtils.closeQuietly(inputStream);
         }
-
-        return objectList;
     }
 
     /**
@@ -208,6 +217,7 @@ public class ExcelToObject {
                 }
             }
         }
+
         return columnMap;
     }
 
@@ -229,23 +239,27 @@ public class ExcelToObject {
             int cellIndex = columnMapIter.next();
             Column column = columnMap.get(cellIndex);
             String propertyName = column.getPropertyName();
+
             logger.debug("작업 대상 셀 : " + cellIndex + "Processing cell propertyName" + propertyName);
             Cell cell = row.getCell(cellIndex);
 
             //cell값이 존재한다면 아래 구문을 실행한다.
             if (cell != null) {
                 Object cellValue = generateObjectBaseOnProperty(column, cell);
-
-                //결과값을 insert 처리.
-                try {
-                    PropertyUtils.setSimpleProperty(objInstance, propertyName, cellValue);
-                } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-                    throw new ExcelToObjectException("excelToObject Error.", e);
-                }
+                setObjectProperty(objInstance, propertyName, cellValue);
             }
 
         }
         return objInstance;
+    }
+
+    private <T> void setObjectProperty(T objInstance, String propertyName, Object cellValue) {
+        //결과값을 insert 처리.
+        try {
+            PropertyUtils.setSimpleProperty(objInstance, propertyName, cellValue);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new ExcelToObjectException("excelToObject Error.", e);
+        }
     }
 
     /**
@@ -288,6 +302,7 @@ public class ExcelToObject {
         } else if (column.getClassType() == ClassType.DOUBLE) {
             cellValue = new Float(cell.getNumericCellValue()).doubleValue();
         }
+
         return cellValue;
     }
 

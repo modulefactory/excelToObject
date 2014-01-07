@@ -24,7 +24,6 @@ public class ExcelToObjectTest {
     @Before
     public void setup() {
         excelToObject = new ExcelToObject();
-
         List<Column> addressColumnList = new ArrayList<>();
         addressColumnList.add(new Column("zipcode", "우편번호", ClassType.STRING));
         addressColumnList.add(new Column("address", "주소", ClassType.STRING));
@@ -35,7 +34,7 @@ public class ExcelToObjectTest {
     @Test
     public void testGetObjectList() throws Exception {
         List<Address> objList = excelToObject.getXlsObjectList(
-                new FileInputStream(getTestFolderPath() + "test.xls"), excelProperty, Address.class
+                getTestXlsInputStream(), excelProperty, Address.class
         );
 
         System.out.println(objList.size());
@@ -46,72 +45,39 @@ public class ExcelToObjectTest {
 
     @Test
     public void getObjectList() throws FileNotFoundException, ClassNotFoundException {
-        List<Address> addr = excelToObject.getXlsObjectList(new FileInputStream(getTestFolderPath() + "test.xls"), Address.class);
+        List<Address> addr = excelToObject.getXlsObjectList(getTestXlsInputStream(), Address.class);
         System.out.println(addr);
     }
 
 
-
-
-
-
-
-
-
-    @Test
-    public void testGetObjectList_inputStreamIsNull() {
-        try {
-            excelToObject.getObjectList(null, excelProperty, Address.class);
-            fail();
-        } catch (ExcelToObjectException e) {
-            //성공!
-        }
-
+    @Test(expected = ExcelToObjectException.class)
+    public void testGetObjectList_propIsNull() {
+        excelToObject.getXlsObjectList(getTestXlsInputStream(), null, Address.class);
     }
 
-    @Test
-    public void testGetObjectList_propIsNull() throws FileNotFoundException {
-        try {
-            excelToObject.getXlsObjectList(new FileInputStream(getTestFolderPath() + "test.xls"), null, Address.class);
-            fail();
-        } catch (ExcelToObjectException e) {
-            //성공!
-        }
-
+    @Test(expected = ExcelToObjectException.class)
+    public void testGetObjectList_classIsNull() {
+        excelToObject.getXlsObjectList(getTestXlsInputStream(), excelProperty, null);
     }
 
-    @Test
-    public void testGetObjectList_classIsNull() throws FileNotFoundException {
-        try {
-            excelToObject.getXlsObjectList(new FileInputStream(getTestFolderPath() + "test.xls"), excelProperty, null);
-            fail();
-        } catch (ExcelToObjectException e) {
-            //성공!
-        }
-
+    //어노테이션이 들어가지 않은 객체 조회
+    @Test(expected = ExcelToObjectException.class)
+    public void getObjectList_hasNoAnnotatedClass() {
+        excelToObject.getXlsObjectList(getTestXlsInputStream(), NotAnnotatedObject.class);
     }
+
+    private FileInputStream getTestXlsInputStream() {
+        try {
+            return new FileInputStream(getTestFolderPath() + "test.xls");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 
     private String getTestFolderPath() {
         return this.getClass().getResource(File.separator + "testExcelFile").getPath() + File.separator;
-    }
-
-
-
-
-    //어노테이션이 들어가지 않은 객체 조회
-    @Test
-    public void getObjectList_hasNoAnnotatedClass() {
-        try {
-            excelToObject.getXlsObjectList(
-                    new FileInputStream(getTestFolderPath() + "test.xls"), NotAnnotatedObject.class
-            );
-            //어노테이션이 없으므로 에러처리가 되어야지 정상이다.
-            fail();
-        } catch (ExcelToObjectException e) {
-            //성공!!^___^
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
     }
 
 }
