@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.payment.PaymentSqlMapRepository">
+	               
+	<resultMap id="bank" type="iceberg.capi.order.model.payment.PaymentInfo">
+		<result property="cardRefundPosibleAmount"                      column="CREDIT_SUM" />
+		<result property="nothingBankbookDepositRefundPosibleAmount"    column="BANK_SUM"   />
+		<result property="valueAddedNetworkCode"                        column="VAN_CODE"   />
+	</resultMap>
+
+	<resultMap id="assetInfo" type="iceberg.capi.order.model.payment.PaymentInfo">
+		<result property="accumulatedMoneyRefundPosibleAmount"       column="ASSET_SUM"     />
+		<result property="temporaryReceivableRefundPosibleAmount"    column="RECEIPT_SUM"   />
+		<result property="giftCertificateRefundPosibleAmount"        column="TICKET_SUM"    />
+		<result property="gsPointRefundPosibleAmount"                column="GSPOINT_SUM"   />
+	</resultMap>
+
+
+	<resultMap id="etcInfo" type="iceberg.capi.order.model.payment.PaymentInfo">
+		<result property="pointAmount"            column="TRANS_AMT"     />
+		<result property="taxSaveFlag"            column="TAX_SAVE_YN"   />
+		<result property="paymentTypeCode"        column="TYPE_CD"       />
+	</resultMap>
+
+
+	<resultMap id="receiptFlagInfo" type="iceberg.capi.order.model.payment.PaymentInfo">
+		<result property="cashReceiptRequestFlag"          column="TAX_SAVE_FLG"    />
+	</resultMap>
+
+
+	<resultMap id="bankReceiptInfo" type="iceberg.capi.order.model.payment.PaymentInfo">
+		<result property="approvalTransactionDayAndTime"             column="TRANS_DATE"    />
+		<result property="approvalNumber"                            column="TRANS_NUM"     />
+	</resultMap>
+
+	<resultMap id="paymentBankInfo" type="iceberg.capi.order.model.payment.PaymentBankInfo">
+		<result property="bankName"                          column="BANK_NAME"      />
+		<result property="accountNumber"                     column="ACCT_NUM"       />
+		<result property="depositPersonName"                 column="SENDER"         />
+		<result property="linkageDayAndTime"                 column="LINK_DATE"      />
+		<result property="paymentAmount"                     column="TRANS_AMT"      />
+		<result property="paymentStateCode"                  column="STAT_CD"        />
+		<result property="cashReceiptRequestFlag"            column="TAX_SAVE_YN"    />
+		<result property="paymentNumber"                     column="SRC_ROW_ID"     />
+		<result property="bankDueDate"                       column="BANK_DUE_DT"    />
+		<result property="bankAmount"                        column="BANK_SUM"       />
+		<result property="valueAddedNetworkCode"             column="VAN_CODE"       />
+	</resultMap>
+
+	<resultMap id="paymentCardInfo" type="iceberg.capi.order.model.payment.PaymentCardInfo">
+		<result property="cardName"                                        column="CARD_NAME"           />
+		<result property="approvalNumber"                                  column="CC_SEQ"              />
+		<result property="cardNumber"                                      column="CARD_NUM"            />
+		<result property="paymentAmount"                                   column="TRANS_AMT"           />
+		<result property="paymentDayAndTime"                               column="APPRV_DATE"          />
+		<result property="paymentNumber"                                   column="APPRV_NUM"           />
+		<result property="nothingInterestInstallmentFlag"                  column="NO_INT_FLG"          />
+		<result property="installmentMonth"                                column="INSTALL_MON"         />
+		<result property="paymentTypeCode"                                 column="PAY_TYPE_CD"         />
+		<result property="paymentStateCode"                                column="PAY_STAT_CD"         />
+		<result property="allianceFlag"                                    column="ALI_FLG"             />
+		<result property="slipPurchaseFlag"                                column="RESERVE_FLG"         />
+		<result property="allianceCardTotalAccumulationAmount"             column="ALI_TOTAL_CREDIT"    />
+	</resultMap>
+	<resultMap id="bankItem" type="iceberg.capi.order.model.payment.BankItem">
+		<result property="payMeanOwnrNm"               column="PAY_MEAN_OWNR_NM"       />
+		<result property="payMeanNoEcp"                column="PAY_MEAN_NO_ECP"        />
+		<result property="bankCd"                      column="BANK_CD"                />
+		<result property="bankNm"                      column="BANK_NM"                />
+		<result property="primPayMeanFlg"              column="PRIM_PAY_MEAN_FLG"      />
+		<result property="payMeanMsk"                  column="PAY_MEAN_MSK"           />
+	</resultMap>
+
+<!--
+	주문시 사용한 카드와 무통장 결제 금액 가져 오기(그룹핑) EC소스반영
+ -->
+	<select id="findCardAndBankInfoGroup" parameterType="criteria" resultMap="bank">
+		<![CDATA[
+			SELECT  NVL(SUM(DECODE( A.PAY_TYP_CD, 'Credit Card', NVL(A.RFN_PSBL_AMT,0),0)),0) AS CREDIT_SUM
+			       ,NVL(SUM(DECODE( A.PAY_TYP_CD, 'Bank Account',
+			            DECODE(A.META_ATTR28, NULL ,
+			                DECODE( A.PAY_ST_CD, 'B03', NVL(A.PAY_AMT,0), 'B02', NVL(A.PAY_AMT,0), NVL(A.RFN_PSBL_AMT,0) ),
+			                NVL(A.RFN_PSBL_AMT,0)),0)),0) AS BANK_SUM
+			       ,A.META_ATTR21 AS VAN_CODE
+			  FROM  PAY_ORD_PAYMT_D A
+			       ,ORD_ORD_M B
+			 WHERE  B.ORD_NO = #{_c.ordNo[0].value}
+			   AND  RTRIM(B.CUST_NO) = #{_c.custNo[0].value}
+			   AND  B.PAY_ORD_NO = A.PAY_ORD_NO(+)
+			 GROUP  BY A.META_ATTR21
+		 ]]>
+	</select>
+	<!--
+		주문시사용적립금/가수금/상품권 정보  EC소스반영
+	 -->
+	<select id="findAssetTxnInfoForOrder" parameterType="criteria" resultMap="assetInfo">
+		<![CDATA[
+			SELECT  NVL(SUM(DECODE(C.TXN_TYP_CD, 'R08', C.RET_PSBL_AMT, 0)),0) + NVL(SUM(DECODE(C.TXN_TYP_CD, 'P08', C.RET_PSBL_AMT, 0)),0) AS ASSET_SUM
+			       ,NVL(SUM(DECODE(C.TXN_TYP_CD, 'C01', C.RET_PSBL_AMT, 0)),0) AS RECEIPT_SUM
+			       ,NVL(SUM(DECODE(C.TXN_TYP_CD, 'T01', C.RET_PSBL_AMT, 0)),0) AS TICKET_SUM
+			       ,NVL(SUM(DECODE(C.TXN_TYP_CD, 'P08', C.RET_PSBL_AMT, 0)),0) AS GSPOINT_SUM
+			  FROM 	ORD_ORD_M B
+			            ,CST_ASSET_TXN_D C
+			 WHERE  B.ORD_NO = #{_c.ordNo[0].value}
+			   AND 	RTRIM(B.CUST_NO) = #{_c.custNo[0].value}
+			   AND 	B.PAY_ORD_NO = C.PAY_ORD_NO(+)
+			   AND 	RTRIM(C.TXN_TYP_CD) IN  ('R08','P08', 'C01', 'T01')
+		 ]]>
+	</select>
+	<select id="findPaymentUseInfoByTypeCd" parameterType="criteria" resultMap="etcInfo">
+		<![CDATA[
+			SELECT  NVL(SUM(A.PAY_AMT), 0) AS TRANS_AMT
+			           ,MAX(NVL(A.META_ATTR16,'N')) AS TAX_SAVE_YN
+			           ,'Point' AS TYPE_CD
+			  FROM   PAY_ORD_PAYMT_D A
+			           ,ORD_ORD_M B
+			 WHERE  B.ORD_NO = #{_c.ordNo[0].value}
+			   AND    RTRIM(B.CUST_NO) = #{_c.custNo[0].value}
+			   AND    A.PAY_TYP_CD = 'Point'
+			   AND    B.ORD_NO = A.PAY_ORD_NO(+)
+			UNION ALL
+			SELECT  NVL(SUM(A.PAY_AMT), 0) AS TRANS_AMT
+			           ,MAX(NVL(A.META_ATTR16,'N')) AS TAX_SAVE_YN
+			           ,'Prepaid Card' AS TYPE_CD
+			  FROM   PAY_ORD_PAYMT_D A
+			           ,ORD_ORD_M B
+			 WHERE  B.ORD_NO = #{_c.ordNo[0].value}
+			   AND    RTRIM(B.CUST_NO) = #{_c.custNo[0].value}
+			   AND    A.PAY_TYP_CD = 'PREPAID CARD'
+			   AND    B.ORD_NO = A.PAY_ORD_NO(+)
+			UNION ALL
+			SELECT  NVL(SUM(A.PAY_AMT), 0) AS TRANS_AMT
+			            ,MAX(NVL(A.META_ATTR16,'N')) AS TAX_SAVE_YN
+			            ,'GS Ticket' AS TYPE_CD
+			  FROM   PAY_ORD_PAYMT_D A
+			           ,ORD_ORD_M B
+			 WHERE  B.ORD_NO = #{_c.ordNo[0].value}
+			   AND    RTRIM(B.CUST_NO) = #{_c.custNo[0].value}
+			   AND    A.PAY_TYP_CD = 'GS Ticket'
+			   AND    B.ORD_NO = A.PAY_ORD_NO(+)
+		 ]]>
+	</select>
+	<!--
+		가수금, 상품권 현금영수증 flag EC소스반영
+	 -->
+	<select id="findBankReceiptFlagForOrder" parameterType="criteria" resultMap="receiptFlagInfo">
+		<![CDATA[
+			SELECT  MAX(NVL(B.CASH_RCPT_REQ_YN,'N')) as TAX_SAVE_FLG
+			  FROM  ORD_ORD_M B
+			           ,CST_ASSET_TXN_D C
+			 WHERE 	B.ORD_NO = #{_c.ordNo[0].value}
+			   AND 	RTRIM(B.CUST_NO) = #{_c.custNo[0].value}
+			   AND 	B.PAY_ORD_NO = C.PAY_ORD_NO(+)
+			   AND 	RTRIM(C.TXN_TYP_CD) IN  ( 'C01', 'T01')
+		 ]]>
+	</select>
+	<select id="findBankReceiptInfoForOrder" parameterType="criteria" resultMap="bankReceiptInfo">
+		<![CDATA[
+			SELECT  TO_CHAR(APRV_TXN_DTM,'YYYYMMDD') AS TRANS_DATE    /* +9/24 */
+			            ,APRV_NO AS TRANS_NUM
+			  FROM  PAY_CASH_RCPT_APRV_CNL_D
+			 WHERE  ORD_NO = #{_c.ordNo[0].value}
+			   AND 	TXN_ST_CD = '0'
+		 ]]>
+	</select>
+	<!-- EC소스반영 -->
+	<select id="findAssetRefundAmt" parameterType="criteria" resultType="long">
+		<![CDATA[
+			 SELECT  NVL(SUM(TXN_AMT),0) AS ASSET_SUM
+			  FROM  CST_ASSET_TXN_D
+			 WHERE  ORD_NO = #{_c.ordNo[0].value}
+			   AND  TXN_TYP_CD IN ('R03', 'P03')
+		 ]]>
+	</select>
+	<!--
+		주문결재정보중 무통장정보를 가져온다. EC소스반영
+	 -->
+	<select id="findPaymentBankInfo" parameterType="criteria" resultMap="paymentBankInfo">
+		<![CDATA[
+			SELECT
+			        F.CD_VAL AS BANK_NAME
+			       ,A.META_ATTR17 AS ACCT_NUM
+			       ,A.META_ATTR9 AS SENDER
+			       ,TO_CHAR(A.META_ATTR12, 'YYYYMMDDHH24MISS') AS LINK_DATE  /* +9/24 */
+			       ,A.PAY_AMT AS TRANS_AMT
+			       ,A.PAY_ST_CD AS STAT_CD
+			       ,NVL(A.META_ATTR16,'N') AS TAX_SAVE_YN
+			       ,A.PAY_NO AS SRC_ROW_ID
+			       ,TO_CHAR(TRUNC(B.ORD_DTM) +10, 'YYYY-MM-DD') AS BANK_DUE_DT   /* +9/24 */
+			       ,NVL(DECODE( A.PAY_TYP_CD, 'Bank Account',
+			                 DECODE(A.META_ATTR28, NULL ,
+			                 DECODE( A.PAY_ST_CD, 'B03', NVL(A.PAY_AMT,0), 'B02', NVL(A.PAY_AMT,0), NVL(A.RFN_PSBL_AMT,0) ),
+			                 NVL(A.RFN_PSBL_AMT,0)),0)
+			           ,0) AS BANK_SUM
+			       ,A.META_ATTR21 AS VAN_CODE
+			  FROM  PAY_ORD_PAYMT_D A
+			       ,ORD_ORD_M B
+			       ,CMM_CMM_C F
+			 WHERE  B.ORD_NO = #{_c.ordNo[0].value}
+			   AND  RTRIM(B.CUST_NO) = #{_c.custNo[0].value}
+			   AND  A.PAY_TYP_CD = 'Bank Account'
+			   AND  B.ORD_NO = A.ORD_NO(+)
+			   AND  A.META_ATTR21 = F.CMM_CD
+			   AND  F.CMM_GRP_CD = 'PAY001'
+		]]>
+	</select>
+	<!--
+		주문결재정보중 카드정보를 가져온다. EC소스반영
+	 -->
+	<select id="findPaymentCardInfo" parameterType="criteria" resultMap="paymentCardInfo">
+		<![CDATA[
+			SELECT  A.META_ATTR19 AS CARD_NAME
+			       ,A.EDI_SEQ AS CC_SEQ
+			       ,A.META_ATTR17 AS CARD_NUM
+			       ,A.PAY_AMT AS TRANS_AMT
+			       ,TO_CHAR(A.META_ATTR12, 'YYYYMMDDHH24MISS') AS APPRV_DATE    /* +9/24 */
+			       ,A.META_ATTR37 AS APPRV_NUM
+			       ,A.META_ATTR31 AS NO_INT_FLG
+			       ,A.INSM_MM AS INSTALL_MON
+			       ,A.PAY_RSN_CD AS PAY_TYPE_CD
+			       ,NVL(A.CNL_ST_CD, A.PAY_ST_CD) AS PAY_STAT_CD
+			       ,NVL(A.ALIA_CARD_YN,'N') AS X_ALI_FLG
+			       ,NVL(A.META_ATTR23,'N') AS X_RESERVE_FLG
+			       ,NVL(A.ALIA_CARD_TOT_ACCM,0) AS X_ALI_TOTAL_CREDIT
+			  FROM  PAY_ORD_PAYMT_D A
+			       ,ORD_ORD_M B
+			 WHERE  B.ORD_NO = #{_c.ordNo[0].value}
+			   AND  RTRIM(B.CUST_NO) = #{_c.custNo[0].value}
+			   AND  A.PAY_TYP_CD = 'Credit Card'
+			   AND  A.PAY_ST_CD NOT IN ('C00','C01','C11')
+			   AND  B.PAY_ORD_NO = A.PAY_ORD_NO
+		]]>
+	</select>
+	<!--
+		환불 계좌 정보를 가져온다.
+	 -->
+	<select id="findRefundAccountInformation" parameterType="long" resultMap="bankItem">
+		<![CDATA[
+		     SELECT   A.PAY_MEAN_OWNR_NM  AS PAY_MEAN_OWNR_NM -- 결재수단 소유자명                                                     
+		          , A.PAY_MEAN_NO_ECP   AS PAY_MEAN_NO_ECP  -- 결제수단번호암호화값                                                       
+		          , A.BANK_CD           AS BANK_CD -- 은행코드        
+		          , (SELECT CD_VAL FROM CMM_CMM_C WHERE CMM_GRP_CD = 'PAY001' AND CMM_CD = A.BANK_CD )  AS BANK_NM
+		          , A.PRIM_PAY_MEAN_YN  AS PRIM_PAY_MEAN_FLG   -- 주요결재 수단여부      
+		          , A.PAY_MEAN_NO_MSK   AS PAY_MEAN_MSK   -- 결재 수단 마스팅값     
+		     FROM  CST_PAY_MEAN_D A    --결제수단정보        
+		    WHERE  A.CUST_NO = #{custNo}  
+		      AND  A.PAY_MEAN_GBN_CD = '30'   -- 결재 수단 구분코드     
+		]]>
+	</select>
+	
+</mapper>

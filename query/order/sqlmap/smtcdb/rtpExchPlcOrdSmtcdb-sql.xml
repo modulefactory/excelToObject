@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	<mapper namespace="iceberg.capi.order.smtcdb.repository.returnexchange.RtpExchPlcOrdSmtcDBSqlMapRepository">
+	               
+	<!--
+	   	내용 : 원주문의 반품여부 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 12. 24 
+	   
+	   	#{_c.ordNo[0].value} = 600020253
+	   	#{_c.custNo[0].value} = 40766020
+	-->
+	
+	<resultMap id="rtpExchPrdMap" type="iceberg.capi.order.model.returnexchange.RtpExchPrd">
+		<result property="ordNo"                  column="ORD_NO"/>
+		<result property="ordItemNo"              column="ORD_ITEM_NO"/>
+		<result property="rtpReReqPrevntCd"       column="RTP_RE_REQ_PREVNT_CD"/>
+		<result property="remanQty"               column="REMAN_QTY"/>
+	</resultMap>
+	<select id="findSrcOrderReturnFlag" parameterType="criteria" resultMap="rtpExchPrdMap">
+		SELECT OOM.ORD_NO
+		     , OID.ORD_ITEM_NO
+		     , NVL(OID.RTP_RE_REQ_PREVNT_CD, 'N') AS RTP_RE_REQ_PREVNT_CD
+		     , NVL(OID.ORD_QTY, 0) - NVL(OID.RTP_QTY, 0) AS REMAN_QTY
+		  FROM ORD_ORD_M OOM
+		     , ORD_ITEM_D OID
+		 WHERE OOM.ORD_NO = OID.ORD_NO
+		   AND OOM.ORD_NO = #{_c.ordNo[0].value}
+		   AND OOM.CUST_NO = #{_c.custNo[0].value}
+		   AND OID.ORD_ITEM_NO IN 
+		   <foreach collection="_c.ordItemNo[0].value" item="item" index="index" open="(" separator="," close=")">
+		   	#{item}
+		   </foreach>
+	</select>
+
+</mapper>

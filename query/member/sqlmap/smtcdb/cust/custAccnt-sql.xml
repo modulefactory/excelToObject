@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.member.smtcdb.repository.cust.CustAccntSqlMapRepository">
+
+	<resultMap type="iceberg.capi.member.model.cust.Cust" id="custMap" >
+ 			<result property="gsnpntCustNo"  column="GSNPNT_CUST_NO"/>
+ 			<result property="gsnpntEcTrmsAgreeFlg"  column="GSSHOP_TRMS_AGREE_YN"/>
+ 			<result property="gshsEcTrmsAgreeFlg"    column="EC_TRMS_AGREE_YN"/>
+ 			<result property="thdprtInfoProvdFlg"    column="THDPRT_INFO_AGREE_YN"/>
+ 	</resultMap> 
+	
+	<!-- 
+	내용 : GS&POINT 약관 동의여부 조회  findGsnpntTrmsAgreeFlg
+	작성자 : yhchoi
+	작성일 : 2013. 11. 28 
+
+    #{_c.id[0].value} = ectest0001
+    #{_c.passwd[0].value} =  3ddc1ff96bab63039e1d098bbb082c0a0df483bf1cac7c7ece6993811e642603
+	-->
+    <select id="findGsnpntTrmsAgreeFlg" parameterType="criteria" resultMap="custMap">
+    SELECT GSNPNT_CUST_NO                                  AS GSNPNT_CUST_NO
+          ,DECODE(CCAM.EC_TRMS_AGREE_DTM, NULL, 'N', 'Y')  AS GSSHOP_TRMS_AGREE_YN  
+          ,NVL(CGCM.EC_TRMS_AGREE_YN, 'N')                 AS EC_TRMS_AGREE_YN
+          ,NVL(CGCM.THDPRT_INFO_AGREE_YN, 'N')             AS THDPRT_INFO_AGREE_YN	
+     FROM  CST_GSNPNT_CUST_M	CGCM 
+          ,CST_CUST_ACCNT_M		CCAM 
+     WHERE CCAM.CUST_NO               = CGCM.CUST_NO(+)  
+       AND CCAM.LOGIN_ID              = #{_c.id[0].value}
+       AND CCAM.PASSWD                = #{_c.passwd[0].value}
+       AND CCAM.CUST_ACCNT_GBN_CD     = 'GSEC'  
+       AND CCAM.CUST_ACCNT_ST_CD      = 'A'  
+       AND CGCM.GSNPNT_CUST_ST_CD(+)  = '01' 
+    </select>
+ 
+	<!-- 
+	내용 : 회원의 비밀번호 마지막 수정 일시 조회 findPasswdLastModDt
+	작성자 : yhchoi
+	작성일 : 2013. 11. 28 
+
+	#{_c.custNo[0].value} = 40766029
+	-->
+    <select id="findPasswdLastModDt" parameterType="criteria" resultType="String">
+    SELECT SUBSTR(MIN(PASSWD_LAST_MOD_DT), 4, 14) AS PASSWD_LAST_MOD_DT
+     FROM  ( SELECT '010' || TO_CHAR(MAX(REG_DTM), 'YYYYMMDDHH24MISS') AS PASSWD_LAST_MOD_DT   
+              FROM  CST_CUST_INFO_CHG_L     
+             WHERE  CUST_NO = #{_c.custNo[0].value}   
+               AND  CHG_ATTR_CD = 'PWD'  
+               AND  CHG_AFT_CNTNT IS NOT NULL   
+             UNION
+             SELECT '020' || TO_CHAR(DECODE(MOD_DTM, NULL, REG_DTM, MOD_DTM), 'YYYYMMDDHH24MISS') AS PASSWD_LAST_MOD_DT   
+              FROM  CST_CUST_ACCNT_M   
+             WHERE  CUST_NO = #{_c.custNo[0].value}   
+               AND  CUST_ACCNT_GBN_CD = 'GSEC'  
+           )
+    WHERE  NVL(LENGTH(PASSWD_LAST_MOD_DT), 0) <![CDATA[ > ]]> 3 
+    </select>
+
+
+
+	<!-- 
+	내용 : EC고객번호 채번
+	작성자 : 김경아
+	작성일 : 2013. 11. 28  
+	-->
+    <select id="findCustAccntGetno" resultType="long">
+        SELECT SQ_CST_CCAM_ECN_01.NEXTVAL
+          FROM DUAL
+    </select>
+
+
+</mapper>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.orderdelivery.OrdDlvNoMemSqlMapRepository">
+
+	<!--
+		API : 주문 배송 현황 비 회원 고객 번호 조회
+		작성자 : 유영모
+		작성일 : 2013-12-11
+		#{_c.ipinDiNo[0].value} = "MC0GCCqGSIb3DQIJAyEAtsjxHy5+Kox/CWdBfZsi15SMcoB4cCO+eKf3Z8xND7Y="
+		#{_c.custNm[0].value} = "유영모"
+	-->
+    <select id="findCustNo" parameterType="criteria" resultType="long">
+    	<![CDATA[
+	       SELECT CUST_NO
+			  FROM (SELECT /*+ ORDERED */ OOM.CUST_NO
+			          FROM (SELECT /*+ INDEX(CCM IX_CST_CUST_M_02) */ CUST_NO
+			                  FROM CST_CUST_M CCM
+			                 WHERE IPIN_DI_NO = #{_c.ipinDiNo[0].value}
+			                   AND CUST_NM = #{_c.custNm[0].value}) CCM
+			              ,ORD_ORD_M OOM
+			              ,ORD_ITEM_D OID
+			         WHERE CCM.CUST_NO = OOM.CUST_NO
+			           AND OOM.ORD_DTM >= ADD_MONTHS(SYSDATE, -6)
+			           AND OOM.ORD_NO  = OID.ORD_NO
+			           AND OOM.CHANL_CD IN ('B','P')
+			           AND OOM.EC_NOMEM_ORD_YN = 'Y'
+			           AND OOM.ORD_TYP_DTL_CD NOT IN ('AS Remove', 'AS Delivery', 'AS Not Remove', 'AS Not Delivery', 'AS Visit', 'eStore Order','Exchange Return Order','Exchange Return Order')
+			           AND RTRIM(OID.ST_CD) NOT IN ('00', 'A1', '41', '49')
+			           AND NVL(OID.ORD_QTY, 0) - NVL(OID.RTP_QTY,0) > 0
+			          ORDER BY OOM.ORD_DTM DESC ) X
+			 WHERE  ROWNUM = 1
+		]]> 
+	</select>
+</mapper>

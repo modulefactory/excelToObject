@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.orderdelivery.CharCpnPrdDtlCurstaSqlMapRepository">
+
+    <!--
+		내용	: 문자쿠폰상품상세현황을 조회한다.
+		작성자	: 이동민
+		작성일	: 2013.11.01
+		          2013.11.14 분석가 검토내용 반영
+
+		#{_c.ordNo[0].value} = 259735891
+    -->
+
+    <resultMap type="iceberg.capi.order.model.orderdelivery.CharCpnPrdDtlCursta" id="charCpnPrdDtlCursta">
+        <result property="charCpnCelphnTelno"		column="CHAR_CPN_CELPHN_TELNO"/>
+        <result property="charCpnRcvrCelphnTelno"	column="CHAR_CPN_RCVR_CELPHN_TELNO"/>
+        <result property="charCpnKindCd"			column="CHAR_CPN_KIND_CD"/>
+        <result property="charCpnTypCd"				column="CHAR_CPN_TYP_CD"/>
+        <result property="charCpnTitle"				column="CHAR_CPN_TITLE"/>
+        <result property="charDtlCntnt"				column="CHAR_DTL_CNTNT"/>
+        <result property="charCpnOrdQty"			column="CHAR_CPN_ORD_QTY"/>
+        <result property="charCpnRcvrNm"			column="CHAR_CPN_RCVR_NM"/>
+    </resultMap>
+
+    <select id="findCharCpnPrdDtlCursta" parameterType="criteria" resultMap="charCpnPrdDtlCursta">
+        SELECT /* charCpnPrdDtlCursta-sql.xml, 2013.11.01 by 이동민 */
+               GOLG.S_PH_NUM   AS CHAR_CPN_CELPHN_TELNO			/* 문자쿠폰주문자핸드폰전화번호 */
+              ,GOLG.R_PH_NUM   AS CHAR_CPN_RCVR_CELPHN_TELNO  	/* 문자쿠폰수신자핸드폰전화번호 */
+              ,GOLG.SMS_KIND   AS CHAR_CPN_KIND_CD				/* 문자쿠폰종류코드 ('MMS', 'SMS') */
+              ,GOLG.SMS_TYPE   AS CHAR_CPN_TYP_CD				/* 문자쿠폰유형코드 ('A:제목+본문', 'B:본문만입력', 'C:메시지없음')*/
+              ,GOLG.TITLE      AS CHAR_CPN_TITLE				/* 문자쿠폰제목 */
+              ,GOLG.CONTENTS   AS CHAR_DTL_CNTNT				/* 문자쿠폰 상세내용 */
+              ,GOLG.QTY        AS CHAR_CPN_ORD_QTY				/* 문자쿠폰주문수량 */
+              ,GOLG.R_NAME     AS CHAR_CPN_RCVR_NM				/* 문자쿠폰수신자명 */
+          FROM GS_ORD_LOG_GIFT GOLG
+         WHERE GOLG.ORD_NO     = #{_c.ordNo[0].value}
+    </select>
+
+</mapper>

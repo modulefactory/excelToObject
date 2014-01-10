@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prd.PrdSpecSqlMapRepository">
+	
+	<resultMap type="iceberg.capi.product.model.prd.add.PrdSpec" id="prdSpec">
+		<result property="prdSpecCd" column="PRD_SPEC_CD"/>
+		<result property="prdSpecSeq" column="PRD_SPEC_SEQ"/>
+		<result property="prdSpecNm" column="PRD_SPEC_NM"/>
+		<result property="prdSpecVal" column="PRD_SPEC_VAL"/>
+	</resultMap>
+	
+	<select id="getPrdSpecList" resultMap="prdSpec" >
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품  getPrdSpecList
+		API  : 상품  정보 조회
+		설명 : 상품 사양 정보 조회
+		
+		#{prdCd} = 6551806
+		-->		
+	<![CDATA[
+	SELECT PSD.PRD_SPEC_CD   AS PRD_SPEC_CD         /*상품사양코드*/
+	      ,PSD.PRD_SPEC_SEQ  AS PRD_SPEC_SEQ        /*상품사양순번*/
+	      ,PSLM.PRD_SPEC_NM  AS PRD_SPEC_NM         /*상품사양명*/
+	      ,PSVD.PRD_SPEC_VAL AS PRD_SPEC_VAL        /*상품사양값*/
+	  FROM PRD_SPEC_D       PSD                     /*상품사양정보 Table*/
+	      ,PRD_SPEC_LIST_M  PSLM                    /*상품사양목록기본 Table*/
+	      ,PRD_SPEC_VAL_D   PSVD                    /*상품사양값정보 Table*/
+	 WHERE PSD.PRD_CD 		  = #{prdCd}
+	   AND PSD.PRD_SPEC_ST_CD = 'A'
+	   AND PSD.PRD_SPEC_CD 	  = PSLM.PRD_SPEC_CD
+	   AND PSLM.USE_YN 		  = 'Y'
+	   AND PSD.PRD_SPEC_CD 	  = PSVD.PRD_SPEC_CD
+	   AND PSD.PRD_SPEC_SEQ   = PSVD.PRD_SPEC_SEQ
+	   AND PSVD.USE_YN 		  = 'Y'
+	   AND PSD.PRD_SPEC_SEQ  != '99999'
+	   AND PSD.REP_YN 		  = 'Y'
+	 ORDER BY PSVD.SORT_SEQ
+	]]>
+	</select>
+	
+</mapper>

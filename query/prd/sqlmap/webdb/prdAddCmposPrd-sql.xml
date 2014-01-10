@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prd.PrdAddCmposPrdMapSqlMapRepository">
+	
+	<resultMap type="iceberg.capi.product.model.prd.add.PrdAddCmposPrd" id="prdAddCmposPrdMap">
+		<result property="addCmposPrdTypCd" column="ADD_CMPOS_PRD_TYP_CD"/>   <!-- 추가구성상품 유형코드 -->
+		<result property="addCmposPrdCd" column="ADD_CMPOS_PRD_CD"/>          <!-- 추가상품상품 상품코드 -->
+		<result property="addCmposPrdGrpNm" column="ADD_CMPOS_PRD_GRP_NM"/>   <!-- 추가구성상품 그룹명 -->
+		<result property="attrPrdCd" column="ATTR_PRD_CD"/>                   <!-- 속성상품코드 -->
+		<result property="attrPrdRepCd" column="ATTR_PRD_REP_CD"/>            <!-- 속성상품대표코드 -->
+		<result property="ecAttrPrdCd" column="EC_ATTR_PRD_CD"/>              <!-- EC속성상품코드 -->
+		<result property="attrTypVal" column="ATTR_TYP_VAL"/>                 <!-- 속성유형값 -->
+		<result property="salePrc" column="SALE_PRC"/>                        <!-- 판매가격 -->
+		<result property="ordLimitQty" column="ORD_LIMIT_QTY"/>               <!-- 주문제한수량 -->
+		<result property="exposPrdNm" column="EXPOS_PRD_NM"/>                 <!-- 노출상품명 -->
+		<result property="exposPrdNm2" column="EXPOS_PRD_NM2"/>               <!-- 주문제한수량 -->
+	</resultMap>
+	
+	<select id="getPrdAddCmposPrdList" resultMap="prdAddCmposPrdMap" parameterType="criteria">
+	<!-- 
+		DBMS : WEBDB
+		분야 : 단품 getPrdAddCmposPrdList
+		API  : 단품 옵션
+		설명 : 추가구성상품이 있는지 조회한다.
+		
+		#{_c.prdCd[0].value} = 10053795
+		 #{_c.cmmCurrChanl[0].value} = 'B'
+	-->
+	<![CDATA[
+	SELECT PPM.PRD_TYP_CD                               AS ADD_CMPOS_PRD_TYP_CD /*추가구성상품 유형코드*/
+	      ,X.GROUP_PRDID                                AS ADD_CMPOS_PRD_CD     /*추가구성상품 상품코드*/
+	      ,X.GROUP_NM                                   AS ADD_CMPOS_PRD_GRP_NM /*추가구성상품 그룹명*/
+	      ,PPM.PRD_CD                                   AS ATTR_PRD_CD          /*속성상품코드*/
+	      ,PAPM.ATTR_PRD_REP_CD                         AS ATTR_PRC_REP_CD      /*속성대표코드 */
+	      ,PAPM.EC_ATTR_PRD_CD                          AS EC_ATTR_PRD_CD       /*EC속성상품코드*/
+	      ,REPLACE(PAPM.ATTR_WHL_VAL, ',None', '')      AS ATTR_TYP_VAL         /*속성유형값*/
+	      ,PPM.ORD_LIMIT_QTY                            AS ORD_LIMIT_QTY        /*주문제한수량*/
+	      ,FN_PRD_SALE_PRC(PPM.PRD_CD, SYSDATE)         AS SALE_PRC             /*판매가격*/
+	      ,FN_PRD_EXPOS_NM(PPM.PRD_CD, 'P', SYSDATE)    AS EXPOS_PRD_NM         /*노출상품명*/
+	      ,DECODE(
+	             PPM.PRD_TYP_CD,'S',PPM.PRD_NM||' '|| DECODE(REPLACE(PAPM.ATTR_WHL_VAL,',None','')
+	             ,'',''
+	             ,'['||REPLACE(PAPM.ATTR_WHL_VAL,',None','')||']'),PPM.PRD_NM
+	             )                                      AS EXPOS_PRD_NM2		/*노출상품명2*/
+	  FROM (
+	       SELECT PAGD.GRP_NM AS GROUP_NM                            /*추가상품그룹명*/
+	             ,PAGD.SORT_SEQ AS ORDER_SEQ                         /*정렬순서*/
+				 ,PAPD.PRD_CD AS GROUP_PRDID                         /*추가상품그룹 상품코드*/
+	             ,PAPD.GRP_SEQ AS GROUP_ID                           /*그룹순번*/
+				 ,PAPD.ADD_PRD_CD AS PACK_PRDID                      /*추가상품코드*/
+	         FROM PRD_ADD_GRP_D PAGD                                 /*추가상품그룹정보 TABLE*/
+	             ,PRD_ADD_PRD_D PAPD                                 /*추가상품정보 TABLE*/
+	        WHERE PAGD.PRD_CD  = #{_c.prdCd[0].value}
+	          AND PAGD.PRD_CD  = PAPD.PRD_CD
+	          AND PAGD.GRP_SEQ = PAPD.GRP_SEQ
+	          AND PAGD.USE_YN  = 'Y'
+	          AND PAPD.USE_YN  = 'Y'
+	        ORDER BY PAPD.GRP_SEQ, PAPD.SORT_SEQ
+	       ) X
+	      ,PRD_PRD_M PPM                                             /*상품기본 TABLE*/
+	      ,PRD_CHANL_D PCD                                           /*상품채널정보 TABLE*/
+	      ,PRD_ATTR_PRD_M PAPM                                       /*속성상품기본 TABLE*/
+	      ,PRD_BRAND_M PBM                                           /*브랜드기본 TABLE*/
+	      ,PRD_STOCK_D PSD                                           /*상품재고정보 TABLE*/
+	      ,PRD_SHOP_EXPOS_D PSED                                     /*상품매장노출정보 TABLE*/
+	 WHERE X.PACK_PRDID = PPM.PRD_CD
+	   AND PPM.USE_YN = 'Y'
+	   AND PPM.SALE_END_DTM >= SYSDATE
+	   AND (PPM.EXPOS_ST_CD = 'Y' OR PPM.SEPAR_ORD_NOADMT_YN = 'Y')  /*노출상태코드 OR 단독주문불가여부*/
+	   AND PPM.EC_APRV_ST_CD = '21'                                  /*EC결재상태코드*/
+	   AND PPM.PRD_APRV_ST_CD = '30'                                 /*상품결재상태코드*/
+	   AND NVL(PPM.TEMPOUT_YN, 'N') = 'N'                            /*일시품절여부*/
+	   AND PCD.PRD_CD = PPM.PRD_CD
+	   AND PCD.CHANL_CD = #{_c.cmmCurrChanl[0].value}		
+	   AND PCD.SALE_PSBL_YN = 'Y'
+	   AND PPM.PRD_CD = PAPM.PRD_CD
+	   AND NVL(PAPM.SALE_END_DTM, SYSDATE) >= SYSDATE
+	   AND ((NVL(PPM.PRD_TYP_CD,'P') IN ('G','P')) OR PAPM.ATTR_PRD_APRV_ST_CD ='30' )     /*상품유형코드 OR 속성상품결재상태코드*/
+	   AND PAPM.ATTR_PRD_REP_CD = PSD.ATTR_PRD_REP_CD
+	   AND NVL(PSD.TEMPOUT_YN,'N') = 'N'
+	   AND PSED.PRD_CD = PPM.PRD_CD
+	   AND PBM.BRAND_CD(+) = PPM.BRAND_CD
+	]]>
+	</select>
+</mapper>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	<mapper namespace="iceberg.capi.order.webdb.repository.returnexchange.RtpExchReasonSqlMapRepository">
+
+	<resultMap id="rtpExchReasonMap" type="iceberg.capi.order.model.returnexchange.RtpExchReason">
+		<result property="rsnLrgClsCd" column="RSN_LRG_CLS_CD"/>
+		<result property="rsnMidClsCd" column="RSN_MID_CLS_CD"/>
+		<result property="rsnSmlClsCd" column="RSN_SML_CLS_CD"/>
+		<result property="exposRsnVal" column="EXPOS_RSN_VAL"/>
+		<result property="custRsnFlg" column="CUST_RSN_FLG"/>
+		<result property="rsnLrgClsNm" column="RSN_LRG_CLS_NM"/>
+		<result property="rsnMidClsNm" column="RSN_MID_CLS_NM"/>
+	</resultMap>
+	
+	<!-- 
+		내용	: 반품/교환 사유 조회
+		작성자 : 박노정
+		작성일 : 2013.11.20
+	-->
+	
+	<select id="findRtpExchReason" resultMap="rtpExchReasonMap">
+		<![CDATA[
+			 SELECT LCODE    AS RSN_LRG_CLS_CD
+			      , MCODE    AS RSN_MID_CLS_CD
+			      , SCODE    AS RSN_SML_CLS_CD
+			      , REASON   AS EXPOS_RSN_VAL
+			      , RSNCUSYN AS CUST_RSN_FLG
+			      , LDESC    AS RSN_LRG_CLS_NM
+			      , MDESC    AS RSN_MID_CLS_NM
+			  FROM GS_ORD_REASON
+			 WHERE DBSTS = 'A'
+		]]>
+	</select>
+	
+</mapper>

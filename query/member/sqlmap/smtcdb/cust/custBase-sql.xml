@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.member.smtcdb.repository.cust.CustBaseSqlMapRepository">
+  
+ 	<resultMap type="iceberg.capi.member.model.cust.Cust" id="custMap" >
+ 			<result property="passwd"         	column="PASSWD"/>
+ 			<result property="custNm"         	column="CUST_NM"/>
+ 			<result property="custClsCd"      	column="CUST_CLS_CD"/>
+ 			<result property="chanlDtlCd"     	column="CHANL_DTL_CD"/>
+ 			<result property="loginFlg"       	column="LOGIN_FLG"/>
+ 			<result property="agreeFlg"       	column="AGREE_FLG"/>
+ 			<result property="custEmailAddr"  	column="CUST_EMAIL_ADDR"/>
+ 			<result property="empSaleTgtFlg"  	column="EMP_SALE_TGT_YN"/>
+ 			<result property="ecCustNo"       	column="EC_CUST_NO"/>
+ 			<result property="id" 				column="LOGIN_ID"/>
+ 			<result property="custNo" 			column="CUST_NO"/>
+ 			<result property="regDtm" 			column="MEM_CRE_DT"/>
+ 			<result property="basktNo" 			column="BASKT_NO"/>
+ 			<result property="gendrCd" 			column="GENDR_CD"/>
+ 			<result property="rlnmCertFlg" 		column="RLNM_CERT_FLG"/>
+ 			<result property="ipinCustFlg" 		column="IPIN_CUST_FLG"/>
+ 			<result property="ipinDiNo" 		column="IPIN_DI_NO"/>
+ 			<result property="ecMemTypCd"		column="EC_MEM_TYP_CD"/>
+ 			<result property="ssnoNoPre7" 		column="SSNO_PRE7"/>
+ 			<result property="ssnoEcpVal" 		column="SSNO_ECP"/>
+ 			<result property="gsnpntCustNo" 	column="GSNPNT_CUST_NO"/>
+ 			<result property="certCd" 			column="CERT_CD"/>
+ 			<result property="certCntnt" 		column="CERT_CNTN"/>
+ 			<result property="chgBefCustNo" 	column="CHG_BEF_CUST_NO"/>
+ 			<result property="chgAftCustNo" 	column="CHG_AFT_CUST_NO"/>
+ 			
+ 	</resultMap> 
+ 	
+	<!-- 
+	내용 : 고객정보 조회 findCustLoginInfo
+	작성자 : 최영학
+	작성일 : 2013. 11. 28  
+	
+    #{_c.id[0].value} = ectest0001
+	-->
+    <select id="findCustLoginInfo" parameterType="criteria" resultMap="custMap">
+    SELECT CCAM.PASSWD                        AS PASSWD   
+          ,CCM.CUST_NM                        AS CUST_NM 
+          ,CCM.CUST_CLS_CD                    AS CUST_CLS_CD  
+          ,CCCDRD.CHANL_DTL_CD                AS CHANL_DTL_CD  
+          ,CCCDRD.LOGIN_YN                    AS LOGIN_FLG 
+          ,CCAIH.AGREE_YN                     AS AGREE_FLG  
+          ,NVL(CCM.CUST_EMAIL_ADDR, '')       AS CUST_EMAIL_ADDR 
+          ,NVL(CCCDRD.EMP_SALE_TGT_YN, 'N')   AS EMP_SALE_TGT_YN 
+          ,CCAM.LOGIN_ID                      AS LOGIN_ID
+      FROM CST_CUST_AGREE_INFO_H          CCAIH    
+          ,CST_CUST_CLS_DC_RT_D           CCCDRD   
+          ,CST_CUST_M                     CCM      
+          ,CST_CUST_ACCNT_M               CCAM      
+     WHERE CCAM.CUST_NO             = CCM.CUST_NO 
+       AND CCM.CUST_CLS_CD          = CCCDRD.CUST_CLS_CD(+)   
+       AND CCM.CUST_NO              = CCAIH.CUST_NO(+)   
+       AND SYSDATE BETWEEN CCCDRD.VALID_STR_DTM(+) 
+                       AND CCCDRD.VALID_END_DTM(+)   
+       AND SYSDATE BETWEEN CCAIH.VALID_STR_DTM(+) 
+                       AND CCAIH.VALID_END_DTM(+)  
+       AND CCAM.CUST_ACCNT_ST_CD    = 'A'  
+       AND CCAM.CUST_ACCNT_GBN_CD   = 'GSEC'  
+       AND CCM.CUST_ST_CD           = 'Y'  
+       AND CCAIH.AGREE_ITM_CD(+)    = 'INFOE'  
+       AND CCAM.LOGIN_ID            = #{_c.id[0].value}
+    </select>
+
+    <!-- 
+         내용 : 고객정보 조회 findCustInfo
+         작성자 : yhchoi
+         작성일 : 2013. 11. 28 
+    
+    #{_c.id[0].value} = ectest0001
+    #{_c.passwd[0].value} =  3ddc1ff96bab63039e1d098bbb082c0a0df483bf1cac7c7ece6993811e642603
+    -->
+    <select id="findCustInfo" parameterType="criteria" resultMap="custMap"> 
+     SELECT CCAM.EC_CUST_NO                      AS EC_CUST_NO
+           ,CCAM.LOGIN_ID                        AS LOGIN_ID
+           ,CCAM.CUST_NO                         AS CUST_NO
+           ,TO_CHAR(CCAM.REG_DTM, 'yyyymmdd')    AS MEM_CRE_DT
+           ,CCM.BASKT_NO                         AS BASKT_NO
+           ,CCM.CUST_NM                          AS CUST_NM
+           ,CCM.CUST_CLS_CD                      AS CUST_CLS_CD
+           ,CCM.GENDR_CD                         AS GENDR_CD
+           ,CCM.RLNM_CERT_YN                     AS RLNM_CERT_FLG
+           ,NVL(CCM.IPIN_CUST_YN, 'N')           AS IPIN_CUST_FLG
+           ,CCM.IPIN_DI_NO                       AS IPIN_DI_NO
+           ,CCM.EC_MEM_TYP_CD                    AS EC_MEM_TYP_CD
+           ,CCM.SSNO_PRE7                        AS SSNO_PRE7
+           ,CCM.SSNO_ECP                         AS SSNO_ECP
+           ,CGCM.GSNPNT_CUST_NO                  AS GSNPNT_CUST_NO
+           ,CGCM.CERT_CD                         AS CERT_CD
+           ,CGCM.CERT_CNTNT                      AS CERT_CNTNT
+       FROM CST_GSNPNT_CUST_M  CGCM
+           ,CST_CUST_M         CCM
+           ,CST_CUST_ACCNT_M   CCAM
+      WHERE CCAM.CUST_NO               = CCM.CUST_NO
+        AND CCAM.CUST_NO               = CGCM.CUST_NO(+)
+        AND CCAM.LOGIN_ID              = #{_c.id[0].value}
+        AND CCAM.PASSWD                = #{_c.passwd[0].value}
+        AND CCAM.CUST_ACCNT_GBN_CD     = 'GSEC'
+        AND CCAM.CUST_ACCNT_ST_CD      = 'A'
+        AND CCM.CUST_ST_CD             = 'Y'
+        AND CGCM.GSNPNT_CUST_ST_CD(+)  = '01'
+    </select> 
+    
+    <!-- 
+          내용 : 고객정보 조회 findCustInfoByCustNo
+          작성자 : yhchoi
+          작성일 : 2013. 11. 28 
+    
+    #{custNo} = 40766029
+    -->
+    <select id="findCustInfoByCustNo" parameterType="long" resultMap="custMap">
+     SELECT CCAM.EC_CUST_NO                      AS EC_CUST_NO
+           ,CCAM.LOGIN_ID                        AS LOGIN_ID
+           ,CCAM.CUST_NO                         AS CUST_NO
+           ,TO_CHAR(CCAM.REG_DTM, 'yyyymmdd')    AS MEM_CRE_DT
+           ,CCM.BASKT_NO                         AS BASKT_NO
+           ,CCM.CUST_NM                          AS CUST_NM
+           ,CCM.CUST_CLS_CD                      AS CUST_CLS_CD
+           ,CCM.GENDR_CD                         AS GENDR_CD
+           ,CCM.RLNM_CERT_YN                     AS RLNM_CERT_FLG
+           ,NVL(CCM.IPIN_CUST_YN, 'N')           AS IPIN_CUST_FLG
+           ,CCM.IPIN_DI_NO                       AS IPIN_DI_NO
+           ,CCM.EC_MEM_TYP_CD                    AS EC_MEM_TYP_CD
+           ,CCM.SSNO_PRE7                        AS SSNO_PRE7
+           ,CCM.SSNO_ECP                         AS SSNO_ECP
+           ,CGCM.GSNPNT_CUST_NO                  AS GSNPNT_CUST_NO
+           ,CGCM.CERT_CD                         AS CERT_CD
+           ,CGCM.CERT_CNTNT                      AS CERT_CNTNT
+      FROM  CST_GSNPNT_CUST_M  CGCM
+           ,CST_CUST_M         CCM
+           ,CST_CUST_ACCNT_M   CCAM
+      WHERE CCAM.CUST_NO               = CCM.CUST_NO
+        AND CCAM.CUST_NO               = CGCM.CUST_NO(+)
+        AND CCAM.CUST_NO               = #{custNo}
+        AND CCAM.CUST_ACCNT_GBN_CD     = 'GSEC'
+        AND CCAM.CUST_ACCNT_ST_CD      = 'A'
+        AND CCM.CUST_ST_CD             = 'Y'
+        AND CGCM.GSNPNT_CUST_ST_CD(+)  = '01' 
+    </select> 
+ 
+    <!-- 
+          내용 : 고객패스워드 조회 findCustPasswd
+          작성자 : yhchoi
+          작성일 : 2013. 11. 28 
+    
+    #{_c.id[0].value} = ectest0001
+    -->
+    <select id="findCustPasswd" parameterType="criteria" resultMap="custMap">    
+           SELECT CCAM.PASSWD       AS PASSWD
+                 ,CCM.CUST_NM       AS CUST_NM   
+            FROM  CST_CUST_ACCNT_M      CCAM  
+                 ,CST_CUST_M            CCM        
+           WHERE  CCAM.CUST_NO            = CCM.CUST_NO 
+             AND  CCAM.CUST_ACCNT_ST_CD   = 'A' 
+             AND  CCAM.CUST_ACCNT_GBN_CD  = 'GSEC'  
+             AND  CCM.CUST_ST_CD          = 'Y'  
+             AND  CCAM.LOGIN_ID           = #{_c.id[0].value}
+    </select>
+ 
+     
+    <!-- 
+          내용 : 콜센터에서 GS SHOP 회원전환한 고객인지 조회  findGSHSChgCustCallCent
+          작성자 : yhchoi
+          작성일 : 2013. 11. 28 
+    
+    #{_c.custNo[0].value} = 40766029 
+    -->
+	<select id="findGSHSChgCustCallCent" parameterType="criteria" resultMap="custMap">
+        SELECT /*+ INDEX_DESC(CST_CUST_INFO_CHG_L PK_CST_CUST_INFO_CHG_L) */
+               CHG_BEF_CNTNT AS CHG_BEF_CUST_NO 
+              ,CHG_AFT_CNTNT AS CHG_AFT_CUST_NO
+          FROM CST_CUST_INFO_CHG_L  
+         WHERE CUST_NO      = #{_c.custNo[0].value}  
+           AND CHG_TGT_NO   = #{_c.custNo[0].value}  
+           AND CHG_ATTR_CD  = 'C11' 
+           AND ROWNUM       = 1	
+    </select>    
+	
+    
+	
+</mapper>
+
+

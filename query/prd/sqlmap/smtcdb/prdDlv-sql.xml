@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.smtcdb.repository.prd.PrdDlvSqlMapRepository">
+	
+	<resultMap type="iceberg.capi.product.model.prd.PrdDly" id="dlvInfoMap">
+		<result property="zipCd"     				column="ZIP_CD"/>
+	</resultMap>
+	
+	<select id="getDlvZipCd" resultMap="dlvInfoMap" parameterType="long">
+		<!-- 
+		DBMS : SMTC
+		분야 : 단품  getZipCd
+		API  : 배송 불가 우편번호 조회
+		설명 : 배송 불가 우편번호 조회
+		#{prdCd} = 5165776
+		-->		
+ 	SELECT PDRD.ZIPCD AS ZIP_CD
+      FROM PRD_DLV_REGON_D PDRD 
+     WHERE PDRD.PRD_CD = #{prdCd}
+       AND PDRD.USE_YN = 'Y' 
+	</select>
+	
+</mapper>

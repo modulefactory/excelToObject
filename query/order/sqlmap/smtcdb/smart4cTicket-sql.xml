@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.member.Smart4cTicketSqlMapRepository">
+
+	<!--
+   	내용 : 스타일 라벨 정보
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 02
+
+   	#{_c.custNo[0].value} = 31701633
+	-->
+	<resultMap id="findAbleTicketInfoData" type="iceberg.capi.order.model.member.Ticket">
+		<result property="gftcertActDt" 			column="GFTCERT_ACT_DT"/>
+		<result property="gftcertNo" 				column="GFTCERT_NO"/>
+		<result property="gftcertOrgAmt" 		column="GFTCERT_ORG_AMT"/>
+		<result property="assetAmt" 				column="ASSET_AMT"/>
+		<result property="frmlesPrdTypCd" 		column="FRMLES_PRD_TYP_CD"/>
+	</resultMap>
+	
+	<select id = "findAbleTicketInfo" parameterType = "criteria" resultMap = "findAbleTicketInfoData">
+	<![CDATA[
+    SELECT MIN(TB.GFTCERT_ACT_DT) AS GFTCERT_ACT_DT
+		    ,TB.GFTCERT_NO	
+		    ,MIN(TB.GFTCERT_ORG_AMT) AS GFTCERT_ORG_AMT
+		    ,MIN(TB.ASSET_AMT) AS ASSET_AMT
+		    ,MIN(TB.FRMLES_PRD_TYP_CD) AS FRMLES_PRD_TYP_CD	
+	FROM ( 		
+		SELECT TO_CHAR(CAM.GFTCERT_ACT_DT + 9/24,'YYYY/MM/DD') AS GFTCERT_ACT_DT /*--상품권활성일자   */
+			    ,CAM.GFTCERT_NO AS GFTCERT_NO      	/*--상품권번호  */
+			    ,CAM.GFTCERT_ORG_AMT AS GFTCERT_ORG_AMT		/*--상품권 원금액    */  
+			    ,CAM.ASSET_AMT AS ASSET_AMT     /* --자산금액      */
+			    ,NVL(PPM.FRMLES_PRD_TYP_CD,'N') AS FRMLES_PRD_TYP_CD 	/*--무형유형상품코드 */
+			    ,DECODE(SIGN((CAM.GFTCERT_ACT_DT + 9/24)-(ADD_MONTHS(SYSDATE,-60))),-1,'N','Y') EXP_YN 	
+		FROM CST_ASSET_M CAM
+			    ,ORD_ORD_M OOM 
+			    ,ORD_ITEM_D OID 			
+			    ,PRD_PRD_M PPM 			
+		WHERE CAM.CUST_NO = #{_c.custNo[0].value}  
+			AND CAM.ASSET_TYP_CD  = 'GFTCERT' 	
+			AND CAM.ASSET_AMT     > 0 			
+			AND CAM.GFTCERT_ST_CD <> '05' 			
+			AND CAM.CUST_NO  = OOM.CUST_NO   		
+			AND OOM.ORD_NO   = OID.ORD_NO 			
+			AND OID.PRD_CD  = PPM.PRD_CD 			
+		) TB
+	WHERE TB.EXP_YN = 'Y' 			
+	GROUP BY TB.GFTCERT_NO 			
+	ORDER BY GFTCERT_ACT_DT 			
+    ]]>
+	</select>
+	
+</mapper>

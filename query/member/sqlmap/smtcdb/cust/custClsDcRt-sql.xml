@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.member.smtcdb.repository.cust.CustClsDcRtSqlMapRepository">
+  
+    <resultMap type="iceberg.capi.member.model.cust.Cust" id="custMap" >
+ 		<result property="custClsCd"      	column="CUST_CLS_CD"/>
+ 	</resultMap> 
+     
+    <!-- 
+          내용 : 고객 분류 할인율 정보 조회   findCustChanlCls
+          작성자 : yhchoi
+          작성일 : 2013. 11. 28 
+    
+    #{_c.chanlDtlCd[0].value} = '03' : 현재 LOGIN_YN ='Y' 인 데이터가 없음. 확인하고 데이터를 만들예정(양K)
+    -->
+    <select id="findCustChanlCls" parameterType="criteria" resultType="String">
+    SELECT CUST_CLS_CD 
+     FROM  CST_CUST_CLS_DC_RT_D 
+     WHERE CHANL_DTL_CD = #{_c.chanlDtlCd[0].value}
+       AND LOGIN_YN = 'Y' 
+       AND SYSDATE BETWEEN VALID_STR_DTM 
+                       AND VALID_END_DTM 
+    </select>
+    
+	
+</mapper>

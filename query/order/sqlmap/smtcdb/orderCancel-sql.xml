@@ -1,0 +1,768 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.ordercancel.SmtcOrderCancelSqlMapRepository">
+
+	<!--
+		내용	: 주문취소에 대한 smtc db를 보고 있는 내용입니다.
+		작성자	: Seulgi
+		작성일	: 2013.11.08 신규작성
+	-->
+
+	<resultMap id="orderCancelUnableCaseMap" type="iceberg.capi.order.model.ordercancel.OrderCancelUnableCase">
+		<result property="supRelsSchdDt" column="SUP_RELS_SCHD_DT"/>
+		<result property="ordDlvGrdCd"   column="ORD_DLV_GRD_CD"/>
+	</resultMap>
+
+	<resultMap id="myGiftListByPmo" type="iceberg.capi.order.model.ordercancel.MyGiftListByPmo">
+		<result property="gftPrdCd" 			column="GFT_PRD_CD"/>
+		<result property="addCmposGbnCd" 	    column="ADD_CMPOS_GBN_CD"/>
+	</resultMap>
+
+	<resultMap id="myOrder" type="iceberg.capi.order.model.ordercancel.MyOrder">
+		<result property="ordNo"                       	column="ORD_NO"                    />
+		<result property="orgOrdNo"                  	column="ORG_ORD_NO"                />
+		<result property="ordDtm"                     	column="ORD_DTM"                   />
+		<result property="ordItemNo"                 	column="ORD_ITEM_NO"               />
+		<result property="prdCd"                       	column="PRD_CD"                    />
+		<result property="exposPrdNm"              	    column="EXPOS_PRD_NM"              />
+		<result property="ordQty"                      	column="ORD_QTY"                   />
+		<result property="lastUprc"                    	column="LAST_UPRC"                 />
+		<result property="ordItemStCd"              	column="ORD_ITEM_ST_CD"            />
+		<result property="rtpQty"                       column="RTP_QTY"                   />
+		<result property="chanlCd"                    	column="CHANL_CD"                  />
+		<result property="ordTypDtlCd"              	column="ORD_TYP_DTL_CD"            />
+		<result property="srSubArea"                 	column="SR_SUB_AREA"               />
+		<result property="frmlesPrdTypCd"         	    column="FRMLES_PRD_TYP_CD"         />
+		<result property="ordDlvGrdCd"             	    column="ORD_DLV_GRD_CD"            />
+		<result property="lineTypCd"                  	column="LINE_TYP_CD"               />
+		<result property="rfnTypCd"                     column="RFN_TYP_CD"                />
+		<result property="rtpExchPsblFlg"          	    column="RTP_EXCH_PSBL_FLG"         />
+		<result property="attrPrdNm"                 	column="ATTR_PRD_NM"               />
+		<result property="arfnTimeCd"               	column="ARFN_TIME_CD"              />
+		<result property="arfnDt"                       column="ARFN_DT"                   />
+		<result property="srRsnMidClsCd"          	    column="SR_RSN_MID_CLS_CD"         />
+		<result property="clsCd"                        column="CONTACT_STS"               />
+		<result property="ordCnfFlg"                  	column="ORD_CNF_FLG"               />
+		<result property="dlvFshDt"                   	column="DLV_FSH_DT"                />
+		<result property="relsFshDt"                  	column="RELS_FSH_DT"               />
+		<result property="dlvRequirDdcnt"          	    column="DLV_REQUIR_DDCNT"          />
+		<result property="optPrdTypCd"             	    column="OPT_PRD_TYP_CD"            />
+		<result property="attrPrdCd"                  	column="ATTR_PRD_CD"               />
+		<result property="chanlDtlCd"                	column="CHANL_DTL_CD"              />
+		<result property="srRsnSmlClsCd"          	    column="SR_RSN_SML_CLS_CD"         />
+		<result property="pleinOrdStCd"             	column="PLEIN_ORD_ST_CD"           />
+		<result property="repPrdSupAttrPrdNm"           column="REP_PRD_SUP_ATTR_PRD_NM"   />
+		<result property="repPrdSupAddCntnt"            column="REP_PRD_SUP_ADD_CNTNT"     />
+		<result property="mimTypCd"                     column="MIM_TYP_CD"                />
+		<result property="supCd"                        column="SUP_CD"                    />
+		<result property="repPrdSupPrdCd"               column="REP_PRD_SUP_PRD_CD"        />
+		<result property="repPrdSupPrdNm"               column="REP_PRD_SUP_PRD_NM"        />
+		<result property="dittoFlg"                     column="DITTO_FLG"                 />
+		<result property="dlvPickMthodCd"        	    column="DLV_PICK_MTHOD_CD"         />
+	</resultMap>
+
+	<resultMap id="myOrderDetail" type="iceberg.capi.order.model.ordercancel.MyOrder">
+		<result property="ordNo"                    column="ORD_NO"               />
+		<result property="prdCd"                    column="PRD_CD"               />
+		<result property="ordItemNo"                column="ORD_ITEM_NO"          />
+		<result property="ordQty"                   column="ORD_QTY"              />
+		<result property="lastUprc"                 column="LAST_UPRC"            />
+		<result property="ordItemStCd"              column="ORD_ITEM_ST_CD"       />
+		<result property="repPayMeanCd"             column="REP_PAY_MEAN_CD"      />
+		<result property="prdAttrColor"             column="PRD_ATTR_COLOR"       />
+		<result property="prdAttrStyle"             column="PRD_ATTR_STYLE"       />
+		<result property="prdAttrSize"              column="PRD_ATTR_SIZE"        />
+		<result property="prdAttrGft"               column="PRD_ATTR_GFT"         />
+		<result property="srSubArea"                column="SR_SUB_AREA"          />
+		<result property="taxTypCd"                 column="TAX_TYP_CD"           />
+		<result property="cpnTypCd"                 column="CPN_TYP_CD"           />
+		<result property="genrlCpnDcAmt"            column="GENRL_CPN_DC_AMT"     />
+		<result property="immAccDcUseCnt"           column="IMM_ACC_DC_USE_CNT"   />
+		<result property="salePrc"                  column="SALE_PRC"             />
+		<result property="rtpQty"                   column="RTP_QTY"              />
+		<result property="arsDcAmt"                 column="ARS_DC_AMT"           />
+		<result property="sgpayDcAmt"             	column="SGPAY_DC_AMT"         />
+		<result property="uprcAdjstDcAmt"        	column="UPRC_ADJST_DC_AMT"    />
+		<result property="fmlyDcAmt"               	column="FMLY_DC_AMT"          />
+		<result property="dlvPickMthodCd"        	column="DLV_PICK_MTHOD_CD"    />
+		<result property="empDcAmt"               	column="EMP_DC_AMT"           />
+		<result property="cpnNo"                    column="CPN_NO"               />
+		<result property="cpnDcRtAmt"             	column="CPN_DC_RT_AMT"        />
+		<result property="dlvpTelno"                column="DLVP_TELNO"           />
+		<result property="dlvpCelphnTelno"       	column="DLVP_CELPHN_TELNO"    />
+		<result property="ordPrsnTelno"             column="ORD_PRSN_TELNO"       />
+		<result property="ordPrsnCelphnNo"      	column="ORD_PRSN_CELPHN_NO"   />
+		<result property="gshsImmAccDcAmt"          column="GSHS_IMM_ACC_DC_AMT"  />
+		<result property="supImmAccDcAmt"           column="SUP_IMM_ACC_DC_AMT"   />
+		<result property="uprcAdjstDtlRsnCd"    	column="UPRC_ADJST_DTL_RSN_CD"/>
+		<result property="foryyDcAmt"               column="FORYY_DC_AMT"         />
+		<result property="lineTypCd"                column="LINE_TYP_CD"         />
+	</resultMap>
+
+	<resultMap id="orderCancelReason" type="iceberg.capi.order.model.ordercancel.OrderCancelReason">
+		<result property="srRsnLrgClsCd"      column="SBL_CANCEL_CD"  />
+		<result property="lrgClsCdNm"         column="SBL_CANCEL_DESC"  />
+		<result property="srRsnMidClsCd"      column="SBM_CANCEL_CD"  />
+		<result property="midClsCdNm"         column="SBM_CANCEL_DESC"  />
+	</resultMap>
+
+	<resultMap id="myOrderItem" type="iceberg.capi.order.model.ordercancel.MyOrderItem">
+		<result property="ordItemNo"      column="ORD_ITEM_NO"  />
+		<result property="ordItemId"      column="ORD_ITEM_ID"  />
+	</resultMap>
+
+	<resultMap id="supCode" type="iceberg.capi.order.model.product.SupInfo">
+		<result property="supCd"         column="SUP_CD"      />
+		<result property="b2BSupCd"      column="B2B_SUP_CD"  />
+	</resultMap>
+
+	<resultMap id="supInfo" type="iceberg.capi.order.model.product.SupInfo">
+		<result property="noBkbDpoPsblYn"         column="NO_BKB_DPO_PSBL_YN"      />
+		<result property="ecOrdCnlPsblYn"      column="EC_ORD_CNL_PSBL_YN"  />
+		<result property="supCd"         column="SUP_CD"      />
+		<result property="mimTypCd"      column="MIM_TYP_CD"  />
+	</resultMap>
+
+	<resultMap id="areaLeadTime" type="iceberg.capi.order.model.ordercancel.AreaLeadTime">
+		<result property="date"               column="DT"      />
+		<result property="day"                column="DAY"  />
+		<result property="holyDayFlg"         column="HOLDY_FLG"      />
+	</resultMap>
+
+ 	<!--
+		내용	: 주문 취소 불가능케이스 조회
+		작성자	: Seulgi
+		작성일	: 2013.11.08 신규작성
+		da 확인 완료 수정
+		#{_c.ordNo[0].value} = "599882195"
+		#{_c.custNo[0].value} = "30481119"
+	-->
+	<select id="findOrderCancelUnableCase" parameterType="criteria" resultMap="orderCancelUnableCaseMap">
+		<![CDATA[
+			 SELECT SUM(CASE WHEN TO_CHAR(SYSDATE, 'YYYYMMDD') = TO_CHAR(OID.SUP_RELS_SCHD_DT, 'YYYYMMDD')
+			                 THEN 1                                     /* 협력사출고예정일자가 오늘인 경우 +9/24 */
+			                 ELSE 0 END)   AS SUP_RELS_SCHD_DT
+			       ,SUM(CASE WHEN NVL(OID.ORD_DLV_GRD_CD, '') = '97'
+			                 THEN 1                                     /* 주문배송등급(ORD001) 97:배송불필요 */
+			       	       ELSE 0 END)   AS ORD_DLV_GRD_CD
+			   FROM ORD_ORD_M  OOM
+			       ,ORD_ITEM_D OID
+			       ,PRD_PRD_M  PPM
+			  WHERE OOM.ORD_NO  = #{_c.ordNo[0].value}
+			    AND OOM.CUST_NO = #{_c.custNo[0].value}
+			    AND OOM.ORD_NO  = OID.ORD_NO
+			    AND OID.PRD_CD  = PPM.PRD_CD
+		 ]]>
+	</select>
+
+	<!--
+		내용	: 주문목록조회
+		작성자	: Seulgi
+		작성일	: 2013.11.08 신규작성
+		da 확인 완료 수정
+		#{custNo} = "30481119"
+		#{custNo} = "30481119"
+		#{dateFlag} = "-6"
+		#{ordNo} = "599882195"
+		#{custNo} = "30481119"
+	-->
+	<select id="findMyOrderList" parameterType="iceberg.capi.order.model.ordercancel.OrderFilter" resultMap="myOrder">
+		<![CDATA[
+				SELECT *
+				  FROM (SELECT ORD_NO
+				              ,ORG_ORD_NO
+				              ,ORD_DTM
+				              ,ORD_ITEM_NO
+				              ,PRD_CD
+				              ,EXPOS_PRD_NM
+				              ,ORD_QTY
+				              ,LAST_UPRC
+				              ,ORD_ITEM_ST_CD
+				              ,RTP_QTY
+				              ,CHANL_CD
+				              ,ORD_TYP_DTL_CD
+				              ,SR_SUB_AREA
+				              ,FRMLES_PRD_TYP_CD
+				              ,ORD_DLV_GRD_CD
+				              ,LINE_TYP_CD
+				              ,RTP_EXCH_PSBL_FLG
+				              ,ATTR_PRD_NM
+				              ,RFN_TYP_CD
+				              ,ARFN_TIME_CD
+				              ,ARFN_DT
+				              ,SR_RSN_MID_CLS_CD
+				              ,CONTACT_STS
+				              ,ORD_CNF_FLG
+				              ,DLV_FSH_DT
+				              ,RELS_FSH_DT
+				              ,DLV_REQUIR_DDCNT
+				              ,OPT_PRD_TYP_CD
+				              ,ATTR_PRD_CD
+				              ,CHANL_DTL_CD
+				              ,SR_RSN_SML_CLS_CD
+				              ,PLEIN_ORD_ST_CD
+				              ,REP_PRD_SUP_ATTR_PRD_NM
+				              ,REP_PRD_SUP_ADD_CNTNT
+				              ,MIM_TYP_CD
+				              ,SUP_CD
+				              ,REP_PRD_SUP_PRD_CD
+				              ,REP_PRD_SUP_PRD_NM
+				              ,DITTO_FLG
+				              ,DLV_PICK_MTHOD_CD
+				          FROM (SELECT CASE WHEN ORD_TYP_DTL_CD = 'R'
+				                             AND ORD_ITEM_ST_CD IN ('R1', 'R2', 'R3') THEN 'Y'
+				                            WHEN ORD_TYP_DTL_CD = 'E' AND ORD_ITEM_ST_CD NOT IN ('11', '12', '21', '22', '31', 'B1')
+				                            THEN 'Y' ELSE NVL(EC_EXPOS_EXCPT_YN, 'N')
+				                        END          AS EC_EXPOS_EXCPT_YN
+				                      ,ORD_NO
+				                      ,ORG_ORD_NO
+				                      ,ORD_DTM
+				                      ,ORD_ITEM_NO
+				                      ,PRD_CD
+				                      ,EXPOS_PRD_NM
+				                      ,ORD_QTY
+				                      ,LAST_UPRC
+				                      ,ORD_ITEM_ST_CD
+				                      ,RTP_QTY
+				                      ,CHANL_CD
+				                      ,ORD_TYP_DTL_CD
+				                      ,SR_SUB_AREA
+				                      ,FRMLES_PRD_TYP_CD
+				                      ,ORD_DLV_GRD_CD
+				                      ,LINE_TYP_CD
+				                      ,RTP_EXCH_PSBL_FLG
+				                      ,ATTR_PRD_NM
+				                      ,RFN_TYP_CD
+				                      ,ARFN_TIME_CD
+				                      ,ARFN_DT
+				                      ,SR_RSN_MID_CLS_CD
+				                      ,CONTACT_STS
+				                      ,ORD_CNF_FLG
+				                      ,DLV_FSH_DT
+				                      ,RELS_FSH_DT
+				                      ,DLV_REQUIR_DDCNT
+				                      ,OPT_PRD_TYP_CD
+				                      ,ATTR_PRD_CD
+				                      ,CHANL_DTL_CD
+				                      ,SR_RSN_SML_CLS_CD
+				                      ,PLEIN_ORD_ST_CD
+				                      ,REP_PRD_SUP_ATTR_PRD_NM
+				                      ,REP_PRD_SUP_ADD_CNTNT
+				                      ,MIM_TYP_CD
+				                      ,SUP_CD
+				                      ,REP_PRD_SUP_PRD_CD
+				                      ,REP_PRD_SUP_PRD_NM
+				                      ,DITTO_FLG
+				                      ,DLV_PICK_MTHOD_CD
+				                  FROM (SELECT NVL(OID.EC_EXPOS_EXCPT_YN, 'N') AS EC_EXPOS_EXCPT_YN
+				                              ,OOM.ORD_NO      AS ORD_NO
+				                              ,OOM.ORG_ORD_NO  AS ORG_ORD_NO
+				                              ,OOM.ORD_DTM     AS ORD_DTM
+				                              ,OID.ORD_ITEM_NO AS ORD_ITEM_NO
+				                              ,OID.PRD_CD      AS PRD_CD
+				                              ,CASE WHEN OID.CHANL_CD IN ('P', 'B') AND OID.LINE_TYP_CD <> '02'
+				                                    THEN OID.EXPOS_PRD_NM ELSE OID.PRD_NM
+				                                END          AS EXPOS_PRD_NM
+				                              ,NVL(OID.ORD_QTY, 0) - NVL(OID.RTP_QTY, 0) AS ORD_QTY
+				                              ,NVL(OID.LAST_UPRC, 0) 						AS LAST_UPRC
+				                              ,CASE WHEN OID.ST_CD IN ('31', 'B1')
+				                                     AND OID.DLVS_CO_CD IN ('HJ','DH','HD','HT','CJ','KG','EP','ER','FA','AJ','KL','YC','KR','TR','KT','SD','SG','ND','IN','DS','CI')
+				                                     AND(SYSDATE - OID.DLV_FSH_DT) < 8 AND OID.DLV_FSH_SUBJ_CD = 'V' THEN '22'
+				                                    ELSE OID.ST_CD
+				                                END         AS ORD_ITEM_ST_CD
+				                              ,NVL(OID.RTP_QTY, 0) AS RTP_QTY
+				                              ,OID.CHANL_CD        AS CHANL_CD
+				                              ,DECODE(OOM.ORD_TYP_DTL_CD
+				                                     ,'Sales Order' ,           'S'
+				                                     ,'Return Order',           'R'
+				                                     ,'Exchange Sales Order',   'E'
+				                                     ,'Exchange Return Order',  'R'
+				                                     ,'AS Remove',              'A'
+				                                     ,'AS Delivery',            'A'
+				                                     ,'AS Not Remove',          'A'
+				                                     ,'AS Not Delivery',        'A'
+				                                     ,'AS Visit',               'A'
+				                                     ,'Virtual Sales',          'S'
+				                                     ,'R')       AS ORD_TYP_DTL_CD
+				                              ,SSMSSCC.SR_SUB_AREA
+				                              ,PPM.FRMLES_PRD_TYP_CD AS FRMLES_PRD_TYP_CD
+				                              ,OID.ORD_DLV_GRD_CD    AS ORD_DLV_GRD_CD
+				                              ,OID.LINE_TYP_CD       AS LINE_TYP_CD
+				                              ,CASE WHEN NVL(PPM.FRMLES_PRD_TYP_CD, 'N') = 'R'
+				                                    THEN /*무형상품코드 = 문자쿠폰(상품교환권)*/
+				                                        CASE WHEN (OID.ST_CD = '22') AND SYSDATE < (OID.RELS_FSH_DT + 7) THEN 'Y' /* +9/24 */
+				                                             WHEN (OID.ST_CD = '31' OR OID.ST_CD = 'B1') AND SYSDATE < (OID.DLV_FSH_DT + 7) THEN 'Y' /* +9/24 */
+				                                             ELSE 'N'
+				                                         END
+				                                    WHEN NVL(PPM.FRMLES_PRD_TYP_CD, 'N') <> 'R'
+				                                    THEN /* 신세계 상품 출고완료+13일/ 배송완료+7일 */
+				                                        CASE WHEN (OID.ST_CD = '22') AND OID.SUP_CD = 1020882 AND SYSDATE < (OID.RELS_FSH_DT + 14) THEN 'Y'
+				                                             WHEN (OID.ST_CD = '31' OR OID.ST_CD = 'B1') AND OID.SUP_CD = 1020882 AND SYSDATE < (OID.DLV_FSH_DT + 8) THEN 'Y'
+				                                             WHEN (OID.ST_CD = '22') AND OID.SUP_CD <> 1020882 AND SYSDATE < (OID.RELS_FSH_DT + NVL(PCSD.RTP_TERM_DDCNT, 30) + 7) THEN 'Y' /* +9/24 */
+				                                             WHEN (OID.ST_CD = '31' OR OID.ST_CD = 'B1') AND OID.SUP_CD <> 1020882 AND SYSDATE < (OID.DLV_FSH_DT + NVL(PCSD.RTP_TERM_DDCNT, 30) + 1) THEN 'Y' /* +9/24 */
+				                                             ELSE 'N'
+				                                         END
+				                                    ELSE 'N'
+				                                    END      AS RTP_EXCH_PSBL_FLG
+				                              ,NVL(OID.ATTR_PRD_NM, '') AS ATTR_PRD_NM
+				                              ,OID.RFN_TYP_CD           AS RFN_TYP_CD
+				                              ,OID.ARFN_TIME_CD         AS ARFN_TIME_CD
+				                              ,OID.ARFN_DT              AS ARFN_DT
+				                              ,SSMSSCC.REASON_MID           AS SR_RSN_MID_CLS_CD
+				                              ,'CY'                   AS CONTACT_STS
+				                              ,NVL(OOM.ORD_CNF_YN, 'N') AS ORD_CNF_FLG
+				                              ,TO_CHAR(OID.DLV_FSH_DT, 'YYYYMMDD') AS DLV_FSH_DT
+				                              ,(CASE WHEN OID.RELS_FSH_DT IS NULL THEN ''
+				                                     ELSE TO_CHAR(OID.RELS_FSH_DT, 'YYYYMMDDHH24MISS')
+				                                 END)                 AS RELS_FSH_DT
+				                              ,(SELECT DLV_REQUIR_TIME_VAL / 24
+				                                  FROM CMM_ZIPCD_DLV_C
+				                                 WHERE ZIPCD = (SELECT ZIPCD
+				                                                  FROM CST_CUST_ADDR_D
+				                                                 WHERE NVL(ADDR_USE_YN, 'Y') != 'N'
+				                                                   AND ADDR_CNTC_NO = OID.DLVP_ADDR_NO
+				                                                   AND ROWNUM < 2)
+				                                   AND ROWNUM < 2)    AS DLV_REQUIR_DDCNT
+				                              ,OID.OPT_PRD_TYP_CD       AS OPT_PRD_TYP_CD
+				                              ,TO_CHAR(OID.ATTR_PRD_CD) AS ATTR_PRD_CD /* 속성상품코드*/
+				                              ,OID.CHANL_DTL_CD
+				                              ,SSMSSCC.REASON_SML           AS SR_RSN_SML_CLS_CD
+				                              ,OID.PLEIN_ORD_ST_CD      AS PLEIN_ORD_ST_CD
+				                              ,OID.REP_PRD_SUP_ATTR_PRD_NM AS REP_PRD_SUP_ATTR_PRD_NM
+				                              ,OID.REP_PRD_SUP_ADD_CNTNT   AS REP_PRD_SUP_ADD_CNTNT
+				                              ,SSM.MIM_TYP_CD         AS MIM_TYP_CD
+				                              ,OID.SUP_CD               AS SUP_CD
+				                              ,OID.REP_PRD_SUP_PRD_CD   AS REP_PRD_SUP_PRD_CD
+				                              ,OID.REP_PRD_SUP_PRD_NM   AS REP_PRD_SUP_PRD_NM
+				                              ,NVL(PPM.DITTO_YN, 'N')   AS DITTO_FLG
+				                              ,OID.DLV_PICK_MTHOD_CD          AS DLV_PICK_MTHOD_CD
+				                          FROM ORD_ORD_M       OOM
+				                              ,ORD_ITEM_D      OID
+				                              ,ORD_ITEM_PRC_D OIPD_A01
+				                              ,ORD_ITEM_PRC_D OIPD_A12
+				                              ,ORD_ITEM_PRC_D OIPD_A14
+				                              ,PRD_PRD_M       PPM
+				                              ,CST_CUST_ADDR_D CCAD
+				                              ,(SELECT SSM.ORD_ITEM_ID            AS ORDER_ITEM_ID
+				                                      ,MAX(SSCC.OLD_CLS_CD)       AS SR_SUB_AREA
+				                                      ,MAX(SSM.SR_RSN_MID_CLS_CD) AS REASON_MID
+				                                      ,MAX(SSM.SR_RSN_SML_CLS_CD) AS REASON_SML
+				                                  FROM SRV_SR_M SSM, SRV_SR_CLS_C SSCC
+				                                 WHERE SSM.SR_RSN_SML_CLS_CD = SSCC.SR_RSN_CLS_CD(+)
+				                                   AND SSCC.SR_RSN_CLS_TYP_CD(+) = 'SR'
+				                                   AND SSM.CUST_NO = #{custNo}
+				                                   AND SSCC.OLD_CLS_CD(+) IN ('I02', 'I03', 'I04', 'C07')
+				                                   AND NVL(SSM.SR_PROC_ST_CD, 'Closed') = 'Open'
+				                                 GROUP BY SSM.ORD_ITEM_ID) SSMSSCC
+				                              ,CMM_CMM_C      CCC
+				                              ,PRD_CLS_M      PCM       /* 상품분류기본 */
+				                              ,PRD_CLS_SET_D  PCSD /* 상품분류설정정보 */
+				                              ,SUP_SUP_M      SSM
+				                              ,PRD_ATTR_PRD_M PAPM
+				                              ,CST_CUST_ACCM_DOWN_TGT_D CCADTD
+				                         WHERE OOM.CUST_NO = #{custNo}
+				                           AND OOM.ORD_DTM >= TO_DATE(TO_CHAR(ADD_MONTHS(SYSDATE,TO_NUMBER(#{dateFlag})),'YYYYMMDD'),'YYYYMMDD')
+				                           AND OOM.ORD_NO = OID.ORD_NO
+				                           AND OOM.ORD_NO = #{ordNo}
+				                           AND OOM.ORD_TYP_DTL_CD in ('Sales Order', 'Exchange Sales Order')
+				                           AND (RTRIM(OID.ST_CD) in ('A1', '11', '12', '21') OR
+				                               (RTRIM(OID.ST_CD) in ('41', '42', '44') AND
+				                                NVL(OOM.ORD_CNF_YN, 'N') = 'N'))
+				                           AND RTRIM(OID.ORD_DLV_GRD_CD) NOT IN ('97')
+				                           AND NVL(PPM.FRMLES_PRD_TYP_CD, 'N') NOT IN ('T', 'E')
+				                           AND OID.ST_CD = (CASE WHEN PPM.FRMLES_PRD_TYP_CD = 'R' THEN '11' ELSE OID.ST_CD END)
+				                           AND NVL(OOM.EC_NOMEM_ORD_YN, 'N') <> 'Y'
+				                           AND NVL(OID.LINE_TYP_CD, '00') <> '07'
+				                           AND OID.PRD_CD = PPM.PRD_CD(+)
+				                           AND OID.ORD_ITEM_ID = OIPD_A01.ORD_ITEM_ID(+)
+				                           AND OID.ORD_ITEM_ID = OIPD_A12.ORD_ITEM_ID(+)
+				                           AND OID.ORD_ITEM_ID = OIPD_A14.ORD_ITEM_ID(+)
+				                           AND OIPD_A01.ADJST_DTL_CD(+) = 'A01'
+				                           AND OIPD_A12.ADJST_DTL_CD(+) = 'A12'
+				                           AND OIPD_A14.ADJST_DTL_CD(+) = 'A14'
+				                           AND OID.ORD_ITEM_ID = SSMSSCC.ORDER_ITEM_ID(+)
+				                           AND OID.DLVP_ADDR_NO = CCAD.ADDR_CNTC_NO(+)
+				                           AND CCC.CMM_GRP_CD(+) = 'PRD008'
+				                           AND CCC.USE_YN(+) = 'Y'
+				                           AND OID.DLVS_CO_CD = CCC.CMM_CD(+)
+				                           AND NVL(OID.EC_EXPOS_EXCPT_YN, 'N') <> 'Y'
+				                           AND PPM.PRD_CLS_CD = PCM.PRD_CLS_CD
+				                           AND SUBSTR(PCM.PRD_CLS_CD, 1, 7) = PCSD.PRD_CLS_CD
+				                           AND PCSD.CLS_SET_CD = 'R'
+				                           AND NVL(OOM.CHANL_CD, 'P') <> 'S'
+				                           AND ((OOM.CHANL_CD = 'P' AND
+				                                 PCSD.CHANL_OR_GRP_CD = (SELECT CHANL_GRP_CD
+				                                                          FROM PRD_CHANL_MAPPN_D
+				                                                         WHERE CHANL_CD = 'P'
+				                                                           AND CHANL_GRP_TYP_CD = 'D'
+				                                                           AND ROWNUM = 1)) OR
+				                                (OOM.CHANL_CD != 'P' AND
+				                                 PCSD.CHANL_OR_GRP_CD != (SELECT CHANL_GRP_CD
+				                                                           FROM PRD_CHANL_MAPPN_D
+				                                                          WHERE CHANL_CD = 'P'
+				                                                            AND CHANL_GRP_TYP_CD = 'D'
+				                                                            AND ROWNUM = 1)))
+				                           AND OID.SUP_CD = SSM.SUP_CD(+)
+				                           AND NVL(OID.CHANL_DTL_CD, 'N') NOT IN ('HE')
+				                           AND SSM.SUP_CD NOT IN ('1012691', '1012768', '1012769', '1012771')
+				                           AND OID.ATTR_PRD_CD = PAPM.ATTR_PRD_CD(+)
+				                           AND OID.ORD_ITEM_ID = CCADTD.ORD_ITEM_ID(+)
+				                           AND (CCADTD.TXN_RSN_CD(+) IS NULL OR CCADTD.TXN_RSN_CD(+) <> 'B16') /* 수입대행 차액정산 건 제외 안하면 동일아이템 중복노출 */))
+				         WHERE EC_EXPOS_EXCPT_YN <> 'Y' /* 수입대행 차액정산 건 제외 안하면 동일아이템 중복노출 */
+				         UNION ALL
+				        SELECT ORPRD.RSRV_NO  AS ORD_NO
+				              ,0            AS ORG_ORD_NO
+				              ,ORPRD.RSRV_DTM AS ORD_DTM
+				              ,0            AS ORD_ITEM_NO
+				              ,ORPRD.PRD_CD   AS PRD_CD
+				              ,(CASE WHEN PNCH.EXPOS_PRD_NM IS NULL
+				                     THEN PPM.PRD_NM
+				                     ELSE PNCH.EXPOS_PRD_NM
+				                 END)       AS EXPOS_PRD_NM
+				              ,1            AS ORD_QTY
+				              ,NVL(ORPRD.SALE_PRC, 0)        AS LAST_UPRC
+				              ,nvl(ORPRD.CUST_REACT_CD, ' ') AS ORD_ITEM_ST_CD
+				              ,0            AS RTP_QTY
+				              ,DECODE(ORPRD.ACP_PATH_CD, 'AR', 'C', 'CC', 'C', 'P') AS CHANL_CD
+				              ,DECODE(ORPRD.CUST_REACT_CD
+				                     ,'10' ,'신청완료'
+				                     ,'20' ,'설치완료'
+				                     ,'30' ,'신청취소')    AS ORD_TYP_DTL_CD
+				              ,''      AS SR_SUB_AREA
+				              ,''      AS FRMLES_PRD_TYP_CD
+				              ,''      AS ORD_DLV_GRD_CD
+				              ,''      AS LINE_TYP_CD
+				              ,''      AS RTP_EXCH_PSBL_FLG
+				              ,''      AS ATTR_PRD_NM
+				              ,''      AS RFN_TYP_CD
+				              ,''      AS ARFN_TIME_CD
+				              ,SYSDATE AS ARFN_DT
+				              ,''      AS SR_RSN_MID_CLS_CD
+				              ,'CX'    AS CONTACT_STS
+				              ,''      AS ORD_CNF_FLG
+				              ,''      AS DLV_FSH_DT
+				              ,''      AS RELS_FSH_DT
+				              ,0       AS DLV_REQUIR_DDCNT
+				              ,''      AS OPT_PRD_TYP_CD
+				              ,''      AS ATTR_PRD_CD
+				              ,'REN'   AS CHANL_DTL_CD
+				              ,''      AS SR_RSN_SML_CLS_CD
+				              ,''      AS PLEIN_ORD_ST_CD
+				              ,''      AS REP_PRD_SUP_ATTR_PRD_NM
+				              ,''      AS REP_PRD_SUP_ADD_CNTNT
+				              ,''      AS MIM_TYP_CD
+				              ,ORPRD.SUP_CD AS SUP_CD
+				              ,''      AS REP_PRD_SUP_PRD_CD
+				              ,''      AS REP_PRD_SUP_PRD_NM
+				              ,''      AS DITTO_FLG
+				              ,''      AS DLV_PICK_MTHOD_CD
+				          FROM ORD_RENT_PRD_RSRV_D ORPRD
+				              ,PRD_PRD_M           PPM
+				              ,PRD_NM_CHG_H        PNCH
+				         WHERE ORPRD.CUST_NO = #{custNo}
+				           AND ORPRD.PRD_CD = PPM.PRD_CD
+				           AND ORPRD.RSRV_NO IS NOT NULL
+				           AND PPM.PRD_CD = PNCH.PRD_CD
+				           AND PNCH.CHANL_CD = 'P'
+				           AND PNCH.VALID_END_DTM >= SYSDATE
+				           AND PNCH.VALID_STR_DTM <= SYSDATE) X
+				 WHERE CONTACT_STS = 'CY'
+				 ORDER BY ORD_DTM      DESC
+				         ,LINE_TYP_CD
+				         ,ORD_ITEM_NO
+				         ,OPT_PRD_TYP_CD DESC
+         		 ]]>
+	</select>
+
+	<!--
+		내용	: 프로모션 사은품 중 배송품 코드 조회
+		작성자	: Seulgi
+		작성일	: 2013.11.08 신규작성
+		da 확인 완료 수정
+		#{_c.ordNo[0].value}	= "599882195"
+		#{_c.freeGiftProductCode[0].value} = "11731301"
+	-->
+	<select id="findMyGiftListByPmoDeliverCodeInfo" parameterType="criteria" resultMap="myGiftListByPmo">
+		<![CDATA[
+		  SELECT PSGD.GFT_PRD_CD       AS GFT_PRD_CD
+		        ,PSGD.ADD_CMPOS_GBN_CD AS ADD_CMPOS_GBN_CD
+		    FROM ORD_ORD_M          OOM
+		        ,ORD_ITEM_D         OID
+		        ,ORD_ITEM_GFT_MAP_D OIGMD
+		        ,PMO_SIMPL_D        PSD
+		        ,PMO_SIMPL_GFT_D    PSGD
+		   WHERE OOM.ORD_NO        = #{_c.ordNo[0].value}
+		     AND PSGD.GFT_PRD_CD   = #{_c.freeGiftProductCode[0].value}
+		     AND OID.LINE_TYP_CD   IN ('01','02')
+		     AND OOM.ORD_NO        = OID.ORD_NO
+		     AND OID.ORD_NO        = OIGMD.ORG_ORD_NO
+		     AND OID.ORD_ITEM_ID   = OIGMD.GFT_ORD_ITEM_ID
+		     AND OIGMD.PMO_NO      = PSD.PMO_NO
+		     AND OIGMD.PRD_PMO_SEQ = PSD.PRD_PMO_SEQ
+		     AND OIGMD.PMO_NO      = PSGD.PMO_NO
+		     AND OIGMD.PRD_PMO_SEQ = PSGD.PRD_PMO_SEQ
+		     AND PSGD.GFT_PRD_CD   = OID.PRD_CD
+		     AND ROWNUM = 1
+
+		]]>
+	</select>
+
+	<!--
+		내용	: 주문 상세 조회
+		작성자	: Seulgi
+		작성일	: 2013.11.08 신규작성
+		da 확인 완료 수정
+        #{custNo}	= "30481119"
+        #{ordNo}	= "599882195"
+        #{custNo}	= "30481119"
+
+	-->
+	<select id="findMyOrderDetail" parameterType="iceberg.capi.order.model.ordercancel.OrderFilter" resultMap="myOrderDetail">
+		<![CDATA[
+			 SELECT OOM.ORD_NO      AS ORD_NO
+			       ,OID.PRD_CD AS PRD_CD
+			       ,OID.ORD_ITEM_NO AS ORD_ITEM_NO
+			       ,OID.ORD_QTY     AS ORD_QTY
+			       ,NVL(OID.LAST_UPRC, 0) AS LAST_UPRC
+			       ,CASE WHEN (OID.ST_CD = '31' OR OID.ST_CD = 'B1')
+			              AND (OID.DLVS_CO_CD IN ('HJ','DH','HD','HT','CJ','KG','EP','ER','FA','AJ','KL','YC','KR','TR','KT','SD','SG','ND','IN','DS','CI'))
+			              AND (SYSDATE - OID.DLV_FSH_DT) < 8 /* +9/24 */
+			              AND OID.DLV_FSH_SUBJ_CD = 'V' AND (CASE WHEN (TO_NUMBER(TO_CHAR(OID.RELS_FSH_DT, 'YYYYMMDD')) < '20081211') THEN '3' /* +9/24 */
+			                                                    ELSE SUBSTR(OID.DLV_PICK_MTHOD_CD, 0, 1) END) = '3'
+			             THEN '22'
+			             ELSE OID.ST_CD
+			         END              AS ORD_ITEM_ST_CD
+			       ,OOM.REP_PAY_MEAN_CD AS REP_PAY_MEAN_CD
+			       ,NVL2(PAPM.ATTR_WHL_VAL, PAPM.ATTR_VAL_1, '') AS PRD_ATTR_COLOR
+			       ,NVL2(PAPM.ATTR_WHL_VAL, PAPM.ATTR_VAL_2, '') AS PRD_ATTR_STYLE
+			       ,NVL2(PAPM.ATTR_WHL_VAL, PAPM.ATTR_VAL_3, '') AS PRD_ATTR_SIZE
+			       ,NVL2(PAPM.ATTR_WHL_VAL, PAPM.ATTR_VAL_4, '') AS PRD_ATTR_GFT
+			       ,SSMSSCC.SR_SUB_AREA AS SR_SUB_AREA
+			       ,OID.TAX_TYP_CD  AS TAX_TYP_CD
+			       ,CCM.CPN_TYP_CD  AS CPN_TYP_CD
+			       ,(NVL(OIPD_A06.GSHS_GIV_AMT, 0) + NVL(OIPD_A06.SUP_GIV_AMT, 0)) *
+			         NVL(OID.ORD_QTY, 0) AS GENRL_CPN_DC_AMT
+			       ,NVL((SELECT COUNT(*)
+			              FROM CST_ASSET_TXN_D CATD
+			             WHERE CATD.ORD_NO = OOM.ORD_NO
+			               AND CATD.TXN_RSN_CD = 'B14')
+			           ,0)        AS IMM_ACC_DC_USE_CNT
+			       ,NVL(OID.STD_UPRC, 0) -
+			        (FLOOR((NVL(OIPD_A01.SUP_GIV_AMT, 0) +
+			                NVL(OIPD_A01.GSHS_GIV_AMT, 0)) / 10) * 10) +
+			                NVL(OIPD_A14.GSHS_GIV_AMT, 0)  AS SALE_PRC
+			       ,OID.RTP_QTY AS RTP_QTY
+			       ,NVL(OIPD_A05.GSHS_GIV_AMT, 0) + NVL(OIPD_A05.SUP_GIV_AMT, 0) AS ARS_DC_AMT
+			       ,DECODE(OIPD_A04.ADJST_DTL_REP_VAL,'Y',NVL(OIPD_A04.GSHS_GIV_AMT, 0) +NVL(OIPD_A04.SUP_GIV_AMT, 0),0) AS SGPAY_DC_AMT
+			       ,NVL(OIPD_A12.GSHS_GIV_AMT, 0) AS UPRC_ADJST_DC_AMT
+			       ,NVL(OIPD_A03.GSHS_GIV_AMT, 0) AS FMLY_DC_AMT
+			       ,OID.DLV_PICK_MTHOD_CD          AS DLV_PICK_MTHOD_CD
+			       ,NVL(OIPD_A02.GSHS_GIV_AMT, 0) AS EMP_DC_AMT
+			       ,NVL(OID.STD_UPRC, 0)           AS STD_UPRC
+			       ,CCM.CPN_NO                     AS CPN_NO
+			       ,(CCM.GSHS_DC_RTAMT + CCM.SUP_DC_RTAMT) AS CPN_DC_RT_AMT
+			       ,CCAD.DLVP_TELNO        AS DLVP_TELNO
+			       ,CCAD.DLVP_CELPHN_TELNO AS DLVP_CELPHN_TELNO
+			       ,(SELECT NVL(DLVP_TELNO, '')
+			           FROM CST_CUST_ADDR_D
+			          WHERE CUST_NO = OOM.CUST_NO
+			            AND ADDR_GBN_CD = '01'
+			            AND ROWNUM = 1) AS ORD_PRSN_TELNO
+			       ,(SELECT NVL(DLVP_CELPHN_TELNO, '')
+			           FROM CST_CUST_ADDR_D
+			          WHERE CUST_NO = OOM.CUST_NO
+			            AND ADDR_GBN_CD = '01'
+			            AND ROWNUM = 1) AS ORD_PRSN_CELPHN_NO
+			       ,NVL(OIPD_A10.GSHS_GIV_AMT, 0) AS GSHS_IMM_ACC_DC_AMT
+			       ,NVL(OIPD_A10.SUP_GIV_AMT, 0)  AS SUP_IMM_ACC_DC_AMT
+			       ,OIPD_A12.ADJST_DTL_RSN_CD     AS UPRC_ADJST_DTL_RSN_CD
+			       ,NVL(OIPD_A11.GSHS_GIV_AMT, 0) AS FORYY_DC_AMT
+			       ,OID.LINE_TYP_CD					AS LINE_TYP_CD
+			   FROM ORD_ORD_M      OOM
+			       ,ORD_ITEM_D     OID
+			       ,ORD_ITEM_PRC_D OIPD_A01
+			       ,ORD_ITEM_PRC_D OIPD_A02
+			       ,ORD_ITEM_PRC_D OIPD_A03
+			       ,ORD_ITEM_PRC_D OIPD_A04
+			       ,ORD_ITEM_PRC_D OIPD_A05
+			       ,ORD_ITEM_PRC_D OIPD_A06
+			       ,ORD_ITEM_PRC_D OIPD_A08
+			       ,ORD_ITEM_PRC_D OIPD_A10
+			       ,ORD_ITEM_PRC_D OIPD_A11
+			       ,ORD_ITEM_PRC_D OIPD_A12
+			       ,ORD_ITEM_PRC_D OIPD_A14
+			       ,ORD_ITEM_PRC_D OIPD_A15
+			       ,PRD_PRD_M       PPM
+			       ,CST_CUST_ADDR_D CCAD
+			       ,CPN_CPN_M       CCM
+			       ,PRD_ATTR_PRD_M  PAPM
+			       ,SUP_SUP_M       SSM
+			       ,CMM_CMM_C       CCC
+			       ,CST_CUST_ACCM_DOWN_TGT_D CCADTD
+			       ,(SELECT SSM.ORD_ITEM_ID            AS ORDER_ITEM_ID
+			               ,MAX(SSCC.OLD_CLS_CD)       AS SR_SUB_AREA
+			               ,MAX(SSM.SR_RSN_MID_CLS_CD) AS REASON_MID
+			               ,MAX(SSM.SR_RSN_SML_CLS_CD) AS REASON_SML
+			           FROM SRV_SR_M SSM, SRV_SR_CLS_C SSCC
+			          WHERE SSM.SR_RSN_SML_CLS_CD     = SSCC.SR_RSN_CLS_CD(+)
+			            AND SSCC.SR_RSN_CLS_TYP_CD(+) = 'SR'
+			            AND SSM.CUST_NO = #{custNo}
+			            AND SSCC.OLD_CLS_CD(+) IN ('I02', 'I03', 'I04')
+			            AND NVL(SR_PROC_ST_CD, 'Closed') = 'Open'
+			          GROUP BY SSM.ORD_ITEM_ID) SSMSSCC
+			       ,PAY_CASH_RCPT_APRV_CNL_D    PCRACD
+			       ,PRD_CLS_M   PCM
+			  WHERE OOM.ORD_NO  = #{ordNo}
+			    AND OOM.CUST_NO = #{custNo}
+			    AND OOM.ORD_NO      = OID.ORD_NO
+			    AND OID.ORD_ITEM_ID = OIPD_A01.ORD_ITEM_ID(+)
+			    AND OID.ORD_ITEM_ID = OIPD_A02.ORD_ITEM_ID(+)
+			    AND OID.ORD_ITEM_ID = OIPD_A03.ORD_ITEM_ID(+)
+			    AND OID.ORD_ITEM_ID = OIPD_A04.ORD_ITEM_ID(+)
+			    AND OID.ORD_ITEM_ID = OIPD_A05.ORD_ITEM_ID(+)
+			    AND OID.ORD_ITEM_ID = OIPD_A06.ORD_ITEM_ID(+)
+			    AND OID.ORD_ITEM_ID = OIPD_A08.ORD_ITEM_ID(+)
+			    AND OID.ORD_ITEM_ID = OIPD_A10.ORD_ITEM_ID(+)
+			    AND OID.ORD_ITEM_ID = OIPD_A11.ORD_ITEM_ID(+)
+			    AND OID.ORD_ITEM_ID = OIPD_A12.ORD_ITEM_ID(+)
+			    AND OID.ORD_ITEM_ID = OIPD_A14.ORD_ITEM_ID(+)
+			    AND OID.ORD_ITEM_ID = OIPD_A15.ORD_ITEM_ID(+)
+			    AND OIPD_A01.ADJST_DTL_CD(+) = 'A01' /* 프로모션MD할인(A01) */
+			    AND OIPD_A02.ADJST_DTL_CD(+) = 'A02' /* 사내임직원할인(A02) */
+			    AND OIPD_A03.ADJST_DTL_CD(+) = 'A03' /* 그룹사할인(A03) */
+			    AND OIPD_A04.ADJST_DTL_CD(+) = 'A04' /* 일시불할인(A04) */
+			    AND OIPD_A05.ADJST_DTL_CD(+) = 'A05' /* ARS할인(A05) */
+			    AND OIPD_A06.ADJST_DTL_CD(+) = 'A06' /* 쿠폰할인(A06) */
+			    AND OIPD_A08.ADJST_DTL_CD(+) = 'A08' /* 매체쿠폰할인(A08) */
+			    AND OIPD_A10.ADJST_DTL_CD(+) = 'A10' /* 즉시적립할인(A10) */
+			    AND OIPD_A11.ADJST_DTL_CD(+) = 'A11' /* 연간플러스할인(A11) */
+			    AND OIPD_A12.ADJST_DTL_CD(+) = 'A12' /* 단가조정할인(A12) */
+			    AND OIPD_A14.ADJST_DTL_CD(+) = 'A14' /* 가격조정(A14) */
+			    AND OIPD_A15.ADJST_DTL_CD(+) = 'A15' /* 포장비(A15) */
+			    AND OID.PRD_CD = PPM.PRD_CD
+			    AND OID.ORD_ITEM_ID   = CCADTD.ORD_ITEM_ID(+)
+			    AND OIPD_A06.CPN_NO  = CCM.CPN_NO(+)
+			    AND OID.DLVP_ADDR_NO  = CCAD.ADDR_CNTC_NO
+			    AND OID.ATTR_PRD_CD   = PAPM.ATTR_PRD_CD(+)
+			    AND OID.ORD_ITEM_ID   = SSMSSCC.ORDER_ITEM_ID(+)
+			    AND CCC.CMM_GRP_CD(+) = 'PRD008'
+			    AND CCC.USE_YN(+)  = 'Y'
+			    AND OID.DLVS_CO_CD = CCC.CMM_CD(+)
+			    AND PPM.SUP_CD = SSM.SUP_CD(+)
+			    AND OOM.ORD_NO = PCRACD.ORD_NO(+)
+			    AND PPM.PRD_CLS_CD = PCM.PRD_CLS_CD
+    		]]>
+	</select>
+
+	<!--
+		내용	: 출고완료 + 지역별 리드타임일을 조회
+		작성자	: Seulgi
+		작성일	: 2013.11.08 신규작성
+		da 확인 완료 수정
+		#{_c.shipDate[0].value} = '20131118'
+	-->
+	<select id="findAreaLeadTime" parameterType="String" resultMap="areaLeadTime">
+		<![CDATA[
+		SELECT TO_CHAR(DT, 'yyyy/mm/dd') AS DT           /* +9/24 */
+		      ,WEKDY_NM                  AS DAY
+		      ,HOLDY_YN                  AS HOLDY_FLG
+		  FROM CMM_CALND_C
+		 WHERE DT > TO_DATE(#{_c.shipDate[0].value}, 'YYYYMMDD')                   /* -9/24 */
+		 ORDER BY DT
+		 ]]>
+	</select>
+
+	<!--
+		  내용  : 주문취소사유코드 및 사유 조회
+		  작성자  : Seulgi
+		  작성일  : 2013.11.08 신규작성
+		 da 확인 완료 수정
+	-->
+	<select id="findOrderCancelReason" resultMap="orderCancelReason">
+		<![CDATA[
+		    SELECT SSCC.SR_RSN_CLS_CD  AS SBL_CANCEL_CD
+		          ,SSCC.CLS_CD_NM      AS SBL_CANCEL_DESC
+		          ,SSCC1.SR_RSN_CLS_CD AS SBM_CANCEL_CD
+		          ,SSCC1.CLS_CD_NM     AS SBM_CANCEL_DESC
+		     FROM  SRV_SR_CLS_C SSCC
+		          ,SRV_SR_CLS_C SSCC1
+		     WHERE SSCC.SR_RSN_CLS_TYP_CD = SSCC1.SR_RSN_CLS_TYP_CD
+		       AND SSCC.SR_RSN_CLS_CD     = SSCC1.UPPER_CLS_CD
+		       AND SSCC.SR_RSN_CLS_TYP_CD = 'ORD'
+		       AND SSCC.SR_RSN_CLS_CD IN ('CL01','CL03','CL04','CL06')
+		       AND SSCC.USE_YN     = 'Y'
+		       AND SSCC1.USE_YN    = 'Y'
+		       AND SSCC1.EC_USE_YN = 'Y'
+		     ORDER BY SSCC.SR_RSN_CLS_CD
+		             ,SSCC1.SR_RSN_CLS_CD
+		 ]]>
+	</select>
+
+	<!--
+		내용	: 주문 상품 정보 조회
+		작성자	: Seulgi
+		작성일	: 2013.11.08 신규작성
+      	da 확인 완료 수정
+      #{ordNo} =  "599882195"
+	-->
+	<select id="findOrderItemInfo" parameterType="long" resultMap="myOrderItem">
+			SELECT OID.ORD_ITEM_NO
+			      ,OID.ORD_ITEM_ID
+			  FROM ORD_ORD_M  OOM
+			      ,ORD_ITEM_D OID
+			 WHERE OOM.ORD_NO = OID.ORD_NO
+			   AND OOM.ORD_NO = #{ordNo}
+			 ORDER BY OID.ORD_ITEM_NO
+	</select>
+
+	<!--
+		내용	: 상품코드로 공급자 정보를 가져온다.
+		작성자	: Seulgi
+		작성일	: 2013.11.11 신규작성
+
+      #{prdCd}  =  "11731301"
+	-->
+	<select id="findSupCode" parameterType="long" resultMap="supCode">
+			/* orderCancle-sql.xml findSupCode, 작성시기 2013.11.11 */
+			SELECT  PPM.SUP_CD AS SUP_CD
+			       ,SSM.B2B_SUP_CD AS B2B_SUP_CD
+			  FROM  PRD_PRD_M PPM
+			       ,SUP_SUP_M SSM
+			 WHERE  PPM.PRD_CD = #{prdCd}
+			   AND  PPM.SUP_CD = SSM.SUP_CD
+
+	</select>
+
+	<!--
+		내용	: 고객 등급 코드 정보를 가져온다.
+		작성자	: Seulgi
+		작성일	: 2013.11.11 신규작성
+
+      #{custNo}  =  "30481119"
+	-->
+	<select id="findCustGrdCd" parameterType="long" resultType="String">
+			/* orderCancle-sql.xml findCustGrdCd, 작성시기 2013.11.11 */
+			SELECT  CUST_GRD_CD
+			  FROM  CST_CUST_GRD_D
+			 WHERE  CUST_NO = #{custNo}
+			   AND  CUST_GRD_GBN_CD = 'GS'
+			   AND  USE_YN = 'Y'
+	</select>
+
+	<!--
+		내용	: ditto flag를 가져온다.
+		작성자	: Seulgi
+		작성일	: 2013.11.19 신규작성
+
+      #{ordNo}  =  "599882195"
+	-->
+	<select id="findDittoFlag" parameterType="long" resultType="String">
+		/* orderCancle-sql.xml findDittoFlag, 작성시기 2013.11.19 */
+		SELECT  NVL(OID.DITTO_YN, ' ')
+		  FROM  ORD_ORD_M OOM
+		          ,ORD_ITEM_D OID
+		 WHERE  OOM.ORD_NO = #{ordNo}
+		   AND  OOM.ORD_NO = OID.ORD_NO
+		   AND  NVL(OID.LINE_TYP_CD, '00') = '00'
+	</select>
+</mapper>

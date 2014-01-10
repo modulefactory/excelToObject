@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.cust.smtcdb.repository.tmprcv.TmprcvSqlMapRepository">
+
+    <select id="findTmprcv" parameterType="long" resultType="int">
+    <!--
+    내용 : 고객번호로 예치금액을 가져온다.
+    #{custNo}  = 7608979
+    -->
+    <![CDATA[
+        SELECT CAM.ASSET_AMT
+          FROM CST_ASSET_M CAM
+         WHERE CAM.CUST_NO = #{custNo}
+           AND CAM.ASSET_TYP_CD = 'TMPRCV'
+           AND ROWNUM <= 1
+    ]]>
+    </select>
+
+</mapper>

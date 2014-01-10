@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	<mapper namespace="iceberg.capi.order.smtcdb.repository.returnexchange.RtpExchReasonAddrNewSqlMapRepository">
+
+	<resultMap id="addrInfoMap" type="iceberg.capi.order.model.returnexchange.RtpAddrInfo">
+		<result property="rcvrNm"           column="RCVR_NM" />
+		<result property="zipcd"            column="ZIPCD" />
+		<result property="baseAddr"         column="BASE_ADDR" />
+		<result property="dtlAddr"          column="DTL_ADDR" />
+		<result property="dlvpTelno"        column="DLVP_TELNO" />
+		<result property="dlvpCelphnTelno"  column="DLVP_CELPHN_TELNO" />
+		<result property="eastnChkRsltCd"   column="EASTN_CHK_RSLT_CD" />
+		<result property="addrCntcNo"       column="ADDR_CNTC_NO" />
+		<result property="oboxCd"           column="OBOX_CD" />
+	</resultMap>
+	
+	<!--
+	   	내용 : 배송지 정보 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 25
+	   
+	   	#{custNo} = 500000008
+	   	#{ordNo} = 11662386
+	   	#{ordItemId} = '5000000026'
+	-->
+	
+	<select id="findAddrInfo" parameterType="criteria" resultMap="addrInfoMap">
+		SELECT CCAD.RCVR_NM
+		     , CCAD.ZIPCD
+		     , CCAD.BASE_ADDR
+		     , CCAD.DTL_ADDR
+		     , CCAD.DLVP_TELNO
+		     , CCAD.DLVP_CELPHN_TELNO
+		     , CCAD.EASTN_CHK_RSLT_CD
+		     , CCAD.ADDR_CNTC_NO
+		     , OID.OBOX_CD
+		  FROM ORD_ORD_M OOM
+		     , ORD_ITEM_D OID
+		     , CST_CUST_ADDR_D CCAD
+		 WHERE OOM.ORD_NO        = #{_c.ordNo[0].value}
+		   AND OOM.CUST_NO       = #{_c.custNo[0].value}
+		   AND OID.ORD_ITEM_ID   = #{_c.ordItemId[0].value}
+		   AND OOM.ORD_NO        = OID.ORD_NO
+		   AND OID.DLVP_ADDR_NO  = CCAD.ADDR_CNTC_NO
+	</select>
+	
+</mapper>

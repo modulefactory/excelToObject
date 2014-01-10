@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prd.PrdBasePriceSqlMapRepository">
+
+	<resultMap type="iceberg.capi.product.model.prd.add.PrdBasePrice" id="resultPrdBasePrice">
+		<result property = "prdCd"                         column = "PRD_CD"  jdbcType="NUMERIC"/>              			<!--	상품코드	-->
+		<result property = "dcMrkGbnCd"                column = "DC_MRK_GBN_CD"   jdbcType="NVARCHAR" />              <!--	할인표시구분코드	-->
+		<result property = "flgdPrc"                       	column = "FLGD_PRC"  jdbcType="NUMERIC"/>                    	<!--	기분좋은가격	-->
+		<result property = "cpnDcCntnt"                	column = "CPN_DC_CNTNT"  jdbcType="NVARCHAR"/>               <!--	쿠폰할인내용	-->
+		<result property = "selAccRt"                     	column = "SEL_ACC_RT"  jdbcType="NUMERIC"/>                   <!--	선택적립율	-->
+		<result property = "cpnApplyTypCd"            	column = "CPN_APPLY_TYP_CD"  jdbcType="NVARCHAR"/>          <!--	쿠폰적용유형코드	-->
+		<result property = "prcReductBefLowPrc"     	column = "PRC_REDUCT_BEF_LOW_PRC"  jdbcType="NUMERIC"/>  <!--	가격인하전최저가격	-->
+		<result property = "prcReductDtm"             	column = "PRC_REDUCT_DTM" jdbcType="DATE"/>            <!--	가격인하일시	-->
+		<result property = "prcDcDtm"                   column = "PRC_DC_DTM" jdbcType="DATE"/>                  	<!--	가격할인일시	-->
+		<result property = "cpnMaxDcAmt"              column = "CPN_MAX_DC_AMT"  jdbcType="NUMERIC"/>           <!--	쿠폰최대할인금액	-->
+		<result property = "cpnDcAmtExposYn"   		column = "CPN_DC_AMT_EXPOS_YN"  jdbcType="NVARCHAR"/>   <!--	쿠폰할인액노출여부	-->
+		<result property = "salePrc"                       column = "SALE_PRC"  jdbcType="NUMERIC"/>                    	<!--	판매가격	-->
+		<result property = "noIntMmCnt"           		column = "NO_INT_MM_CNT"  jdbcType="NUMERIC"/>       <!--	무이자개월수	-->
+		<result property = "prdPrc"                        column = "PRD_PRC"  jdbcType="NUMERIC"/>                     	<!--	상품가격	-->
+		<result property = "accAmt"                      column = "ACC_AMT"  jdbcType="NUMERIC"/>                    	<!--	적립금액	-->
+		<result property = "sgpayDcAmt"                column = "SGPAY_DC_AMT"  jdbcType="NUMERIC"/>                <!--	일시불할인액	-->
+		<result property = "saleProfitRt"                  column = "SALE_PROFIT_RT"  jdbcType="NUMERIC"/>              <!--	매출이익율	-->
+		<result property = "cardUseLimitFlg"    		column = "CARD_USE_LIMIT_FLG"  jdbcType="NVARCHAR"/>        <!--	카드사용제한여부	-->
+		<result property = "prdTypCd"         			column = "PRD_TYP_CD"  jdbcType="NVARCHAR"/>                  	 <!--	상품유형코드	-->
+		<result property = "repPrdFlg"     				column = "REP_PRD_FLG"  jdbcType="NVARCHAR"/>                  	 <!--	대표상품여부	-->
+		<result property = "frmlesPrdTypCd"            column = "FRMLES_PRD_TYP_CD"  jdbcType="NUMERIC"/>        <!--	무형상품유형코드	-->
+		<result property = "immAccmDcRt"				 column = "IMM_ACCM_DC_RT" jdbcType="NUMERIC"/>			 <!--  즉시적립금할인율 -->
+		<result property = "dmstcFixprc"				 	column = "DMSTC_FIXPRC" jdbcType="NUMERIC"/>			 		<!--  국내정가 -->
+		
+	</resultMap>
+	<select id="findOnePrdBasePrice" parameterType="iceberg.capi.product.model.prd.Prd" resultMap="resultPrdBasePrice">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품 findOnePrdBasePrice
+		API  : 상품 기본 가격 정보 조회
+		설명 : 상품 기본 가격 정보 조회
+		
+		#{prdCd} = 11462058
+		#{commonChannelModel.cmmBaseChanl} = P
+		-->
+		
+		SELECT  /*+ leading(PPM)*/
+				PPM.PRD_CD                         	   AS PRD_CD                             /*상품코드*/
+		  		,PPM.DC_MRK_GBN_CD                 AS DC_MRK_GBN_CD                      /*할인표시구분코드*/
+				,PPM.SEL_ACC_RT                     	AS SEL_ACC_RT                         /*선택적립율*/
+				,PPM.CPN_APPLY_TYP_CD              AS CPN_APPLY_TYP_CD                   /*쿠폰적용유형코드*/
+				,PSED.PRC_REDUCT_BEF_LOW_PRC  AS PRC_REDUCT_BEF_LOW_PRC             /*가격인하전최저가격*/
+				,PSED.PRC_REDUCT_DTM               AS PRC_REDUCT_DTM                     /*가격인하일시*/
+				,PSED.PRC_DC_DTM                      AS PRC_DC_DTM                         /*가격할인일시*/
+				,NVL(PPM.CPN_MAX_DC_AMT, 0)                AS CPN_MAX_DC_AMT                     /*쿠폰최대할인금액*/
+				,PPM.CPN_DC_AMT_EXPOS_YN        AS CPN_DC_AMT_EXPOS_YN                /*쿠폰할인액노출여부*/
+				,TO_NUMBER(FN_PRD_SALE_PRC(PPM.PRD_CD, SYSDATE))  AS SALE_PRC    /*판매가격*/
+				,PG_PMO_PRD_PMO.FN_PRD_NO_INT(PPM.PRD_CD,#{commonChannelModel.cmmBaseChanl},SYSDATE)        AS NO_INT_MM_CNT     /*무이자개월수*/
+				,PG_PMO_PRD_PMO.FN_PRD_MD_DC_PRC(PPM.PRD_CD ,#{commonChannelModel.cmmBaseChanl},SYSDATE)    AS PRD_PRC               /*상품가격(판매가-할인금액(MD할인금액+ARS할인))*/
+				,TO_NUMBER(PG_PMO_PRD_PMO.FN_PRD_ACCM(PPM.PRD_CD,#{commonChannelModel.cmmBaseChanl},SYSDATE,PG_PMO_PRD_PMO.FN_PRD_MD_DC_PRC(PPM.PRD_CD,#{commonChannelModel.cmmBaseChanl},SYSDATE))) AS ACC_AMT           /*적립금액*/
+				,TO_NUMBER(PG_PMO_PRD_PMO.FN_PRD_SGPAY_DC(PPM.PRD_CD,#{commonChannelModel.cmmBaseChanl},SYSDATE))      AS SGPAY_DC_AMT /*일시불할인액*/
+				,FLOOR((DECODE(DECODE(PPM.PRCH_TYP_CD,'04','01',PPM.PRCH_TYP_CD),'01',
+		                            DECODE(PPM.TAX_TYP_CD,'02',NVL(PPH.PRCH_PRC,0) * 1.1,NVL(PPH.PRCH_PRC,0)),
+		                                                      DECODE(PPH.SUP_GIV_RTAMT_CD,'01',NVL(PPH.SUP_GIV_RTAMT,0),
+		                                                      NVL(PPH.SUP_GIV_RTAMT,0)/100 * NVL(PPH.SALE_PRC,0)))+4)/10)*10         AS SALE_PROFIT_RT    /* 매출이익율 */
+				,PPM.CARD_USE_LIMIT_YN          AS CARD_USE_LIMIT_FLG                /*카드사용제한여부*/
+				,PPM.REP_PRD_YN                     AS REP_PRD_FLG                         /*대표상품여부*/
+				,PPM.PRD_TYP_CD                     AS PRD_TYP_CD                         /*상품유형코드*/
+				,PPM.FRMLES_PRD_TYP_CD         AS FRMLES_PRD_TYP_CD              /*무형상품유형코드*/
+				,NVL(PPM.IMM_ACCM_DC_RT, 0)             AS IMM_ACCM_DC_RT					/*즉시적립금할인율*/
+				,PBD.DMSTC_FIXPRC                        AS DMSTC_FIXPRC                /*국내정가*/		                                                      		
+		FROM    PRD_PRD_M        PPM      		/*상품기본 */
+				  ,PRD_PRC_H         PPH      		/*상품가격이력 */		          
+		          ,PRD_SHOP_EXPOS_D  PSED     /*상품매장노출정보 */
+		          ,PRD_BOOK_D        PBD      /*도서상품정보*/
+		WHERE PPM.PRD_CD     = #{prdBase.prdCd.prdCd}
+		    AND PPM.USE_YN  	= 'Y'	    
+			AND PPM.PRD_CD     = PSED.PRD_CD(+)
+			AND PPM.PRD_CD     = PPH.PRD_CD
+			AND PPM.PRD_CD     = PBD.PRD_CD(+)
+		    AND PPH.PRD_ATTR_GBN_CD = #{commonChannelModel.cmmBaseChanl}                                     /*채널코드-기본:P*/
+		    AND SYSDATE BETWEEN PPH.VALID_STR_DTM AND PPH.VALID_END_DTM
+	</select>
+		
+</mapper>

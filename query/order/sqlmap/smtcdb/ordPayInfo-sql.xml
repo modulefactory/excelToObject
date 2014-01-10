@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.orderdelivery.OrdPayInfoSqlMapRepository">
+
+	<!--
+		내용	: 카드결제 정보를 조회하는 SQL
+		작성자	: 이동민
+		작성일	: 2013.11.05
+
+		#{_c.ordNo[0].value} = 599858197
+		#{_c.custNo[0].value} = 33013366
+	-->
+
+    <resultMap type="iceberg.capi.order.model.orderdelivery.CardPayInfo" id="cardPayInfo">
+		<result property="cardNm"           column="CARD_NM"/>
+		<result property="cardAprvSeq"      column="CARD_APRV_SEQ"/>
+		<result property="cardNoExposTyp"	column="CARD_NO_EXPOS_TYP"/>
+		<result property="aprvAmt"          column="APRV_AMT"/>
+		<result property="aprvDt"			column="APRV_DT"/>
+		<result property="aprvNo"           column="APRV_NO"/>
+		<result property="noIntFlg"         column="NO_INT_FLG"/>
+		<result property="insmMmCnt"        column="INSM_MM_CNT"/>
+		<result property="cardStCd"         column="CARD_ST_CD"/>
+		<result property="payStCd"          column="PAY_ST_CD"/>
+		<result property="aliaCardFlg"      column="ALIA_CARD_FLG"/>
+		<result property="metaAttr23"       column="ALIA_CARD_ACCM_GIV_FLG"/>
+		<result property="aliaCardTotAccm"	column="ALIA_CARD_TOT_ACCM"/>
+    </resultMap>
+
+    <select id="findCardPayInfo" parameterType="criteria" resultMap="cardPayInfo">
+        SELECT /* ordPayInfo-sql.xml, 2013.11.05 by 이동민 */
+               POPD.META_ATTR19                       AS CARD_NM                   /* 카드 이름 */
+              ,POPD.EDI_SEQ                           AS CARD_APRV_SEQ             /* 카드승인일련번호 */
+              ,POPD.CARD_NO_MSK                       AS CARD_NO_EXPOS_TYP         /* 카드번호(노출용) */
+              ,POPD.PAY_AMT                           AS APRV_AMT                  /* 승인금액 */
+              ,POPD.META_ATTR12                       AS APRV_DT                   /* 승인날짜 +9/24 */
+              ,POPD.META_ATTR37                       AS APRV_NO                   /* 승인번호 */
+              ,POPD.META_ATTR31                       AS NO_INT_FLG                /* 무이자여부 */
+              ,POPD.INSM_MM                           AS INSM_MM_CNT               /* 할부개월수 */
+              ,POPD.PAY_RSN_CD                        AS CARD_ST_CD                /* 카드 타입 */
+              ,NVL(POPD.CNL_ST_CD, POPD.PAY_ST_CD)    AS PAY_ST_CD                 /* 카드상태*/
+              ,NVL(ALIA_CARD_YN,'N')                  AS ALIA_CARD_FLG
+              ,NVL(META_ATTR23,'N')                   AS ALIA_CARD_ACCM_GIV_FLG    /* 제휴카드적립금부여여부 */
+              ,NVL(ALIA_CARD_TOT_ACCM,0)              AS ALIA_CARD_TOT_ACCM            /* 제휴카드 정보 */
+          FROM PAY_ORD_PAYMT_D POPD
+              ,ORD_ORD_M OOM
+         WHERE OOM.ORD_NO                             = #{_c.ordNo[0].value}
+           AND OOM.CUST_NO                            = #{_c.custNo[0].value}
+           AND POPD.PAY_TYP_CD                     LIKE '%Credit Card'
+           AND POPD.PAY_ST_CD                    NOT IN ('C00','C01','C11')
+           AND OOM.PAY_ORD_NO                         = POPD.PAY_ORD_NO
+    </select>
+
+	<!--
+		내용	: 무통장결제 정보를 조회하는 SQL
+		작성자	: 이동민
+		작성일	: 2013.11.06
+
+		#{_c.ordNo[0].value} = 500000141
+		#{_c.custNo[0].value} = 30457358
+	-->
+
+	<resultMap type="iceberg.capi.order.model.orderdelivery.NoBkbPayInfo" id="noBkbPayInfo">
+		<result property="dpoBankNm"		column="BANK_NM"/>
+		<result property="accntNo"			column="ACCT_NO"/>
+		<result property="dpoPrsnNm"		column="SNDR"/>
+		<result property="dpoDt"			column="LINK_DT"/>
+		<result property="aprvAmt"			column="TRAN_AMT"/>
+		<result property="dpoStCd"			column="ST_CD"/>
+		<result property="cashRcptFlg"		column="TAX_SAV_YN"/>
+		<result property="payNo"			column="SRC_ROW_ID"/>
+		<result property="noBkbDpoSchdDt"	column="NO_BKB_DPO_SCHD_DT"/>
+		<result property="bankTot"			column="BANK_SUM"/>
+		<result property="vanCd"			column="VAN_CD"/>
+	</resultMap>
+
+	<select id="findNoBkbPayInfo" parameterType="criteria" resultMap="noBkbPayInfo">
+        SELECT /* ordPayInfo-sql.xml, 2013.11.06 by 이동민 */
+               CCC.CD_VAL                             AS BANK_NM               /* 입금은행명 */
+              ,POPD.META_ATTR17                       AS ACCT_NO               /* 계좌번호 */
+              ,POPD.META_ATTR9                        AS SNDR                  /* 입금자명 */
+              ,POPD.META_ATTR12                       AS LINK_DT               /* 입금일 +9/24 */
+              ,POPD.PAY_AMT                           AS TRAN_AMT              /* 승인금액 */
+              ,POPD.PAY_ST_CD                         AS ST_CD                 /* 입금상태 */
+              ,NVL(POPD.META_ATTR16,'N')              AS TAX_SAV_YN            /* 현금영수증 */
+              ,POPD.PAY_NO                            AS SRC_ROW_ID            /* ROW_ID */
+              ,TO_CHAR(OOM.ORD_DTM + 5, 'YYYY-MM-DD') AS NO_BKB_DPO_SCHD_DT    /* +9/24 */ /* [SR02130107055]무통장 입금 10일 > 5일로 안내 변경 beanKnight 2013.01.07 */
+              ,NVL(DECODE(POPD.PAY_TYP_CD
+                         ,'Bank Account',DECODE(POPD.META_ATTR28
+                                               ,NULL,DECODE(POPD.PAY_ST_CD
+                                                           ,'B03',NVL(POPD.PAY_AMT,0)
+                                                           ,'B02',NVL(POPD.PAY_AMT,0)
+                                                           ,NVL(POPD.RFN_PSBL_AMT,0))
+                                               ,NVL(POPD.RFN_PSBL_AMT,0))
+                         ,0)
+                  ,0)                                 AS BANK_SUM
+              ,POPD.META_ATTR21                       AS VAN_CD
+          FROM PAY_ORD_PAYMT_D                        POPD
+              ,ORD_ORD_M                              OOM
+              ,CMM_CMM_C                              CCC
+         WHERE OOM.ORD_NO                             = #{_c.ordNo[0].value}
+           AND OOM.CUST_NO                            = #{_c.custNo[0].value}
+           AND POPD.PAY_TYP_CD                        LIKE '%Bank Account'
+           AND OOM.ORD_NO                             = POPD.ORD_NO(+)
+           AND POPD.META_ATTR21                       = CCC.CMM_CD
+           AND CCC.CMM_GRP_CD                         = 'PAY001'
+	</select>
+
+	<!--
+		내용	: 휴대폰결제 정보를 조회하는 SQL
+		작성자	: 이동민
+		작성일	: 2013.11.05
+		          2013.11.26 - DA리뷰를 통해 고객번호 RTRIM처리 제거함
+
+		#{_c.ordNo[0].value} = 565731032
+		#{_c.custNo[0].value} = 23138216
+	-->
+
+	<resultMap type="iceberg.capi.order.model.orderdelivery.CelphnPayInfo" id="celphnPayInfo">
+	    <result property="svcSupNm"        column="SVC_SUP_NM"/>
+	    <result property="aprvNo"		   column="APRV_NO"/>
+	    <result property="celphnNo"        column="CELPHN_NO"/>
+	    <result property="comCo"           column="COM_CO"/>
+	    <result property="txnNo"           column="TXN_NO"/>
+	    <result property="aprvAmt"         column="APRV_AMT"/>
+	</resultMap>
+
+	<select id="findCelphnPayInfo" parameterType="criteria" resultMap="celphnPayInfo">
+        SELECT /* ordPayInfo-sql.xml, 2013.11.05 by 이동민  */
+               POPD.CARD_NO_MSK   AS SVC_SUP_NM      /* 서비스업체명 */
+              ,POPD.META_ATTR37   AS APRV_NO         /* 승인번호 */
+              ,POPD.META_ATTR34   AS CELPHN_NO       /* 휴대폰번호 */
+              ,POPD.META_ATTR8    AS COM_CO          /* 통신사 */
+              ,POPD.META_ATTR33   AS TXN_NO          /* 거래번호 */
+              ,POPD.PAY_AMT       AS APRV_AMT        /* 승인금액  */
+          FROM PAY_ORD_PAYMT_D    POPD
+              ,ORD_ORD_M          OOM
+         WHERE OOM.ORD_NO         = #{_c.ordNo[0].value}
+           AND OOM.CUST_NO        = #{_c.custNo[0].value}
+           AND POPD.PAY_TYP_CD    = 'Point'
+           AND POPD.PAY_ST_CD NOT IN ('C00','C01','C11')
+           AND OOM.PAY_ORD_NO     = POPD.PAY_ORD_NO
+	</select>
+
+</mapper>

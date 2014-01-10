@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.member.webdb.repository.EcoinSqlMapRepository">
+	
+	<resultMap type="iceberg.capi.member.model.EcoinTransactionRecord" id="ecoinTransactionRecordMap">  
+		<result property = "sequence"               column= "SEQ"          /> 
+		<result property = "accumulationDayAndTime" column= "ACC_DTM"      /> 
+		<result property = "eshopCustomerNumber"    column= "EC_CUST_NO"   /> 
+		<result property = "ecoinGubun"             column= "ECOIN_GBN"    /> 
+		<result property = "ecoinType"              column= "ECOIN_TYP"    /> 
+		<result property = "ecoin"                  column= "ECOIN"        /> 
+		<result property = "content"                column= "CNTNT"        /> 
+		<result property = "validityDayAndTime"     column= "VALID_DTM"    /> 
+		<result property = "orderNumber"            column= "ORD_NO"       /> 
+		<result property = "productCode"            column= "PRD_CD"       /> 
+		<result property = "productName"            column= "PRD_NM"       /> 
+		<result property = "orderDate"              column= "ORD_DT"       /> 
+		<result property = "deliveryFinishDate"     column= "DLV_FSH_DT"   /> 
+		<result property = "paymentAmount"          column= "PAY_AMT"      /> 
+		<result property = "realPaymentAmount"      column= "RL_PAY_AMT"   /> 
+		<result property = "couponNumber"           column= "CPN_NO"       /> 
+		<result property = "note"                   column= "NOTE"         /> 
+		<result property = "creationPerson"         column= "CRE_PRSN"     /> 
+	</resultMap>  
+ 
+		
+	<select id="getEcoinInformationList" parameterType="criteria" resultMap="ecoinTransactionRecordMap">
+	   <![CDATA[
+	   SELECT T1.*  
+	     FROM (SELECT CEIL(ROWNUM /#{_p.pageItemSize}) AS PAGEIDX
+	                 ,TA.* 
+	             FROM (SELECT /*+ index(GS_ECOIN_LOG GS_ECOIN_LOG_CREDATE_IDX) */
+	                          ECOIN_SEQ                      AS SEQ
+	                         ,TO_CHAR(CREDATE,'YYYYMMDD')    AS ACC_DTM
+	                         ,ECUSERID						 AS EC_CUST_NO 
+	                         ,COIN_FLAG						 AS ECOIN_GBN 
+	                         ,COIN_TYPE						 AS ECOIN_TYP 
+	                         ,COIN						     AS ECOIN
+	                         ,COIN_DESC						 AS CNTNT 
+	                         ,TO_CHAR(VALID_DATE,'YYYYMMDD') AS VALID_DTM 
+	                         ,ORDID						     AS ORD_NO 
+	                         ,PRDID						     AS PRD_CD
+	                         ,PRDNAME						 AS PRD_NM
+	                         ,TO_CHAR(ORD_DATE,'YYYYMMDD')   AS ORD_DT
+	                         ,TO_CHAR(SHIP_DATE,'YYYYMMDD')  AS DLV_FSH_DT
+	                         ,PMT_AMT                        AS PAY_AMT
+	                         ,REAL_PMT_AMT                   AS RL_PAY_AMT
+	                         ,COUPON_NUM                     AS CPN_NO 
+	                         ,REMARK						 AS NOTE
+	                         ,CREUSER                        AS CRE_PRSN
+	                     FROM GS_ECOIN_LOG
+	                    WHERE 1=1
+	                      AND CREDATE      >= TO_DATE(#{_c.startDate[0].value},'YYYYMMDD')
+	                      AND ECUSERID      = #{_c.eshopCustomerNumber[0].value}
+	                      AND ROWNUM < 100  
+	                  ) TA 
+	          ) T1 
+	    WHERE PAGEIDX = #{_p.pageNumber} 
+	    ]]>
+	 </select>
+
+
+	<select id="getEcoinAccumulationUseRecordCount" parameterType="criteria" resultType="long">
+			/*ecoin-accumulation-use-record-sql.getEcoinAccumulationUseRecordCount*/
+			SELECT 	COUNT(*) AS CNT
+			FROM 	GS_ECOIN_LOG
+			WHERE ECUSERID = #{_c.eshopCustomerNumber[0].value}
+			AND CREDATE  &gt;= TO_DATE(#{_c.startDate[0].value},'YYYYMMDD')
+<!-- 			
+			<if test="_c.searchEndDate[0].value != null AND _c.searchStartDate[0].value != null">
+				AND TO_CHAR(CREDATE) &gt; = TRUNC(TO_DATE(#{_c.searchEndDate[0].value},'YYYY-MM-DD'))
+				AND TO_CHAR(CREDATE) &lt;= TRUNC(TO_DATE(#{_c.searchStartDate[0].value},'YYYY-MM-DD')) 
+			</if>
+			<if test="_c.searchEndDate[0].value == null AND _c.searchStartDate[0].value == null">
+				AND COIN_FLAG = #{_c.ecoinGubun[0].value}
+	  			AND CREDATE  &gt;= TRUNC(SYSDATE-90)
+  			</if>
+ -->  			
+	</select>	
+
+	<select id="getEcoinTotalAmount" parameterType="criteria" resultMap="ecoinTransactionRecordMap">
+			/*ecoin-accumulation-use-record-sql.getEcoinTotalAmount*/
+			SELECT /*+ INDEX(GS_ECOIN_LOG GS_ECOIN_LOG_FLAG_IDX) */
+			  NVL(SUM(DECODE(COIN_FLAG, '01', COIN, 0)), 0) -
+			  NVL(SUM(DECODE(COIN_FLAG, '02', COIN, 0)), 0) AS ECOIN
+			FROM GS_ECOIN_LOG
+			WHERE ECUSERID = #{_c.eshopCustomerNumber[0].value}
+
+	</select>	
+	
+	<insert id="saveEcoin" parameterType="iceberg.capi.member.model.EcoinTransactionRecord">
+                <selectKey resultType="long" keyProperty="sequence" order="BEFORE">  
+                        SELECT GS_ECOIN_SEQ.NEXTVAL FROM DUAL 
+                </selectKey>
+        INSERT /* /sqlmap/webdb/ecoin-sql.xml 2013.11.04 by 최영학 */
+          INTO GS_ECOIN_LOG
+               (
+                ECOIN_SEQ 
+               ,CREDATE
+               ,ECUSERID
+               ,COIN_FLAG  
+               ,COIN_TYPE   
+               ,COIN
+               ,COIN_DESC  
+               ,VALID_DATE
+               ,REMARK
+               )   
+        VALUES 
+               ( 
+                #{sequence}
+               ,SYSDATE
+               ,#{eshopCustomerNumber}
+               ,#{ecoinGubun}
+               ,#{ecoinType}
+               ,#{ecoin}
+               ,#{content}  
+               ,TO_DATE(CONCAT(TO_CHAR(SYSDATE+90, 'YYYYMMDD'), '235959') ,'YYYYMMDDHH24MISS')
+               ,#{note}
+               )
+	</insert>	
+			
+	
+</mapper>

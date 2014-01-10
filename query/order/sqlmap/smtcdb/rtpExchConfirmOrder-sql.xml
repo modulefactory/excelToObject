@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.returnexchange.RtpExchConfirmOrderSqlMapRepository">
+
+	<!--
+	   	내용 : 반품/교환 주문 내역 조회
+	   	작성자 : 박노정
+	   	작성일 : 2014. 1. 7
+	   
+	   	#{ordNo} = 280068296
+	   	#{custNo} = 10753739
+	   	#{ordItemNo} = 1
+	-->
+		
+	<resultMap id="returnDetail" type="iceberg.capi.order.model.returnexchange.RtpExchPrd">
+		<result property="ordItemNo"           column="ORD_ITEM_NO"           />
+		<result property="prdCd"               column="PRD_CD"                />
+		<result property="exposPrdNm"          column="EXPOS_PRD_NM"          />
+		<result property="ordQty"              column="ORD_QTY"               />
+		<result property="payPrc"              column="PAY_PRC"               />
+		<result property="rcvrNm"              column="RCVR_NM"               />
+		<result property="baseAddr"            column="BASE_ADDR"             />
+		<result property="dtlAddr"             column="DTL_ADDR"              />
+		<result property="dlvpTelno"           column="DLVP_TELNO"            />
+		<result property="dlvPickMthodCd"      column="DLV_PICK_MTHOD_CD"     />
+		<result property="cpnTypCd"            column="CPN_TYP_CD"            />
+		<result property="dlvPickMsgCntnt"     column="DLV_PICK_MSG_CNTNT"    />
+		<result property="orgOrdNo"            column="ORG_ORD_NO"            />
+		<result property="rsnDtlExplnCntnt"    column="RSN_DTL_EXPLN_CNTNT"   />
+		<result property="cpnNo"               column="CPN_NO"                />
+		<result property="gshsDcRtamt"         column="GSHS_DC_RTAMT"         />
+		<result property="dlvpCelphnTelno"     column="DLVP_CELPHN_TELNO"     />
+		<result property="exchRtpcOrdItemId"   column="EXCH_RTPC_ORD_ITEM_ID" />
+		<result property="ordNo"               column="ORD_NO"                />
+		<result property="rfnTypCd"            column="RFN_TYP_CD"            />
+		<result property="arfnTimeCd"          column="ARFN_TIME_CD"          />
+		<result property="apntDlvsPickYn"      column="APNT_DLVS_PICK_YN"     />
+		<result property="rsnLrgClsCd"         column="RSN_LRG_CLS_CD"        />
+		<result property="rsnMidClsCd"         column="RSN_MID_CLS_CD"        />
+		<result property="lineTypCd"           column="LINE_TYP_CD"           />
+		<result property="befOrdItemId"        column="BEF_ORD_ITEM_ID"       />
+		<result property="optPrdTypCd"         column="OPT_PRD_TYP_CD"        />
+		<result property="ecAttrSeq"           column="EC_ATTR_SEQ"           />
+		<result property="attrPrdCd"           column="ATTR_PRD_CD"           />
+		<result property="dittoFlg"            column="DITTO_FLG"             />
+		<result property="frmlesPrdTypCd"      column="FRMLES_PRD_TYP_CD"     />
+		<result property="charCpnRcvrTelno"    column="CHAR_CPN_RCVR_TELNO"   />
+		<result property="payOrdNo"            column="PAY_ORD_NO"            />
+		<result property="ordItemId"           column="ORD_ITEM_ID"           />
+		<result property="attrPrdNm"           column="ATTR_PRD_NM"           />
+	</resultMap>
+	<select id="findReturnDetailList" parameterType="criteria" resultMap="returnDetail">
+		 SELECT OID.ORD_ITEM_NO
+		      , NVL(PPM.PRD_CD, '')                     AS PRD_CD
+		      , OID.EXPOS_PRD_NM
+		      , OID.ORD_QTY
+		      , NVL(OID.LAST_UPRC, 0)                   AS PAY_PRC
+		      , CCAD.RCVR_NM
+		      , CCAD.BASE_ADDR
+		      , CCAD.DTL_ADDR
+		      , CCAD.DLVP_TELNO
+		      , OID.DLV_PICK_MTHOD_CD
+		      , CCM.CPN_TYP_CD
+		      , OID.DLV_PICK_MSG_CNTNT
+		      , OOM.ORG_ORD_NO
+		      , OID.RSN_DTL_EXPLN_CNTNT
+		      , CCM.CPN_NO
+		      , CCM.GSHS_DC_RTAMT
+		      , CCAD.DLVP_CELPHN_TELNO
+		      , OID.EXCH_RTPC_ORD_ITEM_ID
+		      , OOM.ORD_NO
+		      , OID.RFN_TYP_CD
+		      , OID.ARFN_TIME_CD
+		      , OID.APNT_DLVS_PICK_YN
+		      , NVL(OID.RSN_LRG_CLS_CD, '')             AS RSN_LRG_CLS_CD
+		      , NVL(OID.RSN_MID_CLS_CD, '')             AS RSN_MID_CLS_CD
+		      , OID.LINE_TYP_CD
+		      , OID.BEF_ORD_ITEM_ID
+		      , TRIM(NVL(OID.OPT_PRD_TYP_CD, '0'))      AS OPT_PRD_TYP_CD
+		      , TRIM(NVL(OID.EC_ATTR_SEQ, ''))          AS EC_ATTR_SEQ
+		      , OID.ATTR_PRD_CD
+		      , NVL(PPM.DITTO_YN, 'N')                  AS DITTO_FLG
+		      , NVL(PPM.FRMLES_PRD_TYP_CD, 'N')         AS FRMLES_PRD_TYP_CD
+		      , OID.CHAR_CPN_RCVR_TELNO
+		      , OOM.PAY_ORD_NO
+		      , OID.ORD_ITEM_ID
+		      , NVL(OID.ATTR_PRD_NM, '')                AS ATTR_PRD_NM
+		   FROM ORD_ORD_M OOM
+		      , ORD_ITEM_D OID
+		      , PRD_PRD_M PPM
+		      , CST_CUST_ADDR_D CCAD
+		      , CPN_CPN_M CCM
+		      , ORD_ITEM_PRC_D PRC_A06
+		  WHERE OOM.ORD_NO              = #{_c.ordNo[0].value}
+		    AND OOM.CUST_NO             = #{_c.custNo[0].value}
+		    AND OOM.ORD_NO              = OID.ORD_NO
+		    AND OID.LINE_TYP_CD       IN ('00', '01', '02', '07')
+		    <if test="_c.orderType[0] != null and _c.orderType[0].value == 'R'">
+		    AND RTRIM(OID.ST_CD)         IN ('00', '01', '02', '03', '04', '023', '025', '027')
+		    </if>
+		    AND OID.PRD_CD              = PPM.PRD_CD(+)
+		    AND OID.DLVP_ADDR_NO        = CCAD.ADDR_CNTC_NO
+		    AND OID.ORD_ITEM_ID         = PRC_A06.ORD_ITEM_ID(+)
+		    AND PRC_A06.ADJST_DTL_CD(+) = 'A06'     /*쿠폰할인*/
+		    AND PRC_A06.CPN_NO          = CCM.CPN_NO(+)
+		  ORDER BY OID.LINE_TYP_CD, OID.ST_CD
+	</select>
+	
+	<!--
+	   	내용 : 반품상품 재결제 내역 조회
+	   	작성자 : 박노정
+	   	작성일 : 2014. 1. 7
+	   
+	   	#{payOrdNo} = 1622400
+	-->
+	<resultMap id="rePayment" type="iceberg.capi.order.model.returnexchange.Payment">
+		<result property="payAmt"              column="PAY_AMT"                  />
+		<result property="rfnPsblAmt"          column="RFN_PSBL_AMT"             />
+		<result property="dpoPayTotAmt"        column="DPO_PAY_TOT_AMT"          />
+		<result property="dpoRfnPsblPayTotAmt" column="DPO_RFN_PSBL_PAY_TOT_AMT" />
+		<result property="cardPayTotAmt"       column="CARD_PAY_TOT_AMT"         />
+		<result property="cardAprvFailTotAmt"  column="CARD_APRV_FAIL_TOT_AMT"   />
+		<result property="pntPayTotAmt"        column="PNT_PAY_TOT_AMT"          />
+		<result property="gsgftPayTotAmt"      column="GSGFT_PAY_TOT_AMT"        />
+		<result property="ktwdpsPayTotAmt"     column="KTWDPS_PAY_TOT_AMT"       />
+		<result property="crditPayTotAmt"      column="CRDIT_PAY_TOT_AMT"        />
+		<result property="assetTotAmt"         column="ASSET_TOT_AMT"            />
+		<result property="tmprcvPayTotAmt"     column="TMPRCV_PAY_TOT_AMT"       />
+		<result property="accmPayTotAmt"       column="ACCM_PAY_TOT_AMT"         />
+		<result property="gftcertPayTotAmt"    column="GFTCERT_PAY_TOT_AMT"      />
+		<result property="ecashPayTotAmt"      column="ECASH_PAY_TOT_AMT"        />
+	</resultMap>
+	<select id="findRePayment" parameterType="long" resultMap="rePayment">
+		 SELECT SUM(PAY_AMT) AS PAY_AMT
+		      , SUM(RFN_PSBL_AMT)  AS RFN_PSBL_AMT
+		      , SUM(
+		            CASE
+		              WHEN PAY_TYP_CD = 'Bank Account'
+		              THEN
+		                CASE
+		                  WHEN ACCNTRCV_REPAY_ID IS NULL AND PAY_ST_CD IN ('B03', 'B02')
+		                  THEN PAY_AMT
+		                  ELSE RFN_PSBL_AMT
+		                END
+		              ELSE 0
+		            END) AS DPO_PAY_TOT_AMT
+		      , SUM(
+		            CASE
+		              WHEN PAY_TYP_CD = 'Bank Account'
+		              THEN RFN_PSBL_AMT
+		              ELSE 0
+		            END) AS DPO_RFN_PSBL_PAY_TOT_AMT
+		      , SUM(
+		            CASE
+		              WHEN PAY_TYP_CD = 'Credit Card'
+		              THEN RFN_PSBL_AMT
+		              ELSE 0
+		            END) AS CARD_PAY_TOT_AMT
+		      , SUM(
+		            CASE
+		              WHEN PAY_TYP_CD = 'Credit Card'
+		              THEN
+		                CASE
+		                  WHEN NVL(CNL_ST_CD, PAY_ST_CD) = 'C01' AND ACCNTRCV_REPAY_ID IS NULL
+		                  THEN 0
+		                  ELSE 0
+		                END
+		              ELSE 0
+		            END) AS CARD_APRV_FAIL_TOT_AMT
+		      , SUM(
+		            CASE
+		              WHEN PAY_TYP_CD = 'Point'
+		              THEN
+		                CASE
+		                  WHEN NVL(CNL_ST_CD, PAY_ST_CD) = 'P01' AND ACCNTRCV_REPAY_ID IS NULL
+		                  THEN PAY_AMT
+		                  ELSE RFN_PSBL_AMT
+		                END
+		              ELSE 0
+		            END) AS PNT_PAY_TOT_AMT
+		      , SUM(
+		            CASE
+		              WHEN PAY_TYP_CD = 'GS Ticket'
+		              THEN
+		                CASE
+		                  WHEN NVL(CNL_ST_CD, PAY_ST_CD) = 'GS01' AND ACCNTRCV_REPAY_ID IS NULL
+		                  THEN PAY_AMT
+		                  ELSE RFN_PSBL_AMT
+		                END
+		              ELSE 0
+		            END) AS GSGFT_PAY_TOT_AMT
+		      , SUM(
+		            CASE
+		              WHEN PAY_TYP_CD = 'Prepaid Card'
+		              THEN RFN_PSBL_AMT
+		              ELSE 0
+		            END) AS KTWDPS_PAY_TOT_AMT
+		      , SUM(
+		            CASE
+		              WHEN PAY_TYP_CD = 'Account Receivable' AND PAY_ST_CD IN ('A01', 'A11')
+		              THEN PAY_AMT
+		              ELSE 0
+		            END) AS CRDIT_PAY_TOT_AMT
+		      , SUM(
+		            CASE
+		              WHEN PAY_TYP_CD IN ('TMPRCV', 'ACCM', 'GSNPNT', 'GFTCERT', 'ECASH')
+		              THEN RFN_PSBL_AMT
+		              ELSE 0
+		            END) AS ASSET_TOT_AMT
+		      , SUM(
+		            CASE
+		              WHEN PAY_TYP_CD = 'TMPRCV'
+		              THEN RFN_PSBL_AMT
+		              ELSE 0
+		            END) AS TMPRCV_PAY_TOT_AMT
+		      , SUM(
+		            CASE
+		              WHEN PAY_TYP_CD IN ('ACCM', 'GSNPNT')
+		              THEN RFN_PSBL_AMT
+		              ELSE 0
+		            END) AS ACCM_PAY_TOT_AMT
+		      , SUM(
+		            CASE
+		              WHEN PAY_TYP_CD = 'GFTCERT'
+		              THEN RFN_PSBL_AMT
+		              ELSE 0
+		            END) AS GFTCERT_PAY_TOT_AMT
+		      , SUM(
+		            CASE
+		              WHEN PAY_TYP_CD = 'ECASH'
+		              THEN RFN_PSBL_AMT
+		              ELSE 0
+		            END) AS ECASH_PAY_TOT_AMT
+		   FROM
+		        (
+		         SELECT POPD.PAY_TYP_CD     AS PAY_TYP_CD
+		              , NVL(POPD.PAY_AMT, 0)      AS PAY_AMT
+		              , NVL(POPD.RFN_PSBL_AMT, 0) AS RFN_PSBL_AMT
+		              , POPD.PAY_ST_CD            AS PAY_ST_CD
+		              , POPD.CNL_ST_CD            AS CNL_ST_CD
+		              , POPD.META_ATTR28          AS ACCNTRCV_REPAY_ID
+		           FROM PAY_ORD_PAYMT_D POPD
+		          WHERE POPD.PAY_ORD_NO = #{payOrdNo}
+		      UNION ALL
+		         SELECT
+		                CAM.ASSET_TYP_CD          AS PAY_TYP_CD
+		              , NVL(CATD.TXN_AMT, 0)      AS PAY_AMT
+		              , NVL(CATD.RET_PSBL_AMT, 0) AS RFN_PSBL_AMT
+		              , CATD.TXN_TYP_CD           AS PAY_ST_CD
+		              , CATD.TXN_TYP_CD           AS CNL_ST_CD
+		              , NULL                      AS ACCNTRCV_REPAY_ID
+		           FROM CST_ASSET_TXN_D CATD, CST_ASSET_M CAM
+		          WHERE CAM.ASSET_NO     = CATD.ASSET_NO
+		            AND CATD.PAY_ORD_NO  = #{payOrdNo}
+		            AND CATD.TXN_TYP_CD IN ('R08', 'C01', 'T01', 'R02', 'C02', 'T02', 'C06', 'R03', 'E70', 'E50', 'E90', 'P08', 'P02', 'P03')
+		            AND CAM.ASSET_TYP_CD IN ('TMPRCV', 'ACCM', 'GSNPNT', 'GFTCERT')
+		        )
+	</select>
+	
+	<!--
+	   	내용 : 반품 결제시 카드 정보
+	   	작성자 : 박노정
+	   	작성일 : 2014. 1. 7
+	   
+	   	#{ordNo} = 500000039
+	-->
+	<resultMap id="cardInfo" type="iceberg.capi.order.model.returnexchange.CardInfo">
+		<result property="cardNm"        column="CARD_NM"    />
+		<result property="cardNo"        column="CARD_NO"    />
+		<result property="payAmt"        column="PAY_AMT"    />
+		<result property="apprvNo"       column="APPRV_NO"   />
+		<result property="noIntFlg"      column="NO_INT_FLG" />
+		<result property="insmMm"        column="INSM_MM"    />
+	</resultMap>
+	<select id="findCardInfo" parameterType="long" resultMap="cardInfo">
+		 SELECT NVL(POPD.META_ATTR19, '')   AS CARD_NM
+		      , NVL(POPD.CARD_NO_MSK, '')   AS CARD_NO
+		      , NVL(POPD.PAY_AMT, 0)        AS PAY_AMT
+		      , NVL(POPD.META_ATTR37, '')   AS APPRV_NO
+		      , NVL(POPD.META_ATTR31, '')   AS NO_INT_FLG
+		      , NVL(POPD.INSM_MM, '')       AS INSM_MM
+		   FROM PAY_ORD_PAYMT_D POPD
+		      , ORD_ORD_M OOM
+		  WHERE OOM.ORD_NO        = #{ordNo}
+		    AND OOM.ORD_NO        = POPD.ORD_NO(+)
+		    AND POPD.PAY_TYP_CD   LIKE '%Credit Card'
+		    AND POPD.PAY_ST_CD    NOT IN ('C00', 'C01', 'C11')
+		    AND OOM.PAY_ORD_NO    = POPD.PAY_ORD_NO
+	</select>
+	
+	<!--
+	   	내용 : 상품 환불 금액 정보
+	   	작성자 : 박노정
+	   	작성일 : 2014. 1. 7
+	   
+	   	#{_c.ordNo[0].value} = 500000028
+	   	#{_c.custNo[0].value} = 5341218
+	-->
+	<resultMap id="returnPayment" type="iceberg.capi.order.model.returnexchange.ReturnPayment">
+		<result property="noBkbPayCnlAmtTot"   column="NO_BKB_PAY_CNL_AMT_TOT" />
+		<result property="tmprcvCnlAmtTot"     column="TMPRCV_CNL_AMT_TOT"     />
+		<result property="accmCnlAmtTot"       column="ACCM_CNL_AMT_TOT"       />
+		<result property="gsgftCnlAmtTot"      column="GSGFT_CNL_AMT_TOT"      />
+		<result property="cardCnlAmtTot"       column="CARD_CNL_AMT_TOT"       />
+		<result property="pntCnlAmtTot"        column="PNT_CNL_AMT_TOT"        />
+		<result property="bpayCardCnlAmtTot"   column="BPAY_CARD_CNL_AMT_TOT"  />
+		<result property="repPayMeanCd"        column="REP_PAY_MEAN_CD"        />
+	</resultMap>
+	<select id="findReturnPayment" parameterType="criteria" resultMap="returnPayment">
+		 SELECT NO_BKB_PAY_CNL_AMT_TOT
+		      , TMPRCV_CNL_AMT_TOT
+		      , ACCM_CNL_AMT_TOT
+		      , GSGFT_CNL_AMT_TOT
+		      , CARD_CNL_AMT_TOT
+		      , PNT_CNL_AMT_TOT
+		      , BPAY_CARD_CNL_AMT_TOT
+		      , REP_PAY_MEAN_CD
+		   FROM ORD_ORD_M
+		  WHERE ORD_NO  = #{_c.ordNo[0].value}
+		    AND CUST_NO = #{_c.custNo[0].value}
+	</select>
+	
+	<!--
+	   	내용 : 상품 환불 금액 정보
+	   	작성자 : 박노정
+	   	작성일 : 2014. 1. 7
+	   
+	   	#{ordNo} = 500000586
+	-->
+	<resultMap id="bankInfo" type="iceberg.capi.order.model.returnexchange.BankInfo">
+		<result property="bankName"             column="CD_VAL"            />
+		<result property="bankNum"              column="RFN_ACCNT_NO_ECP"  />
+		<result property="bankDepositor"        column="ACCHDR_NM"         />
+	</resultMap>
+	<select id="findBankInfo" parameterType="long" resultMap="bankInfo">
+		 SELECT CCC.CD_VAL
+		      , PRPD.RFN_ACCNT_NO_ECP
+		      , PRPD.ACCHDR_NM
+		   FROM PAY_RFN_PROC_D PRPD
+		      , CMM_CMM_C CCC
+		  WHERE PRPD.ORD_NO    = #{ordNo}
+		    AND PRPD.BANK_CD   = CCC.CMM_CD
+		    AND CCC.CMM_GRP_CD = 'PAY001'
+	</select>
+	
+	<!--
+	   	내용 : 배송비 총 금액
+	   	작성자 : 박노정
+	   	작성일 : 2014. 1. 7
+	   
+	   	#{_c.ordNo[0].value} = 1169582
+	   	#{_c.custNo[0].value} = 1255082
+	-->
+	<select id="findDlvcTotAmt" parameterType="criteria" resultType="Long">
+		 SELECT SUM((FLOOR(((NVL(OID.STD_UPRC, 0) - (NVL(OIPD_A01.SUP_GIV_AMT, 0) + NVL(OIPD_A01.GSHS_GIV_AMT, 0)) )) / 10) * 10 +
+		            NVL(OIPD_A14.GSHS_GIV_AMT, 0)) * OID.ORD_QTY) AS ITEM_PRICE
+		   FROM ORD_ORD_M OOM
+		      , ORD_ITEM_D OID
+		      , ORD_ITEM_PRC_D OIPD_A01
+		      , ORD_ITEM_PRC_D OIPD_A14
+		  WHERE OOM.ORD_NO                = #{_c.ordNo[0].value}
+		    AND OOM.CUST_NO               = #{_c.custNo[0].value}
+		    AND OOM.ORD_NO                = OID.ORD_NO
+		    AND OID.ORD_ITEM_ID           = OIPD_A01.ORD_ITEM_ID(+)
+		    AND OID.ORD_ITEM_ID           = OIPD_A14.ORD_ITEM_ID(+)
+		    AND OIPD_A01.ADJST_DTL_CD(+)  = 'A01'
+		    AND OIPD_A14.ADJST_DTL_CD(+)  = 'A14'
+	</select>
+	
+	<!--
+	   	내용 : 상품 환불 금액 정보
+	   	작성자 : 박노정
+	   	작성일 : 2014. 1. 7
+	   
+	   	#{_c.ordNo[0].value} = 296891251
+	   	#{_c.payAmt[0].value} = 0
+	-->
+	<resultMap id="setOffInfo" type="iceberg.capi.order.model.returnexchange.SetOffInfo">
+		<result property="assetTypCd"       column="ASSET_TYP_CD"  />
+		<result property="amt"              column="AMT"           />
+	</resultMap>
+	<select id="findSetOffInfo" parameterType="criteria" resultMap="setOffInfo">
+		 SELECT B.ASSET_TYP_CD
+		      , TRUNC(A.TXN_AMT) AS AMT
+		   FROM CST_ASSET_TXN_D A
+		      , CST_ASSET_M B
+		  WHERE B.ASSET_NO   = A.ASSET_NO
+		    AND A.ORD_NO     = #{_c.ordNo[0].value}
+		    AND A.NOTE_CNTNT = '배송비 상계처리'
+		UNION ALL
+		 SELECT 'BANK' AS ASSET_TYP_CD
+		      , TRUNC(PAY_AMT) AS AMT
+		   FROM PAY_ORD_PAYMT_D
+		  WHERE PAY_TYP_CD       = 'Refund'
+		    AND ORD_NO           = #{_c.ordNo[0].value}
+		    AND RTRIM(PAY_ST_CD) = 'R04'
+		    AND TRUNC(PAY_AMT)   = #{_c.payAmt[0].value}
+	</select>
+	
+	<resultMap id="dlvcAmtInfo1" type="iceberg.capi.order.model.returnexchange.DlvcAmtInfo">
+		<result property="creditSum"           column="CREDIT_SUM"  />
+		<result property="bankSum"             column="BANK_SUM"    />
+		<result property="phoneSum"            column="PHONE_SUM"   />
+	</resultMap>
+	<select id="findCardBankPhnDlvcAmt" parameterType="criteria" resultMap="dlvcAmtInfo1">
+		SELECT NVL(SUM(DECODE(POPD.PAY_TYP_CD, 'Credit Card', NVL(POPD.RFN_PSBL_AMT,0),0)),0) AS CREDIT_SUM
+		     , NVL(SUM(DECODE(POPD.PAY_TYP_CD, 'Bank Account',
+					           DECODE(POPD.META_ATTR28, NULL,
+						           DECODE(POPD.PAY_ST_CD, 'B03', NVL(POPD.PAY_AMT,0),
+						                               'B02', NVL(POPD.PAY_AMT,0), NVL(POPD.RFN_PSBL_AMT,0)),
+		                      NVL(POPD.RFN_PSBL_AMT,0))
+		                   ,0)
+		               ),0) AS BANK_SUM
+		     , NVL(SUM(DECODE(POPD.META_ATTR19, 'PA', NVL(POPD.RFN_PSBL_AMT,0), 0)),0) AS PHONE_SUM
+		  FROM PAY_ORD_PAYMT_D POPD
+		     , ORD_ORD_M OOM
+		 WHERE OOM.ORD_NO         = #{_c.ordNo[0].value}
+		   AND RTRIM(OOM.CUST_NO) = #{_c.custNo[0].value}
+		   AND OOM.PAY_ORD_NO     = POPD.PAY_ORD_NO(+)
+	</select>
+	
+	<resultMap id="dlvcAmtInfo2" type="iceberg.capi.order.model.returnexchange.DlvcAmtInfo">
+		<result property="assetSum"            column="ASSET_SUM"    />
+		<result property="receiptSum"          column="RECEIPT_SUM"  />
+		<result property="ticketSum"           column="TICKET_SUM"   />
+		<result property="echSum"              column="ECH_SUM"      />
+	</resultMap>
+	<select id="findAssetDlvcAmt" parameterType="criteria" resultMap="dlvcAmtInfo2">
+		SELECT NVL(SUM(DECODE(CATD.TXN_TYP_CD, 'R08', CATD.RET_PSBL_AMT, 0)),0) AS ASSET_SUM
+		     , NVL(SUM(DECODE(CATD.TXN_TYP_CD, 'C01', CATD.RET_PSBL_AMT, 0)),0) AS RECEIPT_SUM
+		     , NVL(SUM(DECODE(CATD.TXN_TYP_CD, 'T01', CATD.RET_PSBL_AMT, 0)),0) AS TICKET_SUM
+		     , NVL(SUM(DECODE(CATD.TXN_TYP_CD, 'E70', CATD.RET_PSBL_AMT, 0)),0) AS ECH_SUM
+		  FROM ORD_ORD_M OOM
+		     , CST_ASSET_TXN_D CATD
+		 WHERE OOM.ORD_NO             = #{_c.ordNo[0].value}
+		   AND RTRIM(OOM.CUST_NO)     = #{_c.custNo[0].value}
+		   AND OOM.PAY_ORD_NO         = CATD.PAY_ORD_NO(+)
+		   AND RTRIM(CATD.TXN_TYP_CD) IN ('R08', 'C01', 'T01', 'E70')
+	</select>
+	
+	<resultMap id="dlvcAmtInfo3" type="iceberg.capi.order.model.returnexchange.DlvcAmtInfo">
+		<result property="transAmt"       column="TRANS_AMT"  />
+	</resultMap>
+	<select id="findKTWorldDlvcAmt" parameterType="criteria" resultMap="dlvcAmtInfo3">
+		SELECT NVL(SUM(POPD.PAY_AMT), 0) AS TRANS_AMT
+		  FROM PAY_ORD_PAYMT_D POPD
+		     , ORD_ORD_M OOM
+		 WHERE OOM.ORD_NO          = #{_c.ordNo[0].value}
+		   AND RTRIM(OOM.CUST_NO)  = #{_c.custNo[0].value}
+		   AND POPD.PAY_TYP_CD     = 'Prepaid Card'
+		   AND OOM.ORD_NO          = POPD.ORD_NO(+)
+	</select>
+	
+	<resultMap id="dlvcAmtInfo4" type="iceberg.capi.order.model.returnexchange.DlvcAmtInfo">
+		<result property="pointAmt"       column="POINT_AMT"  />
+	</resultMap>
+	<select id="findPointDlvcAmt" parameterType="criteria" resultMap="dlvcAmtInfo4">
+		SELECT NVL(SUM(POPD.PAY_AMT), 0) AS POINT_AMT
+		  FROM PAY_ORD_PAYMT_D POPD
+		     , ORD_ORD_M OOM
+		 WHERE OOM.ORD_NO         = #{_c.ordNo[0].value}
+		   AND RTRIM(OOM.CUST_NO) = #{_c.custNo[0].value}
+		   AND POPD.PAY_TYP_CD    = 'Point'
+		   AND OOM.ORD_NO         = POPD.ORD_NO(+)
+	</select>
+	
+	<resultMap id="dlvcAmtInfo5" type="iceberg.capi.order.model.returnexchange.DlvcAmtInfo">
+		<result property="comCd"       column="COM_CD"     />
+		<result property="celphnNo"    column="CELPHN_NO"  />
+	</resultMap>
+	<select id="findComCdCelPhnNo" parameterType="criteria" resultMap="dlvcAmtInfo5">
+		SELECT POPD.META_ATTR8  AS COM_CD
+		     , POPD.META_ATTR34 AS CELPHN_NO
+		  FROM PAY_ORD_PAYMT_D POPD
+		     , ORD_ORD_M OOM
+		 WHERE OOM.ORD_NO          = #{_c.ordNo[0].value}
+		   AND RTRIM(OOM.CUST_NO)  = #{_c.custNo[0].value}
+		   AND POPD.PAY_TYP_CD     = 'Point'
+		   AND POPD.META_ATTR19    = 'PA'
+		   AND OOM.ORD_NO          = POPD.ORD_NO(+)
+	</select>
+	
+</mapper>

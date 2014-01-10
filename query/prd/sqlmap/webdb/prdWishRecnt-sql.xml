@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prd.PrdWishRecntSqlMapRepository">
+
+<resultMap type="iceberg.capi.product.model.prd.add.PrdWishRecnt" id="wishRecntPrdMap">
+		<result property = "prdCd"			column = "PRD_CD"  />                	   <!--	상품코드	-->	
+		<result property = "prdNm"			column = "PRD_NM"  />                	   <!--	상품명	-->	
+		<result property = "exposPmoNm"		column = "EXPOS_PMO_NM"  />                <!--	노출프로모션명	-->	
+		<result property = "exposPrdNm"		column = "EXPOS_PRD_NM"  />                <!--	노출상품명	--> 
+		<result property = "exposPrSntncNm" column = "EXPOS_PR_SNTNC_NM"  />           <!--	노출홍보문구명	-->
+		<result property = "brandNm" 		column = "BRAND_NM"  />
+		<result property = "salePrc" 		column = "SALE_PRC"  />					   <!--	기분좋은 가격	-->
+		<result property = "lowPrc" 		column = "LOW_PRC"  />
+		<result property = "noIntMm" 		column = "NO_INT_MM"  />
+		<result property = "accType" 		column = "ACC_TYPE"  />
+		<result property = "supCd"			column = "SUP_CD"  />                      <!--	협력사코드	-->
+		<result property = "mnfcCoNm"		column = "MNFC_CO_NM"  />                  <!--	제조사명	-->
+		<result property = "wonCd"			column = "WON_CD"  />      
+		<result property = "ordPrdTypCd" 	column = "ORD_PRD_TYP_CD"  />              <!--	주문상품유형코드	-->
+		<result property = "tempoutFlg"		column = "TEMPOUT_FLG"  />                 <!--	일시품절여부	-->
+		<result property = "gsnpntNoGivFlg"	column = "GSNPNT_NO_GIV_FLG"  />           <!--	GS엔포인트미부여여부	-->	
+		<result property = "adultCertFlg" 	column = "ADULT_CERT_FLG"  />              <!--	성인인증여부	-->		
+		<result property = "zrwonSaleFlg"	column = "ZRWON_SALE_FLG"  />              <!--	0원판매여부	-->	
+		<result property = "dittoFlg"		column = "DITTO_FLG"  />                   <!--	DITTO여부	-->	
+		<result property = "thedaySalePrc"	column = "THEDAY_SALE_PRC"  />			   <!--	당일 판매 금액	-->      
+		<result property = "prdLrgClsCd"   	column = "PRD_LRG_CLS_CD"  />              <!--	상품대분류코드	-->            
+		<result property = "prdMidClsCd"    column = "PRD_MID_CLS_CD"  />              <!--	상품중분류코드	-->            
+		<result property = "prdSmlClsCd"    column = "PRD_SML_CLS_CD"  />              <!--	상품소분류코드	-->            
+		<result property = "prdDtlClsCd"    column = "PRD_DTL_CLS_CD"  />              <!--	상품세분류코드	--> 
+		<result property = "prcReductDtm"   column = "PRC_REDUCT_DTM" jdbcType="DATE" />		   <!--	가격 인하 일시	--> 
+		<result property = "prcDcDtm"    	column = "PRC_DC_DTM" jdbcType="DATE" />			   <!--	가격 할인 일시	--> 
+		<result property = "regDtm"   		column = "REG_DTM" jdbcType="DATE" />	   <!--	등록일시	--> 
+		<result property = "frmlesPrdTypCd"	column = "FRMLES_PRD_TYP_CD"  />           <!--	무형상품유형코드	-->	
+		<result property = "bundlPrdGbnCd"	column = "BUNDL_PRD_GBN_CD"  />            <!--	묶음상품구분코드	-->	
+		<result property = "operMdId"		column = "OPER_MD_ID"  />                  <!--	운영MDID	-->	
+		<result property = "prdGbnCd"       column = "PRD_GBN_CD"  />                  <!--	상품구분코드	-->	
+		<result property = "forgnPrdNormPrc" column = "FORGN_PRD_NORM_PRC"  />		   <!-- 해외상품 정상 가격 -->
+		<result property = "comprPrcmrkFlg" column = "COMPR_PRC_MRK_FLG"  />		   <!-- 비교가격표시여부 -->
+		<result property = "prcReductBefLowPrc" column = "PRC_REDUCT_BEF_LOW_PRC"  />		   <!-- 가격인하전최저가격 -->
+		<result property = "prcReductDtm" column = "PRC_REDUCT_DTM" jdbcType="DATE" />		   <!-- 가격인하일시 -->
+
+
+	</resultMap>
+	
+	<select id="getWishPrdList" parameterType="criteria" resultMap="wishRecntPrdMap">
+	
+	<!-- 
+	DBMS : WEBDB
+	설명 : 찜 상품 조회
+	_c.cmmBaseChanl[0].value =  "P";
+	_c.cmmCurrChanl[0].value = "B";
+	_c.prdCd[0].value = (10926211,11407599, 1602000)
+	-->
+  SELECT /*+ ORDERED INDEX(PPM PK_PRD_PRD_M) */
+         PNCH.EXPOS_PMO_NM          AS EXPOS_PMO_NM            /*노출 프로모션명*/
+        ,PNCH.EXPOS_PRD_NM          AS EXPOS_PRD_NM            /*노출 상품명*/
+        ,PNCH.EXPOS_PR_SNTNC_NM     AS EXPOS_PR_SNTNC_NM       /*노출홍보문구명*/
+        ,(SELECT BRAND_NM FROM PRD_BRAND_M WHERE BRAND_CD = PPM.BRAND_CD) AS BRAND_NM  /*브랜드명*/
+        ,PPH.SALE_PRC               AS SALE_PRC                /*판매가격*/
+        ,(CASE WHEN NVL(PPM.FLGD_PRC_EXPOS_YN, 'Y') = 'Y' THEN (PSED.FLGD_PRC) ELSE 0 END) AS LOW_PRC
+        ,DECODE(RTRIM(NVL(PBCH.NO_INT_YN, 'N')), 'Y', NVL(PBCH.NO_INT_MM_CNT, 0), 0)       AS NO_INT_MM
+        ,PG_PMO_PRD_PMO.FN_PRD_ACCM(PPM.PRD_CD,'P', SYSDATE, PPH.SALE_PRC, 'N')         AS ACC_TYPE
+        ,PPM.SUP_CD                 AS SUP_CD                  /*협력사코드*/
+        ,PPM.MNFC_CO_NM             AS MNFC_CO_NM              /*제조사명*/
+        ,'KRW'                      AS WON_CD                  /*한화코드*/
+        ,DECODE(SIGN(NVL(PPM.SALE_END_DTM, TO_DATE('9999','YYYY')) - SYSDATE), -1, '05', PPM.ORD_PRD_TYP_CD) AS ORD_PRD_TYP_CD  /*주문상품유형코드*/
+        ,NVL(PPM.TEMPOUT_YN, 'N')      AS TEMPOUT_FLG          /*일시품절여부*/
+        ,PPM.GSNPNT_NO_GIV_YN          AS GSNPNT_NO_GIV_FLG    /*GS엔포인트미부여여부*/
+        ,NVL(PPM.ADULT_CERT_YN,'N')    AS ADULT_CERT_FLG       /*성인인증여부*/
+        ,NVL(PPM.ZRWON_SALE_YN, 'N')   AS ZRWON_SALE_FLG       /*0원판매여부*/
+        ,PPM.DITTO_YN            AS DITTO_FLG                  /*DITTO여부*/
+        ,NVL(PG_PMO_PRD_PMO.FN_PRD_MD_DC_PRC(PPM.PRD_CD, 'P', SYSDATE),0) AS THEDAY_SALE_PRC /*당일 판매 금액*/
+        ,SUBSTR(PPM.PRD_CLS_CD, 0, 3)  AS PRD_LRG_CLS_CD       /*상품분류코드(대분류)*/
+        ,SUBSTR(PPM.PRD_CLS_CD, 4, 2)  AS PRD_MID_CLS_CD       /*상품분류코드(중분류)*/
+        ,SUBSTR(PPM.PRD_CLS_CD, 6, 2)  AS PRD_SML_CLS_CD       /*상품분류코드(소분류)*/
+        ,SUBSTR(PPM.PRD_CLS_CD, 8, 2)  AS PRD_DTL_CLS_CD       /*상품분류코드(세분류)*/              
+        ,PSED.PRC_REDUCT_DTM           AS PRC_REDUCT_DTM       /*가격 인하 일시*/
+        ,PSED.PRC_DC_DTM               AS PRC_DC_DTM           /*가격 할인 일시*/
+        ,PPM.REG_DTM                   AS REG_DTM              /*등록일시*/
+        ,PPM.FRMLES_PRD_TYP_CD         AS FRMLES_PRD_TYP_CD    /*무형상품유형코드*/
+        ,NVL(PPM.BUNDL_PRD_GBN_CD,'')  AS BUNDL_PRD_GBN_CD     /*묶음상품구분코드(10-Plein, 20-셋트상품(신규)*/
+        ,PPM.OPER_MD_ID                AS OPER_MD_ID           /*운영MD_ID*/
+        ,PPM.PRD_GBN_CD                AS PRD_GBN_CD           /*상품구분코드*/
+        ,PPM.FORGN_PRD_NORM_PRC        AS FORGN_PRD_NORM_PRC   /*해외상품 정상가격*/
+    FROM PRD_PRD_M        PPM 
+        ,PMO_BATCH_D      PBCH
+        ,PRD_SHOP_EXPOS_D PSED
+        ,PRD_PRC_H        PPH
+        ,PRD_CHANL_D      PCD
+        ,PRD_NM_CHG_H     PNCH
+   WHERE PPM.USE_YN 	= 'Y'
+	 AND PPM.PRD_CD IN 
+	 <foreach collection="_c.prdCd[0].value" item="item" index="index" open="("  separator="," close=")" >
+	     #{item}
+	 </foreach>	   
+     AND PPM.PRD_CD  			= PBCH.PRD_CD(+)
+     AND PPM.PRD_CD  			= PSED.PRD_CD
+     AND PPM.PRD_CD  			= PPH.PRD_CD
+     AND SYSDATE BETWEEN PPH.VALID_STR_DTM AND PPH.VALID_END_DTM
+	 AND PPH.PRD_ATTR_GBN_CD 	=  #{_c.cmmBaseChanl[0].value}	
+     AND PPM.PRD_CD           	= PCD.PRD_CD
+	 AND PCD.CHANL_CD 			= #{_c.cmmCurrChanl[0].value}
+     AND PCD.SALE_PSBL_YN     	= 'Y'
+     AND PPM.PRD_CD           	= PNCH.PRD_CD(+)
+	 AND PNCH.CHANL_CD(+) 		= #{_c.cmmBaseChanl[0].value}
+     AND SYSDATE BETWEEN PNCH.VALID_STR_DTM(+) AND PNCH.VALID_END_DTM(+)
+	
+	</select>
+	
+
+	<select id="getRecntPrdList" parameterType="criteria" resultMap="wishRecntPrdMap">
+	
+	<!-- 
+	DBMS : WEBDB
+	설명 : 최근본 상품 조회
+	_c.cmmBaseChanl[0].value =  "P";
+	_c.cmmCurrChanl[0].value = "B";
+	_c.prdCd[0].value = (10926211,11407599, 1602000)
+	-->
+	SELECT /*+ INDEX(PPM)  */
+	       PPM.PRD_CD                      AS PRD_CD                   /*상품코드*/
+	      ,DECODE(PNCH.EXPOS_PMO_NM, NULL, '', PNCH.EXPOS_PMO_NM || ' ' ) 
+	       || DECODE(PNCH.EXPOS_PRD_NM,NULL,'',PNCH.EXPOS_PRD_NM || ' ') 
+	       || NVL(PNCH.EXPOS_PR_SNTNC_NM, '')    AS PRD_NM             /*상품명*/
+	      ,NVL(SUBSTR(PPM.PRD_CLS_CD,1,3),'')    AS PRD_LRG_CLS_CD     /*상품분류코드(대분류)*/
+	      ,NVL(SUBSTR(PPM.PRD_CLS_CD,4,2),'')    AS PRD_MID_CLS_CD     /*상품분류코드(중분류)*/
+	      ,NVL(SUBSTR(PPM.PRD_CLS_CD,6,2),'')    AS PRD_SML_CLS_CD     /*상품분류코드(소분류)*/
+	      ,NVL(SUBSTR(PPM.PRD_CLS_CD,8,3),'')    AS PRD_DTL_CLS_CD     /*상품분류코드(세분류)*/
+	      ,PPM.FRMLES_PRD_TYP_CD                 AS FRMLES_PRD_TYP_CD  /*무형상품유형코드*/
+	      ,TO_NUMBER( DECODE( RTRIM( NVL(PBCH.NO_INT_YN, 'N')), 'Y', NVL(PBCH.NO_INT_MM_CNT, 0), 0) ) AS NO_INT_MM     /*무이자개월수*/
+	      ,DECODE(NVL(PPM.DC_MRK_GBN_CD,'01') ,'10', PPH.SALE_PRC, DECODE(PBCH.DC_RTAMT_CD,
+	                                    'R', PPH.SALE_PRC - FLOOR( PPH.SALE_PRC * PBCH.SUP_DC_RTAMT * 0.001 ) * 10,
+	                                    'A', PPH.SALE_PRC - PBCH.SUP_DC_RTAMT,
+	                                    PPH.SALE_PRC ) )             AS THEDAY_SALE_PRC
+	      ,PSED.FLGD_PRC                  AS LOW_PRC                 /*기분좋은가격*/
+	      ,PPM.COMPR_PRC_MRK_YN           AS COMPR_PRC_MRK_FLG       /*비교가격표시여부*/
+	      ,PPH.SALE_PRC                   AS SALE_PRC                /*판매가격*/
+	      ,PPM.REG_DTM                    AS REG_DTM                 /*등록 일시*/
+	      ,PSED.PRC_DC_DTM                AS PRC_DC_DTM              /*가격할인일시*/
+	      ,PSED.PRC_REDUCT_BEF_LOW_PRC    AS PRC_REDUCT_BEF_LOW_PRC  /*가격인하전최저가격*/
+	      ,PSED.PRC_REDUCT_DTM            AS PRC_REDUCT_DTM          /*가격인하일시*/
+	  	  ,NVL(PPM.DITTO_YN,'N')          AS DITTO_FLG               /*DITTO여부*/
+          ,NVL(PPM.ADULT_CERT_YN,'N')     AS ADULT_CERT_FLG      	/*성인인증여부*/
+	  FROM PRD_PRD_M    PPM                                          /*상품기본 TABLE*/
+	      ,PRD_CHANL_D  PCD                                          /*상품채널정보 TABLE*/
+	      ,PRD_PRC_H    PPH                                          /*상품가격이력 TABLE*/
+	      ,PMO_BATCH_D  PBCH                                         /*상품프로모션배치정보 TABLE*/
+	      ,PRD_NM_CHG_H PNCH                                         /*상품명변경이력 TABLE*/
+	      ,PRD_SHOP_EXPOS_D PSED                                     /*상품매장노출정보 TABLE*/
+     WHERE PPM.PRD_CD 				= PBCH.PRD_CD(+)
+       AND PBCH.CHANL_CD(+) 	= #{_c.cmmBaseChanl[0].value}	
+       AND PPM.PRD_CD IN
+	   <foreach collection="_c.prdCd[0].value" item="item" index="index" open="("  separator="," close=")" >
+		   #{item}
+	   </foreach>              
+       AND PPM.SALE_END_DTM 		<![CDATA[> ]]> SYSDATE
+	   AND PPM.USE_YN            	= 'Y'
+	   AND RTRIM(PPM.EXPOS_ST_CD)	= 'Y'
+	   AND PPM.GFT_TYP_CD        	= '00'
+	   AND PPM.PRD_CD            	= PCD.PRD_CD(+)
+	   AND PCD.CHANL_CD(+) 			= #{_c.cmmCurrChanl[0].value}
+	   AND PCD.SALE_PSBL_YN(+)   	= 'Y'
+	   AND PPM.PRD_CD            	= PPH.PRD_CD(+)
+	   AND PPH.PRD_ATTR_GBN_CD(+) 	= #{_c.cmmBaseChanl[0].value}	
+	   AND SYSDATE BETWEEN PPH.VALID_STR_DTM(+) AND PPH.VALID_END_DTM(+)
+	   AND PPM.PRD_CD            	= PNCH.PRD_CD(+)
+	   AND PNCH.CHANL_CD(+) 		= #{_c.cmmBaseChanl[0].value}	
+	   AND SYSDATE BETWEEN PNCH.VALID_STR_DTM(+) AND PNCH.VALID_END_DTM(+)
+	   AND PPM.PRD_CD            	= PSED.PRD_CD(+)
+
+	</select>
+	
+</mapper>

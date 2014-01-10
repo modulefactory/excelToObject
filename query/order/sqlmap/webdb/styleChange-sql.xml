@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.basket.StyleChangeSqlMapRepository">
+	               
+	<resultMap id="styleData" type="iceberg.capi.order.model.basket.Basket">
+		<result property="attrTypNm1" 			column="ATTR_TYP_NM1"/>
+		<result property="attrTypNm2" 			column="ATTR_TYP_NM2"/>
+		<result property="attrTypNm3" 			column="ATTR_TYP_NM3"/>
+		<result property="attrTypNm4" 			column="ATTR_TYP_NM4"/>
+		<result property="attrTypExposCd" 		column="ATTR_TYP_EXPOS_CD"/>
+	</resultMap>
+	<!--
+   	내용 : 장바구니 - 타이틀명 가지고 오기-ok
+   	작성자 : 마윤민
+   	작성일 : 2013. 11. 19
+    추가내용 : 주문수정(속성유형노출코드 사용으로 주석 해제)
+   	#{prdCd} = 11111622
+	-->
+	<select id = "findStyleTitleName" parameterType = "long" resultMap = "styleData">
+	<![CDATA[
+    SELECT NVL(PPM.ATTR_TYP_NM1,'None') AS ATTR_TYP_NM1   	/*속성유형명1(컬러, 향 등 여러가지 값이 들어갈수 있음)*/
+               ,NVL(PPM.ATTR_TYP_NM2,'None') AS ATTR_TYP_NM2   	/*속성유형명2       */
+               ,NVL(PPM.ATTR_TYP_NM3,'None') AS ATTR_TYP_NM3   	/*속성유형명3       */
+               ,NVL(PPM.ATTR_TYP_NM4,'None') AS ATTR_TYP_NM4    	/*속성유형명4       */
+               ,NVL(PPM.ATTR_TYP_EXPOS_CD,'L') AS ATTR_TYP_EXPOS_CD  /*속성유형노출코드   */   
+      FROM PRD_PRD_M  PPM
+    WHERE PPM.PRD_CD = #{prdCd}
+    ]]>
+	</select>
+	
+	<resultMap id="findOrderLimitData" type="iceberg.capi.order.model.basket.Basket">
+		<result property="onePrsnPrchLimitQty" 			column="ONE_PRSN_PRCH_LIMIT_QTY"/>
+		<result property="validStrDtm" 			column="VALID_STR_DTM"/>
+		<result property="validEndDtm" 			column="VALID_END_DTM"/>
+		<result property="onePrsnPrchLimitDdcnt" 			column="ONE_PRSN_PRCH_LIMIT_DDCNT"/>
+	</resultMap>
+	<!--
+   	장바구니 - 옵션/수량 변경 체크(주문 제한 수량이 존재하는 상품 여부 조회)
+   
+   	#{prdCd} = 10783466
+	-->
+	<select id = "findOrderLimitQty" parameterType = "criteria" resultMap = "findOrderLimitData">
+	<![CDATA[
+    SELECT MAX(NVL(PUD.UDA_VAL, 0)) AS ONE_PRSN_PRCH_LIMIT_QTY  
+               ,TO_CHAR(MAX(PUD.VALID_STR_DTM), 'YYYY-MM-DD HH24:MI:SS') AS VALID_STR_DTM		
+               ,TO_CHAR(MAX(PUD.VALID_END_DTM), 'YYYY-MM-DD HH24:MI:SS') AS VALID_END_DTM		
+               ,MAX(NVL(PUD.UDA_VAL_1, 0)) AS ONE_PRSN_PRCH_LIMIT_DDCNT
+       FROM PRD_PRD_M PPM, PRD_UDA_D PUD	 
+     WHERE PPM.PRD_CD = #{_c.prdCd[0].value} 	
+         AND PUD.PRD_CD = PPM.PRD_CD 	
+	     AND PUD.UDA_GBN_CD = '10'		
+	     AND PUD.UDA_NO = 15		
+	     AND PUD.USE_YN = 'Y'		
+	     AND SYSDATE BETWEEN PUD.VALID_STR_DTM AND PUD.VALID_END_DTM	
+    GROUP BY PPM.PRD_CD, PPM.PRD_NM	
+    ]]>
+	</select>
+	
+	<!--
+   	장바구니 - 옵션/수량 변경 체크(장바구니에 담긴 특정 상품 갯수 조회)
+   
+   	#{basktNo} = 1353813844
+   	#{basktItemId} = 267294880
+   	#{prdCd} = 10783466
+	-->
+	<select id = "findBasketQty" parameterType = "criteria" resultType = "int">
+	<![CDATA[
+    SELECT NVL(SUM(QTY), 0) AS QTY
+      FROM EC_SHCRTITM ES
+              , PRD_ATTR_PRD_M PAPM
+              , PRD_PRD_M PPM
+    WHERE ES.SHCRTPRSTID = #{_c.basktNo[0].value} 	
+        AND ES.SHCRTITMID <> #{_c.basktItemId[0].value}
+        AND ES.PRDITMID = PAPM.EC_ATTR_PRD_CD 
+        AND PAPM.PRD_CD = PPM.PRD_CD
+        AND PPM.PRD_CD = #{_c.prdCd[0].value} 	
+        AND ES.DBSTS = 'A'
+        AND NVL(ES.CHANL_CD, 'P') <> 'S'                /*필수(오아후 제외) */
+        AND NVL(ES.PMO_TYP_CD, 'NL') NOT IN ('MT','SM') /*멀티프로모션,사은품(제외) */
+        AND ES.EXPDATE >= SYSDATE
+    ]]>
+	</select>
+	
+	<!--
+   	내용 : 장바구니 - 같은 ec속성코드가 있는지 체크-ok
+   	작성자 : 마윤민
+   	작성일 : 2013. 11. 19
+   
+   	#{basktNo} = 1353813844
+   	#{optSeq} = 0
+   	#{ecAttrPrdCd} = 10962115001
+   	#{basktItemId} = 267293203
+	-->
+	<select id = "findCheckCartDup" parameterType = "criteria" resultType = "Long">
+	<![CDATA[
+    SELECT SHCRTITMID AS BASKT_ITEM_ID
+	   FROM EC_SHCRTITM
+     WHERE SHCRTPRSTID = #{_c.basktNo[0].value}
+         AND DBSTS = 'A'
+         AND NVL(OPTION_SEQ, 0) = #{_c.optSeq[0].value}
+         AND PRDITMID = #{_c.ecAttrPrdCd[0].value}
+         AND SHCRTITMID <> #{_c.basktItemId[0].value}
+    ]]>
+	</select>
+	
+	<!--
+   	내용 : 같은 상품이 존재 한다면 변경된 상품의 본품을 D로 update 한다.
+   	작성자 : 마윤민
+   	작성일 : 2013. 11. 22
+	-->
+	<update id="updatePrdStatusD" parameterType="iceberg.capi.order.model.basket.Basket">
+	<![CDATA[
+	UPDATE EC_SHCRTITM
+         SET DBSTS = 'D - ' || #{basktItemId}
+               , UPDDATE = SYSDATE
+     WHERE DBSTS = 'A'
+	     AND SHCRTPRSTID = #{basktNo}
+	     AND SHCRTITMID = #{basktItemId}
+	]]>
+	</update>
+	
+	<!--
+   	내용 : 본품이 변경되면 사은품을 D로 update 한다.
+   	작성자 : 마윤민
+   	작성일 : 2013. 11. 21
+	-->
+	<update id="updateGftStatusD" parameterType="iceberg.capi.order.model.basket.Basket">
+	<![CDATA[
+	UPDATE EC_SHCRTITM  
+	     SET DBSTS = 'D - ' || SHCRTITMID
+		       , UPDDATE = SYSDATE
+	 WHERE DBSTS = 'A'
+	     AND SHCRTPRSTID = #{basktNo}
+		 AND VIEW_GRP_PMO_SEQ = #{basktItemId}
+		 AND PMO_TYP_CD = 'SM'
+		 AND NVL(CHANL_CD, 'P') <> 'S' 
+	]]>
+	</update>
+	
+	<!--
+   	내용 : 기존재하는 본품의 수량을 가져온다.
+   	작성자 : 마윤민
+   	작성일 : 2013. 11. 22
+   	#{basktNo} = 1353813844
+   	#{basktItemId} = 267293203
+	-->
+	<select id="findAfterPrdQty" parameterType="iceberg.capi.order.model.basket.Basket" resultType="Integer">
+	<![CDATA[
+	SELECT QTY
+	   FROM EC_SHCRTITM
+	 WHERE DBSTS = 'A'
+	     AND SHCRTPRSTID = #{basktNo}
+		 AND SHCRTITMID = #{basktItemId}
+	]]>
+	</select>
+	
+	<!--
+   	내용 : 본품의 수량을 Update 한다.
+   	작성자 : 마윤민
+   	작성일 : 2013. 11. 22
+	-->
+	<update id="updateAfterPrdQty" parameterType="iceberg.capi.order.model.basket.Basket">
+	<![CDATA[
+	UPDATE EC_SHCRTITM  
+	     SET QTY = #{ordQty}
+		       , UPDDATE = SYSDATE
+	 WHERE DBSTS = 'A'
+	     AND SHCRTPRSTID = #{basktNo}
+		 AND SHCRTITMID = #{basktItemId}
+	]]>
+	</update>
+	
+	<!--
+   	내용 : 사은품의 수량을 Update 한다.
+   	작성자 : 마윤민
+   	작성일 : 2013. 11. 22
+	-->
+	<update id="updateAfterGftQty" parameterType="iceberg.capi.order.model.basket.Basket">
+	<![CDATA[
+	UPDATE EC_SHCRTITM  
+	     SET QTY = #{ordQty}
+		       , UPDDATE = SYSDATE
+	 WHERE DBSTS = 'A'
+	     AND SHCRTPRSTID = #{basktNo}
+		 AND VIEW_GRP_PMO_SEQ = #{basktItemId}
+		 AND PMO_TYP_CD = 'SM'
+		 AND NVL(CHANL_CD, 'P') <> 'S' 
+	]]>
+	</update>
+	
+	<!--
+   	내용 : 본품이 변경되면 변경된 정보를 본품에 update 한다.
+   	작성자 : 마윤민
+   	작성일 : 2013. 11. 22
+	-->
+	<update id="updateChangePrd" parameterType="iceberg.capi.order.model.basket.Basket">
+	<![CDATA[
+	UPDATE EC_SHCRTITM  
+	     SET PRDITMID = #{ecAttrPrdCd}
+		     , UPDDATE = SYSDATE
+		     , QTY = #{ordQty}
+	WHERE DBSTS = 'A'
+		AND SHCRTPRSTID = #{basktNo}
+		AND SHCRTITMID = #{basktItemId}
+	]]>
+	</update>
+
+	
+</mapper>

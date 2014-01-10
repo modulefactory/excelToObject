@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.product.OrderProductSmtcSqlMapRepository">
+
+	<resultMap id="supInfoMap" type="iceberg.capi.order.model.product.SupInfo">
+		<result property="noBkbDpoPsblYn"             column="NO_BKB_DPO_PSBL_YN"/>
+		<result property="ecOrdCnlPsblYn"             column="EC_ORD_CNL_PSBL_YN"/>
+		<result property="supCd"                      column="SUP_CD"/>
+		<result property="mimTypCd"                   column="MIM_TYP_CD"/>
+	</resultMap>
+
+	<resultMap id="prdStyleSearchMap" type="iceberg.capi.order.model.product.StyleHistory">
+		<result property="variantsCode"             column="VARIANTS_CODE"/>
+		<result property="prditmid"                 column="PRDITMID"/>
+		<result property="colorDesc"                column="COLOR_DESC"/>
+		<result property="sizeDesc"                 column="SIZE_DESC"/>
+		<result property="styleDesc"                column="STYLE_DESC"/>
+		<result property="freeGiftDesc"             column="FREE_GIFT_DESC"/>
+		<result property="colorValue"               column="COLOR_VALUE"/>
+		<result property="imageFile"                column="IMAGE_FILE"/>
+		<result property="sptNonStockYn"            column="SPT_NON_STOCK_YN"/>
+		<result property="allstockYn"               column="ALLSTOCK_YN"/>
+	</resultMap>
+
+	<resultMap id="ordNoSt" type="iceberg.capi.order.model.product.PrdOrdNoSt">
+		<result property="ordNo"             column="ORD_NO"/>
+		<result property="st"                column="ST"/>
+		<result property="rentGbn"           column="RENT_GBN"/>
+	</resultMap>
+
+	<resultMap id="ordInfoMap" type="iceberg.capi.order.model.product.PrdOrdInfo">
+		<result property="ordNo"             column="ORD_NO"/>
+		<result property="orgOrdNo"                column="ORG_ORD_NO"/>
+	</resultMap>
+
+	<!--
+	   	내용 : 협력사 정보 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 13
+
+	   	#{supCd} = 10022190
+	-->
+
+	<select id="findSupInfo" parameterType="long" resultMap="supInfoMap">
+		SELECT  NO_BKB_DPO_PSBL_YN
+		       ,EC_ORD_CNL_PSBL_YN
+		       ,SUP_CD
+		       ,NVL(MIM_TYP_CD,'') AS MIM_TYP_CD
+		  FROM  SUP_SUP_M
+		 WHERE  SUP_CD = #{supCd}
+	</select>
+
+
+		<!--
+	   	내용 : 상품별 배송불가지역 우편번호 조회.
+	   	작성자 : 윤병찬
+	   	작성일 : 2013.11.20
+
+	   	#{prdCd} = 5657956
+	-->
+	<select id="findNotDlvpRegonZipCode" parameterType="long" resultType="String">
+			SELECT ZIPCD AS DLVP_NOT_REGON_ZIPCD
+			  FROM PRD_DLV_REGON_D
+			 WHERE PRD_CD = #{prdCd}
+			   AND NVL(USE_YN,'N') = 'Y'
+	</select>
+
+	<!--
+	   	내용 : 색상 노출가능여부 체크
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 26
+
+	   	#{prdCd} = 10022190
+	-->
+
+	<select id="findStyleColorCheck" parameterType="long" resultType="String">
+		SELECT DECODE(SUM(DECODE(C.COLOR_VAL, NULL, 1, 0)) + SUM(DECODE(C.IMG_FILE_NM, NULL, 1, 0)), 0, 'Y', 'N') ISALLCOLOR
+		  FROM PRD_ATTR_PRD_M A
+		     , PRD_CHANL_D B
+		     , PRD_COLOR_IMG_D C
+		 WHERE A.PRD_CD                         = #{prdCd}
+		   AND A.USE_YN                         = 'Y'
+		   AND A.ATTR_PRD_APRV_ST_CD            = '30'
+		   AND NVL(A.SALE_STR_DTM, SYSDATE - 1) <![CDATA[<]]> SYSDATE
+		   AND NVL(A.SALE_END_DTM, SYSDATE - 1) > SYSDATE
+		   AND A.PRD_CD                         = B.PRD_CD
+		   AND B.CHANL_CD                       = 'P'
+		   AND B.SALE_PSBL_YN                   = 'Y'
+		   AND A.PRD_CD                         = C.PRD_CD(+)
+		   AND A.ATTR_VAL_1                     = C.COLOR_NM(+)
+	</select>
+
+	<!--
+	   	내용 : 선택 상품 스타일 정보 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 26
+
+	   	#{prdCd} = 10022190
+	-->
+
+	<select id="findPrdStyleSeachAll" parameterType="long" resultMap="prdStyleSearchMap">
+		SELECT A.ATTR_PRD_CD AS VARIANTS_CODE
+		     , A.EC_ATTR_PRD_CD AS PRDITMID
+		     , NVL(A.ATTR_VAL_1, 'None') AS COLOR_DESC
+		     , NVL(A.ATTR_VAL_2, 'None') AS SIZE_DESC
+		     , NVL(A.ATTR_VAL_3, 'None') AS STYLE_DESC
+		     , NVL(A.ATTR_VAL_4, 'None') AS FREE_GIFT_DESC
+		     , C.COLOR_VAL AS COLOR_VALUE
+		     , C.IMG_FILE_NM AS IMAGE_FILE
+		     , CASE
+		         WHEN NVL(D.TEMPOUT_YN, 'N') = 'Y'
+		         THEN 'Y'
+		         WHEN NVL(A.SALE_STR_DTM, SYSDATE - 1) > SYSDATE OR NVL(A.SALE_END_DTM, SYSDATE + 1) <![CDATA[<]]> SYSDATE
+		         THEN 'Y'
+		         ELSE 'N'
+		       END AS SPT_NON_STOCK_YN
+		     , DECODE(E.ALLSTOCK_YN, 0, 'Y', 'N')||A.ATTR_VAL_1 AS ALLSTOCK_YN
+		  FROM PRD_ATTR_PRD_M A
+		     , PRD_CHANL_D B
+		     , PRD_COLOR_IMG_D C
+		     , PRD_STOCK_D D
+		     , (SELECT AA.COLOR_DESC
+		             , SUM(STOCK_YN) ALLSTOCK_YN
+		          FROM
+		               (SELECT A.ATTR_VAL_1 AS COLOR_DESC
+		                     , CASE
+		                         WHEN NVL(D.TEMPOUT_YN, 'N') = 'Y'
+		                         THEN 0
+		                         WHEN NVL(A.SALE_STR_DTM, SYSDATE - 1) > SYSDATE OR NVL(A.SALE_END_DTM, SYSDATE + 1) <![CDATA[<]]> SYSDATE
+		                         THEN 0
+		                         ELSE 1
+		                       END STOCK_YN
+		                  FROM PRD_ATTR_PRD_M A
+		                     , PRD_CHANL_D B
+		                     , PRD_STOCK_D D
+		                 WHERE A.PRD_CD              = #{prdCd}
+		                   AND A.USE_YN              = 'Y'
+		                   AND A.ATTR_PRD_APRV_ST_CD = '30'
+		                   AND A.PRD_CD              = B.PRD_CD
+		                   AND A.ATTR_PRD_REP_CD     = D.ATTR_PRD_REP_CD
+		                   AND B.CHANL_CD            = 'P'
+		                   AND B.SALE_PSBL_YN        = 'Y'
+		               ) AA
+		       GROUP BY AA.COLOR_DESC
+		       ) E
+		 WHERE A.PRD_CD              = #{prdCd}
+		   AND A.USE_YN              = 'Y'
+		   AND A.ATTR_PRD_APRV_ST_CD = '30'
+		   AND A.ATTR_PRD_REP_CD     = D.ATTR_PRD_REP_CD
+		   AND A.PRD_CD              = B.PRD_CD
+		   AND B.CHANL_CD            = 'P'
+		   AND B.SALE_PSBL_YN        = 'Y'
+		   AND A.PRD_CD              = C.PRD_CD(+)
+		   AND A.ATTR_VAL_1          = C.COLOR_NM(+)
+		   AND A.ATTR_VAL_1          = E.COLOR_DESC(+)
+		   AND (CASE
+		          WHEN NVL(D.TEMPOUT_YN, 'N') = 'Y'
+		          THEN 'Y'
+		          WHEN NVL(A.SALE_STR_DTM, SYSDATE - 1) > SYSDATE OR NVL(A.SALE_END_DTM, SYSDATE + 1) <![CDATA[<]]> SYSDATE
+		          THEN 'Y'
+		          ELSE 'N'
+		         END) != 'Y'
+		 ORDER BY EXPOS_SEQ, PRDITMID
+	</select>
+
+
+	<select id="findOriginalOrderNumber" parameterType="criteria" resultMap="ordInfoMap">
+		<!--
+		DBMS : SMTC
+		분야 : 단품 getOriginalOrderNumber
+		API  : 주문 정보 조회
+		설명 : 원주문 번호 조회
+
+		#{_c.ordNo[0].value} = 599856484
+		#{_c.prdCd[0].value} = 11407599
+		-->
+
+		SELECT OOM.ORD_NO               AS ORD_NO
+		      ,TO_CHAR(OID.BEF_ORD_NO)  AS ORG_ORD_NO
+		  FROM ORD_ORD_M  OOM
+		      ,ORD_ITEM_D OID
+		      ,PRD_PRD_M  PPM
+		 WHERE OOM.ORD_NO = OID.ORD_NO
+		   AND OID.PRD_CD = PPM.PRD_CD
+		   AND OOM.ORD_NO =  #{_c.ordNo[0].value}
+		   AND DECODE( OID.LINE_TYP_CD, '11', OID.REP_PRD_SUP_PRD_CD, PPM.PRD_CD) = #{_c.prdCd[0].value}
+		   AND ROWNUM = 1
+	</select>
+
+
+	<select id="findOrderStateList" parameterType="criteria" resultMap="ordNoSt">
+		<!--
+		DBMS : SMTC
+		분야 : 단품 getOrderStateList
+		API  : 주문 정보 조회
+		설명 : 상품번호에 해당하는 고객 주문 내역 조회(출고완료/배송중/배송완료 주문)
+
+		#{_c.custNo[0].value} = 31701633
+		#{_c.prdCd[0].value} = 11407599
+		-->
+		<![CDATA[
+		SELECT X.ORG_ORD_NO || '' AS ORD_NO
+		      ,X.ST_CD            AS ST
+		      ,'N'                AS RENT_GBN
+		  FROM (SELECT ORD.ORD_NO
+		              ,DECODE(ORD.ORD_TYP_DTL_CD, 'Exchange Sales Order', 'E', 'A') AS ORD_TYP_DTL_CD
+		              ,OID.ORG_ORD_NO
+		              ,OID.ST_CD
+		              ,OID.LINE_TYP_CD
+		              ,NVL(OID.REP_PRD_SUP_PRD_CD, TO_CHAR(OID.PRD_CD))             AS STR_PRD_CD
+		              ,ROW_NUMBER() OVER(PARTITION BY OID.ORG_ORD_NO
+		                                     ORDER BY OID.ORG_ORD_NO
+		                                             ,ORD.ORD_NO DESC)              AS ORG
+		          FROM ORD_ORD_M  ORD
+		              ,ORD_ITEM_D OID
+		         WHERE ORD.ORD_NO  = OID.ORD_NO
+		           AND ORD.CUST_NO = #{_c.custNo[0].value} /*고객번호*/
+		           AND ORD.ORD_DTM > ADD_MONTHS (SYSDATE, -18)
+		           AND OID.ST_CD IN  ('11', '12', '21', '22', '31', 'B1')
+		           AND NVL(OID.EC_EXPOS_EXCPT_YN, 'N') <> 'Y'
+		           AND NVL(OID.ORD_QTY,0)-NVL(OID.RTP_QTY,0) > 0
+		           AND ORD.ORD_TYP_DTL_CD NOT IN ('AS Remove','AS Delivery','AS Not Remove','AS Not Delivery','AS Visit','eStore Order')
+		           AND DECODE(OID.LINE_TYP_CD, '11', OID.REP_PRD_SUP_PRD_CD, OID.PRD_CD) = #{_c.prdCd[0].value}
+		           AND OID.PRD_CD NOT IN (1353330,1376298,1376298,1376296,1376299,1376302,1381934,1381937)
+		       ) X
+		 WHERE X.STR_PRD_CD = #{_c.prdCd[0].value}
+		   AND X.ORG   = 1
+		 UNION ALL
+		SELECT TO_NUMBER(ORPRD.RSRV_NO) || '' AS ORD_NO
+		      ,ORPRD.CUST_REACT_CD            AS ST
+		      ,'Y'                            AS RENT_GBN
+		  FROM ORD_RENT_PRD_RSRV_D ORPRD
+		 WHERE ORPRD.CUST_NO = #{_c.custNo[0].value}	/*고객번호*/
+		   AND ORPRD.PRD_CD  = #{_c.prdCd[0].value}     /*상품ID*/
+		   AND ORPRD.CUST_REACT_CD IN ('10','20')
+	  ]]>
+	</select>
+
+
+	<select id="findBuyerOrderNumberState" parameterType="criteria" resultMap="ordNoSt">
+
+			<!--
+			DBMS : SMTC
+			분야 : 단품 getBuyerOrderNumStatus
+			API  : 주문 정보 조회
+			설명 : 특정 주문번호로 출고완료/배송중/배송완료 상태 조회
+
+			#{_c.ordNo[0].value} = 540182831
+			#{_c.prdCd[0].value} = 3353707
+			#{_c.custNo[0].value} = 31701633
+			-->
+		<![CDATA[
+			SELECT /* getBuyerOrderNumStatus */
+			       OOM.ORD_NO || '' AS ORD_NO
+			      ,OID.ST_CD        AS ST
+			      ,'N'              AS RENT_GBN
+			  FROM ORD_ORD_M  OOM
+			      ,ORD_ITEM_D OID
+			 WHERE OOM.ORD_NO    = OID.ORD_NO
+			   AND OOM.CUST_NO   = #{_c.custNo[0].value}
+			   AND OOM.ORD_NO    = #{_c.ordNo[0].value}       /*주문번호*/
+			   AND OOM.ORD_DTM  >= ADD_MONTHS (SYSDATE, -18)
+			   AND OOM.ORD_TYP_DTL_CD NOT IN ('AS Remove','AS Delivery','AS Not Remove','AS Not Delivery','AS Visit','eStore Order')
+			   AND OID.PRD_CD NOT IN ('1353330','1376298','1376298','1376296','1376299','1376302','1381934','1381937')
+			   AND NVL (OID.EC_EXPOS_EXCPT_YN, 'N') <> 'Y'
+			   AND OID.ST_CD IN ('22', '31', 'B1')
+			   AND DECODE(OID.LINE_TYP_CD, '11', OID.REP_PRD_SUP_PRD_CD, OID.PRD_CD) = #{_c.prdCd[0].value} /*상품id*/
+			 UNION ALL
+			SELECT TO_NUMBER(ORPRD.RSRV_NO) || '' AS ORD_NUM
+			      ,ORPRD.CUST_REACT_CD            AS ST_CD
+			      ,'Y'                            AS RENT_GBN
+			  FROM ORD_RENT_PRD_RSRV_D ORPRD
+			 WHERE ORPRD.CUST_NO = #{_c.custNo[0].value} /*고객번호*/
+			   AND ORPRD.RSRV_NO = #{_c.ordNo[0].value}       /*주문번호*/
+			   AND ORPRD.PRD_CD  = #{_c.prdCd[0].value}       /*상품ID*/
+			   AND ORPRD.CUST_REACT_CD IN ('10','20')
+		  ]]>
+	</select>
+
+</mapper>

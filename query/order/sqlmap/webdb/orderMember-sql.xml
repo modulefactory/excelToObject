@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.member.OrderMemberSqlMapRepository">
+	               
+	<!-- 
+		내용	: 회원 장바구니 아이디 조회
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+		
+		#{ecuserid} = 9806081;
+		
+	-->
+	<select id="findShCrtId" parameterType="long"  resultType="long">
+			SELECT 	NVL(CCM.BASKT_NO, 0) AS BASKT_NO	
+			  FROM  CST_CUST_M CCM
+			       ,CST_CUST_ACCNT_M CCAM
+			 WHERE CCM.CUST_NO = CCAM.CUST_NO
+			   AND CCAM.CUST_ACCNT_GBN_CD = 'GSEC'
+			   AND CCAM.EC_CUST_NO = #{ecuserid}								 
+	</select>
+	
+
+	
+</mapper>

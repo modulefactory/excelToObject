@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.shop.webdb.repository.PrdRepShopSqlMapRepository">
+	
+	<resultMap type="iceberg.capi.shop.model.PrdRepShop" id="prdRepShopMap">
+		<result property = "shopNo"    				column = "SHOP_NO"  />                                  
+		<result property = "shopNm"          		column = "SHOP_NM"   />
+		<result property = "upperShopNo"            column = "UPPER_SHOP_NO"  />                                  
+		<result property = "repShopNm"          	column = "REP_SHOP_NM"   />
+		<result property = "prdDispFlg"				column = "PRD_DISP_FLG" />	 
+		<result property = "lvl"						    column = "LVL" />	 
+	</resultMap>
+	
+	<select id="getPrdRepShop" parameterType="long" resultMap="prdRepShopMap">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품  getPrdVideoInfo
+		API  : 상품  정보 조회
+		설명 : 상품 대표 매장 정보 조회
+		
+		#{prdCd} = 10529952
+		-->	
+	<![CDATA[
+		SELECT ES.SECTID                     AS SHOP_NO        /* 매장 번호  */
+           ,(SELECT GST.NAME   
+               FROM GS_SECT_TREE GST 
+              WHERE ES.SECTID = GST.SECTID 
+                AND GST.LINK_STS ='A')    AS SHOP_NM        /* 매장 명  */          
+           ,ES.SECTPRSTID                 AS UPPER_SHOP_NO  /* 상위 매장 번호*/
+           ,ES.LBL                        AS REP_SHOP_NM    /* 대표 매장 명*/
+       FROM EC_SECT ES  
+      WHERE ES.DBSTS = 'A'  
+      START WITH ES.SECTID = (SELECT SECTID  
+			                                FROM  (SELECT /*+ INDEX(ESP EC_SECT_PRDLST_IND3) */ 
+			                                			  ESP.SECTID
+			                                             ,NVL(ESP.SECT_SEQ,99) SECT_SEQ
+			                                             ,(CASE WHEN GST.SECTID1=1079896 
+			                                               THEN '099' 
+			                                               ELSE ES.PRIOR_DISP_CD END )  AS PRIOR_DISP_CD 
+			                                          FROM EC_SECT ES
+			                                              ,EC_SECT_PRDLST ESP
+			                                              ,GS_SECT_TREE GST  
+			                                         WHERE ESP.PRDID = #{prdCd}
+			                                           AND ES.SECTID = ESP.SECTID  
+			                                           AND ES.SECTID = GST.SECTID 
+			                                           AND GST.LINK_STS = 'A' 
+			                                           AND ES.PRD_DISP_YN = 'Y' 
+			                                           AND ES.SECT_GUBUN = 'G'  
+			                                           AND ESP.DBSTS = 'A'  
+			                                           AND ES.DBSTS = 'A'  
+			                                         ORDER BY ESP.SECT_SEQ, ES.PRIOR_DISP_CD, ES.SECTID )  
+			                               WHERE ROWNUM = 1)  
+    CONNECT BY ES.SECTID = PRIOR ES.SECTPRSTID 
+    ORDER BY LEVEL DESC 
+	]]>
+	</select>
+	
+	<select id="findRecentSect4Navi" parameterType="long" resultMap="prdRepShopMap">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품  findRecentSect4Navi
+		API  : 상품에 최근 맵핑된 매장 정보 (대중소)
+		설명 : 상품에 최근 맵핑된 매장 정보 (대중소)
+		
+		#{prdCd} = 12112906
+		-->	
+		SELECT
+			  SECTID AS SHOP_NO
+			, SECTPRSTID AS UPPER_SHOP_NO
+			, NAME AS SHOP_NM
+			, PRD_DISP_YN AS PRD_DISP_FLG
+			, LEVEL AS LVL
+		FROM EC_SECT ES
+		WHERE DBSTS = 'A'
+		START WITH SECTID = (SELECT X.SECTID
+										FROM (
+													SELECT ES.SECTID
+													FROM  EC_SECT ES
+														    , EC_SECT_PRDLST ESP
+													WHERE ES.SECTID = ESP.SECTID
+													    AND ES.SECT_GUBUN = 'S'
+													    AND ES.DBSTS = 'A'
+													    AND ESP.DBSTS = 'A'
+													    AND ESP.PRDID = #{prdCd}
+													ORDER BY NVL(ESP.SECT_SEQ, 999)
+													              , ESP.CREDATE
+												  ) X
+										WHERE ROWNUM  = 1)
+		   AND SECT_GUBUN = 'S'
+		CONNECT BY PRIOR SECTPRSTID = SECTID
+		ORDER BY SECTID
+	</select>
+	
+	<select id="findDittoPopularBrandPrd" parameterType="long" resultMap="prdRepShopMap">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품  findDittoPopularBrandPrd
+		API  : 상품이 속한 브랜드 매장 정보 조회 
+		설명 : 상품이 속한 브랜드 매장 정보 조회
+		
+		#{prdCd} = 4792287
+		-->	
+		SELECT 
+		    SECTID AS SHOP_NO
+		    , SECTPRSTID AS UPPER_SHOP_NO
+		    , NAME AS SHOP_NM
+		    , PRD_DISP_YN AS PRD_DISP_FLG
+		    , LV AS LVL
+		FROM (SELECT 
+			           SECTID
+			           , SECTPRSTID
+			           , NAME
+			           , PRD_DISP_YN
+			           , LEVEL LV
+				  FROM EC_SECT
+				  WHERE DBSTS = 'A'
+				  START WITH SECTID IN (SELECT 
+				  											X.SECTID
+													FROM (
+																SELECT 
+																		ES.SECTID
+																FROM EC_SECT ES
+																	   , EC_SECT_PRDLST ESP
+																WHERE ES.SECTID = ESP.SECTID
+																    AND ES.SECT_GUBUN = 'S'
+																    AND ES.DBSTS = 'A'
+																    AND ES.DBSTS = 'A'
+																    AND ESP.PRDID = #{prdCd}
+																ORDER BY NVL(ESP.SECT_SEQ, 999)
+																		      , ESP.CREDATE
+														     ) X
+									                 )
+				   AND SECT_GUBUN = 'S'
+				   CONNECT BY PRIOR SECTPRSTID = SECTID
+			    )
+		WHERE SECTPRSTID = 719275
+	</select>
+	
+</mapper>

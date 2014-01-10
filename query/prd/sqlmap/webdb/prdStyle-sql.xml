@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prd.PrdStyleSqlMapRepository">
+	
+	<resultMap type="iceberg.capi.product.model.prd.add.PrdStyle" id="prdStyle">
+		<result property="isAllColor"     		column="IS_ALL_COLOR"/>
+		<result property="attrPrdCd"      		column="ATTR_PRD_CD"/>
+		<result property="ecAttrPrdCd"    		column="EC_ATTR_PRD_CD"/>
+		<result property="attrPrdRepCd"   		column="ATTR_PRD_REP_CD"/>
+		<result property="ordPrdTypCd"   		column="ORD_PRD_TYP_CD"/>
+		<result property="prdAttrColorCd" 		column="PRD_ATTR_COLOR_CD"/>
+		<result property="prdAttrSizeCd" 		column="PRD_ATTR_SIZE_CD"/>
+		<result property="prdAttrStyleCd" 		column="PRD_ATTR_STYLE_CD"/>
+		<result property="prdAttrGftCd" 		column="PRD_ATTR_GFT_CD"/>
+		<result property="prdAttrColor"			column="PRD_ATTR_COLOR"/>
+		<result property="prdAttrSize" 			column="PRD_ATTR_SIZE"/>
+		<result property="prdAttrStyle" 		column="PRD_ATTR_STYLE"/>
+		<result property="prdAttrGft"			column="PRD_ATTR_GFT"/>
+		<result property="attrWhlVal"			column="ATTR_WHL_VAL"/>
+		<result property="exposDfaltValFlg" 	column="EXPOS_DFALT_VAL_FLG"/>
+		<result property="tempoutFlg" 			column="TEMPOUT_FLG"/>
+		<result property="tempoutFlgVal" 		column="TEMPOUT_FLG_VAL"/>
+		<result property="colorVal" 			column="COLOR_VAL"/>
+		<result property="imgFileNm" 			column="IMG_FILE_NM"/>
+		<result property="allNonstockFlg" 		column="ALL_NONSTOCK_FLG"/>
+		<result property="sizeallNonstockFlg" 	column="SIZEALL_NONSTOCK_FLG"/>
+		<result property="styleallNonstockFlg" 	column="STYLEALL_NONSTOCK_FLG"/>
+		<result property="exposSeq" 			column="EXPOS_SEQ"/>
+	</resultMap>
+	
+	<select id="getPrdStyleAllColor" resultMap="prdStyle" parameterType="criteria">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품  getPrdStyleAllColor
+		API  : 상품  정보 조회
+		설명 : 상품 스타일 전체 색상 조회
+		#{_c.prdCd[0].value} = 11462058
+		#{_c.cmmCurrChanl[0].value} = 'B'
+		#{_c.saleDate[0].value} = new Date();
+		-->		
+	<![CDATA[
+	SELECT DECODE(SUM(DECODE(PCID.COLOR_VAL,NULL,1,0)) + SUM(DECODE(PCID.IMG_FILE_NM,NULL,1,0)),0,'Y','N') AS IS_ALL_COLOR
+      FROM PRD_ATTR_PRD_M   PAPM
+          ,PRD_COLOR_IMG_D  PCID
+          ,PRD_STOCK_D      PSD
+          ,PRD_CHANL_D      PCD
+     WHERE PAPM.PRD_CD               = #{_c.prdCd[0].value}
+       AND PAPM.SALE_STR_DTM 		 < #{_c.saleDate[0].value} 
+       AND PAPM.SALE_END_DTM 		 > #{_c.saleDate[0].value}
+       AND PAPM.PRD_CD               = PCD.PRD_CD
+       AND PCD.CHANL_CD              = #{_c.cmmCurrChanl[0].value}      
+       AND PAPM.USE_YN               = 'A'
+       AND PAPM.ATTR_PRD_APRV_ST_CD  = '30'
+       AND PAPM.PRD_CD               = PCID.PRD_CD(+)
+       AND PAPM.ATTR_VAL_1           = PCID.COLOR_NM(+)
+       AND PAPM.ATTR_PRD_REP_CD      = PSD.ATTR_PRD_REP_CD
+	]]>
+	</select>
+	
+	<select id="getPrdStyleList" resultMap="prdStyle" parameterType="criteria">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품  getPrdStyleList
+		API  : 상품  정보 조회
+		설명 : 상품 스타일 조회
+		
+		#{_c.prdCd[0].value} = 11462058
+		#{_c.cmmCurrChanl[0].value} = 'B'
+		-->			
+	<![CDATA[
+	SELECT X.*
+     FROM (SELECT PAPM.ATTR_PRD_CD                   AS ATTR_PRD_CD                       /*속성상품코드*/
+                 ,PAPM.EC_ATTR_PRD_CD                AS EC_ATTR_PRD_CD                    /*EC속성상품코드*/
+                 ,PAPM.ATTR_PRD_REP_CD               AS ATTR_PRD_REP_CD                   /*속성상품대표코드 */
+                 ,NVL(PAPM.ATTR_VAL_1,'None')        AS PRD_ATTR_COLOR                    /*색상설명*/
+                 ,NVL(PAPM.ATTR_VAL_2,'None')        AS PRD_ATTR_STYLE                    /*사이즈설명*/
+                 ,NVL(PAPM.ATTR_VAL_3,'None')        AS PRD_ATTR_SIZE                     /*스타일설명*/
+                 ,NVL(PAPM.ATTR_VAL_4,'None')        AS PRD_ATTR_GFT                      /*사은품설명*/
+                 ,NVL(PAPM.EXPOS_DFALT_VAL_YN,'N')   AS EXPOS_DFALT_VAL_FLG               /*노출디폴트값여부*/
+                 ,DECODE(NVL(PSD.TEMPOUT_YN,'N'),'Y','Y','N') AS TEMPOUT_FLG              /*일시품절여부*/
+                 ,DECODE(NVL(PSD.TEMPOUT_YN,'N'),'Y','품절','판매중') AS TEMPOUT_FLG_VAL        /*일시품절노출명*/
+                 ,PCID.COLOR_VAL                     AS COLOR_VAL                         /*색상값*/
+                 ,PCID.IMG_FILE_NM                   AS IMG_FILE_NM                       /*이미지파일명*/
+                 ,DECODE(X1.PRD_ATTR_COLOR_STOCK_YN,0,'Y','N')|| NVL(PAPM.ATTR_VAL_1,'None') AS ALL_NONSTOCK_FLG
+                 ,DECODE(X2.PRD_ATTR_SIZE_STOCK_YN,0,'Y','N') || NVL(PAPM.ATTR_VAL_2,'None') AS SIZEALL_NONSTOCK_FLG
+                 ,DECODE(X3.PRD_ATTR_STYLE_STOCK_YN,0,'Y','N')|| NVL(PAPM.ATTR_VAL_3,'None') AS STYLEALL_NONSTOCK_FLG
+                 ,PAPM.EXPOS_SEQ                     AS EXPOS_SEQ
+             FROM PRD_ATTR_PRD_M   PAPM
+                 ,PRD_STOCK_D      PSD
+                 ,PRD_COLOR_IMG_D  PCID
+                 ,(SELECT X.PRD_ATTR_COLOR
+                         ,SUM(X.STOCK_YN) AS PRD_ATTR_COLOR_STOCK_YN
+                     FROM (SELECT PAPM.ATTR_VAL_1 AS PRD_ATTR_COLOR
+                                 ,DECODE(NVL(PSD.TEMPOUT_YN,'N'),'N',1,0)  AS STOCK_YN
+                             FROM PRD_ATTR_PRD_M PAPM
+                                 ,PRD_STOCK_D    PSD
+                                 ,PRD_CHANL_D    PCD
+                            WHERE PAPM.PRD_CD = #{_c.prdCd[0].value}
+                              AND PAPM.ATTR_PRD_REP_CD = PSD.ATTR_PRD_REP_CD
+                              AND SYSDATE BETWEEN NVL(PAPM.SALE_STR_DTM, SYSDATE) AND NVL(PAPM.SALE_END_DTM, SYSDATE)
+                              AND PAPM.PRD_CD = PCD.PRD_CD
+                              AND PCD.CHANL_CD = #{_c.cmmCurrChanl[0].value} 
+                              AND PAPM.USE_YN = 'Y'
+                              AND PAPM.ATTR_PRD_APRV_ST_CD = '30' ) X
+                    GROUP BY X.PRD_ATTR_COLOR ) X1
+                 ,(SELECT X.PRD_ATTR_SIZE
+                         ,SUM(X.STOCK_YN) AS PRD_ATTR_SIZE_STOCK_YN
+                     FROM (SELECT PAPM.ATTR_VAL_2 AS PRD_ATTR_SIZE
+                                 ,DECODE(NVL(PSD.TEMPOUT_YN,'N'),'N',1,0) AS STOCK_YN
+                             FROM PRD_ATTR_PRD_M  PAPM
+                                 ,PRD_STOCK_D      PSD
+                                 ,PRD_CHANL_D      PCD
+                            WHERE PAPM.PRD_CD = #{_c.prdCd[0].value}
+                              AND PAPM.ATTR_PRD_REP_CD = PSD.ATTR_PRD_REP_CD
+                              AND SYSDATE BETWEEN NVL(PAPM.SALE_STR_DTM, SYSDATE) AND NVL(PAPM.SALE_END_DTM, SYSDATE)
+                              AND PAPM.PRD_CD  = PCD.PRD_CD
+                              AND PCD.CHANL_CD = #{_c.cmmCurrChanl[0].value} 
+                              AND PAPM.USE_YN  = 'Y'
+                              AND PAPM.ATTR_PRD_APRV_ST_CD = '30' ) X
+                    GROUP BY X.PRD_ATTR_SIZE) X2
+                 ,(SELECT X.PRD_ATTR_STYLE
+                         ,SUM(STOCK_YN) AS PRD_ATTR_STYLE_STOCK_YN
+                     FROM (SELECT PAPM.ATTR_VAL_3 AS PRD_ATTR_STYLE
+                                 ,DECODE(NVL(PSD.TEMPOUT_YN,'N'),'N',1,0) AS STOCK_YN
+                             FROM PRD_ATTR_PRD_M  PAPM
+                                 ,PRD_STOCK_D      PSD
+                                 ,PRD_CHANL_D      PCD  
+                            WHERE PAPM.PRD_CD = #{_c.prdCd[0].value}
+                              AND PAPM.ATTR_PRD_REP_CD = PSD.ATTR_PRD_REP_CD
+                              AND SYSDATE BETWEEN NVL(PAPM.SALE_STR_DTM, SYSDATE) AND NVL(PAPM.SALE_END_DTM, SYSDATE)
+                              AND PAPM.PRD_CD = PCD.PRD_CD
+                              AND PCD.CHANL_CD = #{_c.cmmCurrChanl[0].value} 
+                              AND PAPM.USE_YN = 'Y'
+                              AND PAPM.ATTR_PRD_APRV_ST_CD = '30') X
+                    GROUP BY X.PRD_ATTR_STYLE) X3
+                 ,PRD_CHANL_D PCD
+            WHERE PAPM.PRD_CD = #{_c.prdCd[0].value}
+              AND PAPM.ATTR_PRD_REP_CD = PSD.ATTR_PRD_REP_CD
+              AND SYSDATE BETWEEN NVL(SALE_STR_DTM, SYSDATE) 
+                              AND NVL(SALE_END_DTM, SYSDATE)
+              AND PAPM.PRD_CD  	  = PCD.PRD_CD
+              AND PCD.CHANL_CD 	  =  #{_c.cmmCurrChanl[0].value} 
+              AND PAPM.USE_YN  	  = 'Y'
+              AND PAPM.ATTR_PRD_APRV_ST_CD = '30'
+              AND PAPM.PRD_CD     = PCID.PRD_CD(+)
+              AND PAPM.ATTR_VAL_1 = PCID.COLOR_NM(+)
+              AND PAPM.ATTR_VAL_1 = X1.PRD_ATTR_COLOR(+)
+              AND PAPM.ATTR_VAL_2 = X2.PRD_ATTR_SIZE(+)
+              AND PAPM.ATTR_VAL_3 = X3.PRD_ATTR_STYLE(+) ) X
+   WHERE X.PRD_ATTR_COLOR||X.PRD_ATTR_SIZE||X.PRD_ATTR_STYLE||DECODE(X.PRD_ATTR_GFT,'None','None','사은품')||DECODE(X.TEMPOUT_FLG,'N','N','Y') <> 'NoneNoneNone사은품Y'
+   ORDER BY X.EXPOS_SEQ, X.EC_ATTR_PRD_CD
+	]]>
+	</select>
+	
+	<select id="getPrdStyleCnt" resultType="int" parameterType="criteria">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품  getPrdStyleList
+		API  : 상품  정보 조회
+		설명 : 	판매중인 스타일 상품 수 조회
+		#{_c.prdCd[0].value} = 11462058
+		#{_c.cmmCurrChanl[0].value} = 'B'
+		#{_c.saleDate[0].value} = new Date();	
+		-->	
+		
+	<![CDATA[
+	   SELECT COUNT(1)  AS CNT
+	     FROM PRD_ATTR_PRD_M PAPM
+	 	      ,PRD_STOCK_D    PSD
+	 	      ,PRD_CHANL_D    PCD
+	    WHERE PAPM.PRD_CD 			   = #{_c.prdCd[0].value}
+	      AND PAPM.ATTR_PRD_REP_CD 	   = PSD.ATTR_PRD_REP_CD
+	      AND PAPM.SALE_STR_DTM 	   < #{_c.saleDate[0].value} AND PAPM.SALE_END_DTM > #{_c.saleDate[0].value}
+	      AND PAPM.PRD_CD  			   = PCD.PRD_CD
+	      AND PCD.CHANL_CD 			   = #{_c.cmmCurrChanl[0].value} 
+	      AND PAPM.USE_YN  			   = 'Y'
+	      AND PAPM.ATTR_PRD_APRV_ST_CD = '30'  /*결재상태*/
+	      AND NVL(PSD.TEMPOUT_YN,'N')  = 'N'
+	]]>
+	</select>
+	
+	<select id="getPrdStyleGeneral"  resultMap="prdStyle">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 	단품  getPrdStyleGeneral
+		API  : 상품  정보 조회
+		설명 : 	판매중인 상품의 스타일 일반 조회
+		#{prdCd} = 11694589
+		-->		
+	<![CDATA[
+	   SELECT PAPM.ATTR_PRD_CD            AS ATTR_PRD_CD           /*속성상품코드*/
+	         ,PAPM.EC_ATTR_PRD_CD         AS EC_ATTR_PRD_CD           /*상품코드*/
+	         ,PAPM.ATTR_PRD_REP_CD        AS ATTR_PRD_REP_CD
+	         ,PAPM.ATTR_VAL_1             AS PRD_ATTR_COLOR           /*칼라설명*/
+	         ,PAPM.ATTR_VAL_2             AS PRD_ATTR_STYLE            /*사이즈설명*/
+	         ,PAPM.ATTR_VAL_3             AS PRD_ATTR_SIZE           /*스타일설명*/
+	         ,PAPM.ATTR_VAL_4             AS PRD_ATTR_GFT             /*사은품설명*/
+	         ,NVL(PAPM.EXPOS_DFALT_VAL_YN,'N') AS EXPOS_DFALT_VAL_FLG   /*노출디폴트값여부*/
+	     FROM PRD_ATTR_PRD_M PAPM
+	         ,PRD_STOCK_D    PSD
+		WHERE PAPM.PRD_CD = #{prdCd}
+		  AND PAPM.ATTR_PRD_REP_CD = PSD.ATTR_PRD_REP_CD
+		  AND PAPM.SALE_STR_DTM < SYSDATE
+		  AND PAPM.SALE_END_DTM > SYSDATE
+		  AND PAPM.USE_YN = 'Y'	
+	]]>
+	</select>
+
+	<select id="getPrdStyleInfo" parameterType="criteria" resultMap="prdStyle">
+	<!-- 
+		DBMS : WEBDB
+		분야 : 	단품  getPrdStyleInfo
+		API  : 현재 채널 상품의 속성 정보 조회
+		설명 : 	현재 채널 상품의 속성 정보 조회
+		#{prdCd} = 11694589
+		-->		
+	<![CDATA[
+	   SELECT
+			  PAPM.ATTR_PRD_CD            AS ATTR_PRD_CD           /*속성상품코드*/
+	         ,PAPM.EC_ATTR_PRD_CD         AS EC_ATTR_PRD_CD      /*상품코드*/
+	         ,PAPM.ATTR_PRD_REP_CD        AS ATTR_PRD_REP_CD
+	         ,PAPM.ATTR_VAL_1             AS PRD_ATTR_COLOR           /*칼라설명*/
+	         ,PAPM.ATTR_VAL_2             AS PRD_ATTR_STYLE            /*사이즈설명*/
+	         ,PAPM.ATTR_VAL_3             AS PRD_ATTR_SIZE           /*스타일설명*/
+	         ,PAPM.ATTR_VAL_4             AS PRD_ATTR_GFT             /*사은품설명*/
+		 FROM PRD_PRD_M PPM
+			 ,PRD_ATTR_PRD_M PAPM
+			 ,PRD_CHANL_D PCD
+		WHERE PPM.PRD_CD = #{_c.prdCd[0].value}
+		  AND PPM.PRD_CD = PAPM.PRD_CD
+		  AND PAPM.USE_YN = 'Y'
+		  AND NVL(PAPM.SALE_END_DTM, '2999-12-31') >= SYSDATE
+		  AND PPM.PRD_CD = PCD.PRD_CD
+		  AND PCD.CHANL_CD = #{_c.cmmCurrChanl[0].value}
+		  AND PCD.SALE_PSBL_YN = 'Y'
+		  AND ROWNUM = 1
+	]]>
+	</select>
+	
+	<select id="getEcAttrPrdCdByPrdCd" parameterType="long" resultMap="prdStyle">
+	<!-- 
+		DBMS : WEBDB
+		분야 : 	단품  getEcAttrPrdCdByPrdCd
+		설명 : 	상품코드 기준 속성정보(EC속성코드 Min) 조회
+		#{prdCd} = 10389310
+		-->		
+	<![CDATA[
+	
+	   SELECT MIN(EC_ATTR_PRD_CD) AS EC_ATTR_PRD_CD 
+	     FROM PRD_ATTR_PRD_M                  
+	    WHERE PRD_CD = #{prdCd}              
+	      AND USE_YN = 'Y'    	
+	   
+	]]>
+	</select>	
+	
+	<select id="getPrdStyleListByPrdCd" resultMap="prdStyle" parameterType="criteria">
+	<!-- 
+		DBMS : WEBDB
+		분야 : 	단품  getEcAttrPrdCdByPrdCd
+		설명 : 	EC속성상품  코드 기준 상품 스타일 조회
+		#{_c.prdCd[0].value} = 10389310
+		#{cmmCurrChanlCd} = 'B'
+		#{prdType} = 'S'
+		-->		
+
+	SELECT PAPM.EC_ATTR_PRD_CD 		   AS EC_ATTR_PRD_CD               
+	      ,PPM.ORD_PRD_TYP_CD 		   AS ORD_PRD_TYP_CD              
+	      ,PAPM.ATTR_VAL_1             AS PRD_ATTR_COLOR            /*칼라설명*/
+	      ,PAPM.ATTR_VAL_2             AS PRD_ATTR_STYLE            /*사이즈설명*/
+	      ,PAPM.ATTR_VAL_3             AS PRD_ATTR_SIZE             /*스타일설명*/
+	      ,PAPM.ATTR_VAL_4             AS PRD_ATTR_GFT              /*사은품설명*/                 
+	      ,PAPM.ATTR_VAL_CD_1 		   AS PRD_ATTR_COLOR_CD                   
+	      ,PAPM.ATTR_VAL_CD_2 		   AS PRD_ATTR_STYLE_CD
+	      ,PAPM.ATTR_VAL_CD_3 		   AS PRD_ATTR_SIZE_CD                   
+	      ,PAPM.ATTR_VAL_CD_4 		   AS PRD_ATTR_GFT_CD 	                                   
+	      ,PAPM.ATTR_PRD_CD 		   AS ATTR_PRD_CD        
+	  FROM PRD_PRD_M PPM                                
+          ,PRD_ATTR_PRD_M PAPM    
+	<if test='(_c.prdTypCd[0].value) == "S"'>            
+          ,PRD_CHANL_D PCD 
+	</if>                                      
+	 WHERE PPM.PRD_CD 				= PAPM.PRD_CD                              
+	   AND PPM.PRD_CD 				= #{_c.prdCd[0].value}                             	                       
+	   AND NVL(PAPM.SALE_STR_DTM, SYSDATE - 1) 	<![CDATA[ < ]]> SYSDATE 
+	   AND NVL(PAPM.SALE_END_DTM, SYSDATE + 1) 	<![CDATA[ > ]]>SYSDATE 
+	   AND PAPM.USE_YN 				= 'Y'       
+	<if test='(_c.prdTypCd[0].value) == "S"'>      
+	   AND PPM.PRD_APRV_ST_CD 		= '30' 
+	   AND PPM.PRD_CD 				= PCD.PRD_CD   	   
+	   AND PCD.CHANL_CD 			= #{_c.cmmCurrChanl[0].value}                    
+	   AND PCD.SALE_PSBL_YN 		= 'Y'       	
+	</if>  
+
+	</select>		
+	
+	<select id="getPrdStyleByEcAttrPrdCd" resultMap="prdStyle" parameterType="long" >
+	<!-- 
+		DBMS : WEBDB
+		분야 : 	단품  getPrdStyleByEcAttrPrdCd
+		설명 : 	상품  코드 기준 상품 스타일 조회
+		#{ecAttrPrdCd} = 12349138001
+
+	-->		
+	SELECT NVL(PAPM.ATTR_VAL_1, '00000')             AS PRD_ATTR_COLOR            /*칼라설명*/
+	      ,NVL(PAPM.ATTR_VAL_2, '00000')             AS PRD_ATTR_STYLE            /*사이즈설명*/
+	      ,NVL(PAPM.ATTR_VAL_3, '00000')             AS PRD_ATTR_SIZE             /*스타일설명*/
+	      ,NVL(PAPM.ATTR_VAL_4, '00000')             AS PRD_ATTR_GFT              /*사은품설명*/             
+          ,PAPM.ATTR_PRD_CD				 			 AS ATTR_PRD_CD
+          ,PAPM.PRD_CD AS PRD_CD
+	  FROM PRD_ATTR_PRD_M PAPM
+	 WHERE EC_ATTR_PRD_CD = #{ecAttrPrdCd}
+
+	</select>	
+	
+	<select id="getPrdStyleByPrdCdAttrPrdCd" resultMap="prdStyle" parameterType="criteria">
+	<!-- 
+		DBMS : WEBDB
+		분야 : 	단품  getPrdStyleInfo
+		API  : 상품코드, 속성상품코드로 상품 스타일 조회
+		#{_c.prdCd[0].value} = 11694589
+		#{_c.attrPrdCd[0].value} = 11694589001
+	-->	
+	
+	SELECT PAPM.ATTR_PRD_CD 								  	AS ATTR_PRD_CD     /*속성상품코드*/               
+          ,DECODE(PPM.PRD_TYP_CD,'G','',PAPM.ATTR_VAL_1)      	AS PRD_ATTR_COLOR  /*속성값1[색상설명]*/       
+          ,DECODE(PPM.PRD_TYP_CD,'G','',PAPM.ATTR_VAL_2)      	AS PRD_ATTR_STYLE  /*속성값2[사이즈설명]*/      
+          ,DECODE(PPM.PRD_TYP_CD,'G','',PAPM.ATTR_VAL_3)      	AS PRD_ATTR_SIZE   /*속성값3[스타일설명]*/     
+          ,DECODE(PPM.PRD_TYP_CD,'G','',PAPM.ATTR_VAL_4)      	AS PRD_ATTR_GFT    /*속성값4[사은품설명]*/   
+          ,DECODE(PPM.PRD_TYP_CD,'G','',PAPM.ATTR_WHL_VAL)  	AS ATTR_WHL_VAL    /*속성전체명*/              
+ 	  FROM PRD_ATTR_PRD_M PAPM    
+          ,PRD_PRD_M PPM            
+ 	 WHERE PAPM.PRD_CD = #{_c.prdCd[0].value} 
+ 	   AND PAPM.USE_YN = 'Y'            
+ 	   AND PPM.PRD_TYP_CD = 'S'        
+ 	   AND PAPM.PRD_CD = PPM.PRD_CD 
+ 	   <if test="(_c.attrPrdCd[0].value) != 0">      
+ 	   AND PAPM.ATTR_PRD_CD  = #{_c.attrPrdCd[0].value}
+ 	   </if>  
+ 	   <if test="(_c.attrPrdCd[0].value) == 0">
+ 	   AND PAPM.ATTR_PRD_CD IS NULL 	
+	   </if>  
+	</select>	
+	
+	<select id="getEcAttrPrdCdByAttrPrdCd" resultMap="prdStyle" parameterType="long">
+	<!-- 
+		DBMS : WEBDB
+		분야 : 	단품  getEcAttrPrdCdByAttrPrdCd
+		API  : 속성상품코드로 ec속성상품코드 조회
+		#{attrPrdCd} = 11694589001
+	-->	
+	
+	SELECT PAPM.EC_ATTR_PRD_CD AS EC_ATTR_PRD_CD
+	  FROM PRD_ATTR_PRD_M PAPM
+	 WHERE PAPM.ATTR_PRD_CD = #{attrPrdCd}
+	   AND PAPM.USE_YN = 'Y'  
+    
+    </select>		
+	
+</mapper>

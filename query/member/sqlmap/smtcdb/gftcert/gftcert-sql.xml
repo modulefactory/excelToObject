@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd"> 
+	
+<mapper namespace="iceberg.capi.cust.smtcdb.repository.gftcert.GftCertSqlMapRepository">	
+ 
+	<resultMap type="iceberg.capi.cust.model.gftcert.GftCert" id="gftCert" >
+		<result property="gftcertRegDt" column="REGISTERED_DT"/>
+		<result property="gftcertNo" column="SERIAL_NUM"/>
+		<result property="gftcertAmt" column="RPLCMNT_VAL_AMT"/>
+		<result property="gftcertBalnc" column="ASSET_VALUE_AMT"/>
+		<result property="gftcertTyp" column="SW_PROD_TYPE"/>
+ 	</resultMap> 
+	
+    <select id="getGiftCardList" parameterType="Long" resultMap="gftCert">
+	<![CDATA[    
+		SELECT MIN(X.REGISTERED_DT) 	AS REGISTERED_DT,
+    		   X.SERIAL_NUM, 
+    		   MIN(X.RPLCMNT_VAL_AMT)	AS RPLCMNT_VAL_AMT, 
+    		   MIN(X.ASSET_VALUE_AMT)	AS ASSET_VALUE_AMT, 
+    		   MIN(X.SW_PROD_TYPE)		AS SW_PROD_TYPE  
+		FROM ( 
+    		   SELECT TO_CHAR(A.GFTCERT_ACT_DT + 9/24,'YYYY/MM/DD') AS REGISTERED_DT, 		 --상품권활성일자   
+    		   		  A.GFTCERT_NO                           		AS SERIAL_NUM ,      	 --상품권번호          
+    		   		  A.GFTCERT_ORG_AMT                      		AS RPLCMNT_VAL_AMT,		 --상품권 원금액      
+    		   		  A.ASSET_AMT                            		AS ASSET_VALUE_AMT,      --자산금액              
+    		   		  NVL(D.FRMLES_PRD_TYP_CD,'N') 					AS SW_PROD_TYPE, 		 --무형유형상품코드 
+    		   		  DECODE(SIGN((A.GFTCERT_ACT_DT + 9/24)-(ADD_MONTHS(SYSDATE,-60))),-1,'N','Y') EXP_YN 
+       		   FROM   CST_ASSET_M         A, 
+					  ORD_ORD_M           B, 
+					  ORD_ITEM_D          C, 
+					  PRD_PRD_M           D 
+			   WHERE  1=1                     
+					  AND  A.CUST_NO = #{custNO}   
+					  AND  A.ASSET_TYP_CD = 'GFTCERT' 
+					  AND  A.ASSET_AMT > 0 
+					  AND  A.GFTCERT_ST_CD <> '05' 
+					  AND  A.CUST_NO = B.CUST_NO   
+					  AND  B.ORD_NO = C.ORD_NO 
+					  AND  C.PRD_CD = D.PRD_CD 
+			 ) X 
+		WHERE X.EXP_YN = 'Y' 
+		GROUP BY X.SERIAL_NUM 
+		ORDER BY REGISTERED_DT
+	 ]]>
+     </select>
+
+    <select id="getGiftCardAmtTot" parameterType="Long" resultType="Long">
+	<![CDATA[    
+		SELECT SUM(X.ASSET_VALUE_AMT) 
+		FROM ( 
+			SELECT                                            
+				     NVL(A.ASSET_AMT,0) AS ASSET_VALUE_AMT 
+					,DECODE(SIGN((A.GFTCERT_ACT_DT)-(ADD_MONTHS(SYSDATE,-60))),-1,'N','Y') EXP_YN  --유효기간 5년
+			FROM   CST_ASSET_M     A                             
+			WHERE  A.CUST_NO           = #{custNO}
+				   AND A.ASSET_TYP_CD  = 'GFTCERT'         
+     			   AND A.GFTCERT_ST_CD <> '05'   
+       	) X
+  		WHERE X.EXP_YN = 'Y' 
+	 ]]>
+     </select>
+
+</mapper>

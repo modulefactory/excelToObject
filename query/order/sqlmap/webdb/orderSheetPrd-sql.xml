@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.ordersheet.OrderSheetPrdSqlMapRepository">
+	               
+	
+	
+	 <!-- 
+		내용	: 본상품의 사은품 프로모션 정보를 조회.
+		작성자	: 윤병찬
+		작성일	: 2013.11.18 신규작성
+		
+		#{_c.attrPrdCd[0].value} = 5528453001;
+		#{_c.chanlCd[0].value} = 'P';
+		#{_c.prdCd[0].value} = 5528453;
+	-->
+	<resultMap id="pmoInfoByPrdAndAttrPrd" type="iceberg.capi.order.model.ordersheet.GsOrdItemDExt">
+		<result property="pmoNo" column="PMO_NO"/>
+		<result property="prdPmoSeq" column="PRD_PMO_SEQ"/>
+		<result property="gftSelQty" column="GFT_SEL_QTY"/>
+		<result property="gftPrdCd" column="GFT_PRD_CD"/>
+		<result property="gftMandFlg" column="GFT_MAND_YN"/>
+		<result property="addCmposGbnCd" column="ADD_CMPOS_GBN_CD"/>
+	</resultMap>
+	<select id="findPmoInfoByPrdAndAttrPrd" parameterType="criteria"  resultMap="pmoInfoByPrdAndAttrPrd">
+		<![CDATA[
+			SELECT PSD.PMO_NO            		/*프로모션번호*/
+			      ,PSD.PRD_PMO_SEQ        	    /*상품프로모션순번*/
+			      ,PSD.GFT_SEL_QTY        		/*사은품선택수량*/
+			      ,NVL(PSGD.GFT_PRD_CD, 0) AS GFT_PRD_CD   								/*사은품상품코드*/
+			      ,NVL(PSGD.MAND_YN, 'N')  AS GFT_MAND_YN       						/*필수여부*/
+			      ,NVL(PSGD.ADD_CMPOS_GBN_CD, 'A') AS ADD_CMPOS_GBN_CD    	        /*추가구성구분코드*/
+			  FROM PMO_SIMPL_D PSD        		/*단순프로모션정보*/
+			      ,PMO_SIMPL_GFT_D PSGD     	/*단순프로모션사은품정*/
+			      ,PRD_PRD_M PPM    
+			      ,PRD_ATTR_PRD_M PAPM    
+			 WHERE PSD.PRD_CD IN (#{_c.prdCd[0].value}, #{_c.attrPrdCd[0].value})    
+			   AND PSD.CHANL_CD IN ('A', 'P')    
+			   AND SYSDATE BETWEEN PSD.VALID_STR_DTM 
+			                   AND PSD.VALID_END_DTM    
+			   AND PSD.APRV_ST_CD = '30'        
+			   AND PSD.TGT_GBN_CD IN ('A', 'P')        
+			   AND PSD.OFFER_TYP_CD = '13'         /* 오퍼유형코드 [10:무이자할부, 11:MD할인, 12:적립금, 13:사은품, 14:EC사은품] */
+			   AND PSD.PMO_NO = PSGD.PMO_NO        
+			   AND PSD.PRD_PMO_SEQ = PSGD.PRD_PMO_SEQ    
+			   AND PSD.APPLY_PRIOR_RANK = PG_PMO_PRD_PMO.FN_PRD_APPLY_PRIOR_RANK( #{_c.attrPrdCd[0].value}, #{_c.chanlCd[0].value}, SYSDATE, 'A') /* 사은품 우선순위 */ -- 변경
+			   AND PSGD.ADD_CMPOS_GBN_CD IN ('G', 'D')    
+			   AND PSGD.USE_YN = 'Y'            
+			   AND PSGD.GFT_PRD_CD = PPM.PRD_CD    
+			   AND SYSDATE BETWEEN PPM.SALE_STR_DTM 
+			                   AND PPM.SALE_END_DTM    
+			   AND PPM.PRD_CD = PAPM.PRD_CD    
+			   AND SYSDATE BETWEEN PAPM.SALE_STR_DTM 
+			                   AND PAPM.SALE_END_DTM 
+		 ]]>  
+	</select>
+	
+	
+	<!-- 
+		내용	: EC속성상품코드로 상품코드와 상품유형코드 조회
+		작성자	: 윤병찬
+		작성일	: 2013.11.18 신규작성
+		
+		#{ecAttrPrdCd} = 5546804002;
+	-->
+	<resultMap id="prdInfoForAttrValMap" type="iceberg.capi.order.model.ordersheet.GsOrdItemDExt">
+		<result property="prdCd" column="PRD_CD"/>
+		<result property="prdTypCd" column="PRD_TYP_CD"/> 
+	</resultMap>
+	<select id="findPrdInfoForAttrVal" parameterType="long"  resultMap="prdInfoForAttrValMap">
+		<![CDATA[
+			SELECT PPM.PRD_CD        
+			      ,PPM.PRD_TYP_CD
+			FROM PRD_PRD_M PPM             
+			    ,PRD_ATTR_PRD_M PAPM         
+			WHERE PAPM.PRD_CD = PPM.PRD_CD      
+			  AND PAPM.EC_ATTR_PRD_CD = #{ecAttrPrdCd}   
+		 ]]>  
+	</select>
+	
+	
+	
+	<!-- 
+		내용	: 속성(옵션/스타일) 값 조회
+		작성자	: 윤병찬
+		작성일	: 2013.11.18 신규작성
+		
+		#{_c.chanlCd[0].value} = 'P';
+		#{_c.prdCd[0].value} = 5546807;
+		
+		AND NVL(PAPM.SALE_STR_DTM, SYSDATE - 1) < SYSDATE 
+	    AND NVL(PAPM.SALE_END_DTM, SYSDATE + 1) > SYSDATE 조건으로 데이타 안나올수 있음.
+		
+	-->
+	<resultMap id="prdInfoForAttrValSMap" type="iceberg.capi.order.model.ordersheet.GsOrdItemDExt">
+		<result property="ecAttrPrdCd" column="EC_ATTR_PRD_CD"/>
+		<result property="ordTypCd" column="ORD_PRD_TYP_CD"/>
+		<result property="prdAttrColor" column="PRD_ATTR_COLOR"/> 
+		<result property="prdAttrSize" column="PRD_ATTR_SIZE"/>  
+		<result property="prdAttrStyle" column="PRD_ATTR_STYLE"/> 
+		<result property="prdAttrGft" column="PRD_ATTR_GFT"/> 
+		<result property="attrPrdCd" column="ATTR_PRD_CD"/> 
+		<result property="prdCd" column="PRD_CD"/> 
+		<result property="chanlCd" column="CHANL_CD"/> 
+	</resultMap>
+	<select id="findPrdInfoForAttrValS" parameterType="criteria"  resultMap="prdInfoForAttrValSMap">
+		<![CDATA[
+			SELECT  
+			    PAPM.EC_ATTR_PRD_CD AS EC_ATTR_PRD_CD               
+			    ,PPM.ORD_PRD_TYP_CD AS ORD_PRD_TYP_CD              
+			    ,PAPM.ATTR_VAL_1 AS PRD_ATTR_COLOR 
+			    ,PAPM.ATTR_VAL_2 AS PRD_ATTR_SIZE                    
+			    ,PAPM.ATTR_VAL_3 AS PRD_ATTR_STYLE                 
+			    ,PAPM.ATTR_VAL_4 AS PRD_ATTR_GFT                                                    
+			    ,PAPM.ATTR_PRD_CD AS ATTR_PRD_CD
+			    ,PPM.PRD_CD       
+			    ,PCD.CHANL_CD 
+			FROM  
+			    PRD_PRD_M PPM
+			    ,PRD_ATTR_PRD_M PAPM
+			    ,PRD_CHANL_D PCD                              
+			WHERE  
+			    PPM.PRD_CD = PAPM.PRD_CD                        
+			    AND PPM.PRD_CD = PCD.PRD_CD                        
+			    AND PPM.PRD_CD = #{_c.prdCd[0].value}                       
+			    AND PPM.PRD_APRV_ST_CD = '30'                    
+			    AND NVL(PAPM.SALE_STR_DTM, SYSDATE - 1) < SYSDATE 
+			    AND NVL(PAPM.SALE_END_DTM, SYSDATE + 1) > SYSDATE 
+			    AND PAPM.USE_YN = 'Y'       
+			 	AND PCD.CHANL_CD = #{_c.chanlCd[0].value}                                             
+				AND PCD.SALE_PSBL_YN = 'Y'   		
+		 ]]>  
+	</select>		
+	
+	<!-- 
+		내용	: 속성(일반상품/키트상품/당사상품권) 값 조회
+		작성자	: 윤병찬
+		작성일	: 2013.11.18 신규작성
+		
+		#{prdCd} = 5546807;
+		
+		AND NVL(PAPM.SALE_STR_DTM, SYSDATE - 1) < SYSDATE 
+		AND NVL(PAPM.SALE_END_DTM, SYSDATE + 1) > SYSDATE 조건으로 데이타 안나올수 있음.
+		
+	-->
+	<resultMap id="prdInfoForAttrValPMap" type="iceberg.capi.order.model.ordersheet.GsOrdItemDExt">
+		<result property="ecAttrPrdCd" column="EC_ATTR_PRD_CD"/>
+		<result property="ordTypCd" column="ORD_PRD_TYP_CD"/>
+		<result property="prdAttrColor" column="PRD_ATTR_COLOR"/> 
+		<result property="prdAttrSize" column="PRD_ATTR_SIZE"/>  
+		<result property="prdAttrStyle" column="PRD_ATTR_STYLE"/> 
+		<result property="prdAttrGft" column="PRD_ATTR_GFT"/> 
+		<result property="attrPrdCd" column="ATTR_PRD_CD"/> 
+		<result property="prdCd" column="PRD_CD"/> 
+	</resultMap>
+	<select id="findPrdInfoForAttrValP" parameterType="long"  resultMap="prdInfoForAttrValPMap">
+		<![CDATA[
+			SELECT  
+			    PAPM.EC_ATTR_PRD_CD AS EC_ATTR_PRD_CD               
+			    ,PPM.ORD_PRD_TYP_CD AS ORD_PRD_TYP_CD              
+			    ,PAPM.ATTR_VAL_1 AS PRD_ATTR_COLOR 
+			    ,PAPM.ATTR_VAL_2 AS PRD_ATTR_SIZE               
+			    ,PAPM.ATTR_VAL_3 AS PRD_ATTR_STYLE              
+			    ,PAPM.ATTR_VAL_4 AS PRD_ATTR_GFT                                                     
+			    ,PAPM.ATTR_PRD_CD AS ATTR_PRD_CD
+			    ,PPM.PRD_CD        
+			FROM  
+			    PRD_PRD_M PPM                                
+			    ,PRD_ATTR_PRD_M PAPM
+			WHERE  
+			    PPM.PRD_CD = PAPM.PRD_CD                        
+			    AND PPM.PRD_CD = #{prdCd}                               
+			    AND NVL(PAPM.SALE_STR_DTM, SYSDATE - 1) < SYSDATE 
+			    AND NVL(PAPM.SALE_END_DTM, SYSDATE + 1) > SYSDATE 
+			    AND PAPM.USE_YN = 'Y'               		
+		 ]]>  
+	</select>		
+	
+	<!-- 
+		내용	: 적립금액을 결정한다.(procedure)
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+	-->
+
+	<select id="findPrdJuklibAmt" statementType="CALLABLE" parameterType="hashmap">
+		{  call PG_PMO_PRD_PMO.SP_PMO_PRD_ACC(
+		   		  #{an_prd_cd}                   /* 상품코드 */
+			    , #{ac_ec_acc_yn}                /* EC적립여부 */
+			    , #{an_prd_sale_prc}                /* 상품판매가격(할인가격제외) */
+			    , #{an_prd_dc_prc}                /* 상품할인가격(적립금사용금액제외) */
+			    , #{an_alia_type_cd}                /* 제휴타입코드 */
+			    , #{an_alia_acc_flag}                /* 제휴적립여부 */
+			    , #{an_no_int_mm_cnt}                /* 무이자할부개월수 */
+			    , #{an_pay_mm_cnt}                /* 결제할부개월수 */
+			    , #{an_prd_cnt}                /* 상품수량 */
+			    , #{an_card_pay_amt}                /* 카드결제금액 */
+			    , #{rn_pmo_acc_pmo_no, mode=OUT, javaType=DECIMAL, jdbcType=DECIMAL}        /* 적립프로모션번호 */
+			    , #{rn_pmo_acc_pmo_seq, mode=OUT, javaType=DECIMAL, jdbcType=DECIMAL}        /* 적립상품프로모션순번 */
+			    , #{rc_pmo_acc_rtamt_cd, mode=OUT, javaType=String, jdbcType=VARCHAR}        /* 프로모션적립율/액코드 */
+			    , #{rn_pmo_acc_gshs_rtamt, mode=OUT, javaType=DECIMAL, jdbcType=DECIMAL}        /* 프로모션적립율/액(당사) */
+			    , #{rn_pmo_acc_sup_rtamt, mode=OUT, javaType=DECIMAL, jdbcType=DECIMAL}        /* 프로모션적립율/액(협력사) */
+			    , #{rn_pmo_acc_gshs_amt, mode=OUT, javaType=DECIMAL, jdbcType=DECIMAL}        /* 프로모션적립금액(당사) */
+			    , #{rn_pmo_acc_sup_amt, mode=OUT, javaType=DECIMAL, jdbcType=DECIMAL}        /* 프로모션적립금액(협력사) */
+			    , #{rn_etc_acc_rt, mode=OUT, javaType=DECIMAL, jdbcType=DECIMAL}        /* 기타적립율(기본 + 제휴) */
+			    , #{rn_etc_acc_amt, mode=OUT, javaType=DECIMAL, jdbcType=DECIMAL}        /* 기타적립금액(기본 + 제휴) */
+			    , #{rn_fmly_acc_rt, mode=OUT, javaType=DECIMAL, jdbcType=DECIMAL}        /* 단축적립금율 */
+			    , #{rn_fmly_acc_amt, mode=OUT, javaType=DECIMAL, jdbcType=DECIMAL}        /* 단축적립금액 */
+		   )
+		}        
+	</select>	
+	
+	
+</mapper>

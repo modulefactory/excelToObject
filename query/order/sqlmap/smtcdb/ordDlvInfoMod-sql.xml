@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.ordermodify.OrdDlvInfoModSqlMapRepository">
+
+
+
+	<resultMap id="findPrdImpsblRegonZipcdMap" type="iceberg.capi.order.model.ordermodify.PrdInfo">
+		<result property="ecAttrPrdCd"										column="EC_ATTR_PRD_CD" />
+		<result property="attrWhlVal"                                       column="ATTR_WHL_VAL" />
+		<result property="attrPrdCd"                                        column="ATTR_PRD_CD" />
+		<result property="prdTypCd"                                        	column="PRD_TYP_CD" />
+	</resultMap>
+<!--
+   내용 : 단품별 배송불가지역 우편번호 조회 
+   작성자 : 송영준
+   작성일 : 2013. 12. 05
+   
+   #{prdCd} = 4909836
+
+-->
+
+	<select id="findPrdImpsblRegonZipcd" parameterType="String" resultMap="findPrdImpsblRegonZipcdMap">
+		<![CDATA[
+			SELECT ZIPCD 			AS ZIPCD
+			 FROM PRD_DLV_REGON_D PDRD 
+			WHERE PDRD.PRD_CD = #{prdCd}
+			  AND NVL(USE_YN,'N') = 'Y' 
+	
+		 ]]>
+	</select>
+
+
+
+</mapper>

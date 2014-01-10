@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.promotion.PmoSimplGftSqlMapRepository">
+	
+	<resultMap id="pmoSimplGft" type="iceberg.capi.order.model.promotion.PmoSimplGft">
+		<result property="gftPrdCd"				column="GFT_PRD_CD"/>
+		<result property="addCmposGbnCd"		column="ADD_CMPOS_GBN_CD"/>
+	</resultMap>
+	
+	     
+	   
+	<!--
+		API : 배송품 코드 조회
+		설명 :  프로모션 상품 중 사은품과 배송품을 구별하기 위해 배송품 코드를 조회
+		작성자 : 유영모
+		작성일 : 2013-11-28
+	-->
+	  	
+	<select id="findMyGiftListByPmoDeliverCode" parameterType="criteria"  resultMap="pmoSimplGft">
+		<![CDATA[
+			 	SELECT  
+			 		 PSGD.GFT_PRD_CD AS GFT_PRD_CD
+          			,PSGD.ADD_CMPOS_GBN_CD 
+				FROM    ORD_ORD_M OOM
+	               ,ORD_ITEM_D OID
+	               ,ORD_ITEM_GFT_MAP_D OIGMD
+	               ,PMO_SIMPL_D PSD
+	               ,PMO_SIMPL_GFT_D PSGD
+				WHERE  OOM.ORD_NO = #{_c.ordNo[0].value}
+		            AND PSGD.GFT_PRD_CD = #{_c.prdNo[0].value}
+		            AND OOM.ORD_NO = OID.ORD_NO
+		            AND OID.LINE_TYP_CD IN ('01','02')
+		            AND OID.ORD_NO = OIGMD.ORG_ORD_NO
+		            AND OID.ORD_ITEM_ID = OIGMD.GFT_ORD_ITEM_ID
+		            AND OIGMD.PMO_NO = PSD.PMO_NO
+		            AND OIGMD.PRD_PMO_SEQ = PSD.PRD_PMO_SEQ
+		            AND OIGMD.PMO_NO = PSGD.PMO_NO
+		            AND OIGMD.PRD_PMO_SEQ = PSGD.PRD_PMO_SEQ
+		            AND PSGD.GFT_PRD_CD = OID.PRD_CD    
+		            AND ROWNUM = 1
+ 		]]>
+	</select>
+</mapper>

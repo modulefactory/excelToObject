@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.ordermodify.OptInfoQrySqlMapRepository">
+
+
+
+<!--
+   내용 : 상품에 대한 상세정보를 조회한다.
+   작성자 : 송영준
+   작성일 : 2013. 11. 26
+   
+   #{prdCd} = 10268681
+-->
+	               
+	<resultMap id="optInfoQryMap" type="iceberg.capi.order.model.ordermodify.OptInfoQryInfo">
+		<result property="ecAttrPrdCd"										column="EC_ATTR_PRD_CD" />
+		<result property="attrWhlVal"                                       column="ATTR_WHL_VAL" />
+		<result property="attrPrdCd"                                        column="ATTR_PRD_CD" />
+		<result property="prdTypCd"                                        	column="PRD_TYP_CD" />
+	</resultMap>
+
+	<select id="findOptInfoQry" parameterType="criteria" resultMap="optInfoQryMap">
+
+		<![CDATA[
+		 SELECT  PAPM.EC_ATTR_PRD_CD 						AS EC_ATTR_PRD_CD            	
+	            ,PAPM.ATTR_WHL_VAL 							AS ATTR_WHL_VAL        
+	            ,PAPM.ATTR_PRD_CD 							AS ATTR_PRD_CD          
+	            ,NVL(PPM.PRD_TYP_CD, 'G') 					AS PRD_TYP_CD		  
+		   FROM  PRD_ATTR_PRD_M PAPM
+			 	,PRD_CHANL_D    PCD                                             	
+				,PRD_PRD_M PPM                                          	
+		  WHERE  PAPM.PRD_CD = #{_c.prdCd[0].value}
+		    AND  PAPM.PRD_CD = PCD.PRD_CD                                          	
+			AND  PCD.PRD_CD = PPM.PRD_CD                                          	
+			AND  PCD.CHANL_CD = 'P'                                             	
+			AND  PAPM.SALE_STR_DTM < SYSDATE                    	
+			AND  PAPM.SALE_END_DTM > SYSDATE                    	
+			AND  PAPM.USE_YN = 'Y'                                                	
+			AND  PAPM.ATTR_PRD_APRV_ST_CD = '30'          
+		]]>
+		
+	</select>
+	
+
+
+
+</mapper>

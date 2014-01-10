@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+	
+<mapper namespace="iceberg.capi.member.smtcdb.repository.cust.GsnpntGshsNocustSqlMapRepository">	
+	  
+	<!-- 
+	내용 : 타사 엔포인트 고객 여부 by 아이핀 고객명   findOthrcoGsnpntCustByIpinNm
+	작성자 : yhchoi
+	작성일 : 2013. 11. 28 
+
+    #{_c.ipinNo[0].value} = 'y+/Q8WWGXsNIfP6laMhWIWcKRRYQjDg4+QE0P3PQ8l0YgfvJGEQX415ZFE2cddITGtOECBimsUow53wt0Ow/jg=='
+    #{_c.custNm[0].value} = '테스트'
+	-->
+    <select id="findOthrcoGsnpntCustByIpinNm" parameterType="criteria" resultType="int">
+    SELECT COUNT(*) 
+     FROM  CST_GSNPNT_GSHS_NOCUST_D
+     WHERE IPIN_CI_NO     = #{_c.ipinNo[0].value} 
+       AND CUST_NM        = #{_c.custNm[0].value} 
+       AND CUST_ST_CD     = '01'  
+       AND CUST_REG_DTM IS NULL  
+       AND ROWNUM <![CDATA[<]]>= 1	
+    </select>
+ 
+    
+	<!-- 
+	내용 : GS&POINT 당사 미고객 패스워드 조회   findOthrcoGsnpntCustPasswd
+	작성자 : yhchoi
+	작성일 : 2013. 11. 28 
+
+    #{_c.id[0].value} = 'test1234141242' 
+	-->
+    <select id="findOthrcoGsnpntCustPasswd" parameterType="criteria" resultType="String">
+    SELECT GSNPNT_WEB_ECP_PASSWD  
+     FROM  CST_GSNPNT_GSHS_NOCUST_D
+     WHERE GSNPNT_WEB_LOGIN_ID = #{_c.id[0].value}   
+       AND CUST_ST_CD          = '01'  
+       AND CUST_REG_DTM IS NULL  
+       AND ROWNUM <![CDATA[<=]]> 1
+       AND IPIN_CI_NO IS NOT NULL 
+    </select> 
+    
+	<!-- 
+	내용 : GS&POINT 당사 미고객(타사 GS&POINT 가입 고객) 여부 조회   findOthrcoGsnpntCustFlgByCiNm
+	작성자 : yhchoi
+	작성일 : 2013. 11. 28 
+
+    #{_c.ipinNo[0].value} = 'y+/Q8WWGXsNIfP6laMhWIWcKRRYQjDg4+QE0P3PQ8l0YgfvJGEQX415ZFE2cddITGtOECBimsUow53wt0Ow/jg=='
+    #{_c.custNm[0].value} = '테스트'
+	-->
+    <select id="findOthrcoGsnpntCustFlgByCiNm" parameterType="criteria" resultType="int">
+    SELECT COUNT(*)
+     FROM  CST_GSNPNT_GSHS_NOCUST_D
+     WHERE IPIN_CI_NO = #{_c.ipinNo[0].value}   
+       AND CUST_NM    = #{_c.custNm[0].value}    
+       AND CUST_ST_CD = '01'  
+       AND CUST_REG_DTM IS NULL
+       AND ROWNUM <![CDATA[<=]]> 1
+    </select>
+
+</mapper>

@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.orderdetail.PaymentInfoSqlMapRepository">
+
+	<resultMap type="iceberg.capi.order.model.orderdetail.payment.PaymentEachRaw" id="paymentEachRaw" >
+		<result property="cardPayAmt" column="CARD_PAY_AMT"/>
+		<result property="noBkbPayAmt" column="NO_BKB_PAY_AMT"/>
+		<result property="rtmBkbPayAmt" column="RTM_BKB_PAY_AMT"/> 
+		<result property="celphnPayAmt" column="CELPHN_PAY_AMT"/>
+		<result property="aliaPntPayAmt" column="ALIA_PNT_PAY_AMT"/>
+		<result property="ktCardPayAmt" column="KT_CARD_PAY_AMT"/>
+		<result property="accPayAmt" column="ACCM_PAY_AMT"/>
+		<result property="tmprcvPayAmt" column="TMPRCV_PAY_AMT"/>
+		<result property="gsShopGftcertPayAmt" column="GS_SHOP_GFTCERT_PAY_AMT"/>
+		<result property="gsnpntPayAmt" column="GSNPNT_PAY_AMT"/>
+		<result property="celphnComCoCd" column="CELPHN_COM_CO_CD"/>
+		<result property="celphnNo" column="CELPHN_NO"/>
+		<result property="cardNo" column="CARD_NO"/>
+		<result property="cardNm" column="CARD_NM"/>
+		<result property="cardNoIntFlg" column="CARD_NO_INT_FLG"/>
+		<result property="cardInsmMmCnt" column="CARD_INSM_MM_CNT"/>
+		<result property="cardAprvDtm" column="CARD_APRV_DTM"/>
+		<result property="cardAprvNo" column="CARD_APRV_NO"/>
+		<result property="cardPayStCd" column="CARD_PAY_ST_CD"/>
+		<result property="dpoBankNm" column="DPO_BANK_NM"/>
+		<result property="dpoAccntNo" column="DPO_ACCNT_NO"/>
+		<result property="dpoPrsnNm" column="DPO_PRSN_NM"/>
+		<result property="dpoDtm" column="DPO_DTM"/>
+		<result property="dpoDedlnDt" column="DPO_DEDLN_DT"/>
+	</resultMap>
+
+	<!--
+		API : 주문상세정보 - 결제정보 조회
+		설명 : 주문에 해당하는 결제정보(각각) 조회
+		작성자 : 손영훈
+		작성일 : 2013-12-31
+		#{_c.ordNo[0].value} = "617217364"
+		#{_c.custNo[0].value} = "21288638"
+	-->
+	<select id="findPaymentEachInfo" parameterType="criteria" resultMap="paymentEachRaw">
+	<![CDATA[
+	SELECT  NVL(DECODE(POPD.PAY_TYP_CD, 'Credit Card', POPD.PAY_AMT),0) AS CARD_PAY_AMT    /* 카드결제금액 */
+	       ,NVL(DECODE(POPD.PAY_TYP_CD,'Bank Account',
+		              DECODE(POPD.META_ATTR21,'RT',0,
+			            DECODE(POPD.META_ATTR28,NULL,
+				          DECODE(POPD.PAY_ST_CD,'B03',
+					        NVL(POPD.PAY_AMT,0),'B02',NVL(POPD.PAY_AMT,0),NVL(POPD.RFN_PSBL_AMT,0)
+				          ),NVL(POPD.RFN_PSBL_AMT,0)
+			       )),0),0) AS NO_BKB_PAY_AMT       /* 무통장입금결제금액 */
+	       ,NVL(DECODE(POPD.PAY_TYP_CD,'Bank Account',
+		              DECODE(POPD.META_ATTR21,'RT',
+			            DECODE(POPD.META_ATTR28,NULL,
+				          DECODE(POPD.PAY_ST_CD,'B03',
+					        NVL(POPD.PAY_AMT,0),'B02',NVL(POPD.PAY_AMT,0),NVL(POPD.RFN_PSBL_AMT,0)
+				          ),NVL(POPD.RFN_PSBL_AMT,0)
+			       ),0),0),0) AS RTM_BKB_PAY_AMT       /* 실시간계좌이체결제금액 */
+	       ,NVL(CASE WHEN POPD.META_ATTR19 IN ('PA','LAJ') AND POPD.PAY_TYP_CD LIKE '%Point' THEN POPD.RFN_PSBL_AMT END,0) AS CELPHN_PAY_AMT       /* 휴대폰결제금액 */
+	       ,NVL(CASE WHEN POPD.META_ATTR19 NOT IN ('PA','LAJ') AND POPD.PAY_TYP_CD LIKE '%Point' THEN POPD.RFN_PSBL_AMT END,0) AS ALIA_PNT_PAY_AMT       /* 제휴포인트결제금액 */
+	       ,NVL(DECODE(POPD.PAY_TYP_CD, 'Prepaid Card', POPD.RFN_PSBL_AMT),0) AS KT_CARD_PAY_AMT    /* KT월드패스카드결제금액 */
+	       ,NVL(DECODE(CATD.TXN_TYP_CD, 'R08', CATD.RET_PSBL_AMT),0) AS ACCM_PAY_AMT            /* 적립금결제금액 */
+	       ,NVL(DECODE(CATD.TXN_TYP_CD, 'C01', CATD.RET_PSBL_AMT),0) AS TMPRCV_PAY_AMT          /* 예치금결제금액 */
+	       ,NVL(DECODE(CATD.TXN_TYP_CD, 'T01', CATD.RET_PSBL_AMT),0) AS GS_SHOP_GFTCERT_PAY_AMT /* GS샵상품권결제금액 */
+	       ,NVL(DECODE(CATD.TXN_TYP_CD, 'P08', CATD.RET_PSBL_AMT),0) AS GSNPNT_PAY_AMT          /* GSNPOINT결제금액 */
+	       ,NVL(POPD.META_ATTR8,'') AS CELPHN_COM_CO_CD   /* 핸드폰통신사코드 */
+	       ,NVL(POPD.META_ATTR34,'') AS CELPHN_NO         /* 핸드폰번호 */
+	       ,NVL(DECODE(POPD.PAY_TYP_CD, 'Credit Card', POPD.CARD_NO_MSK),'')  AS CARD_NO          /* 카드번호 */
+	       ,NVL(DECODE(POPD.PAY_TYP_CD, 'Credit Card', (SELECT CARD_NM 
+	       												  FROM PAY_CARD_CO_D 
+	       												 WHERE CARD_KIND_CD = POPD.META_ATTR19 
+	       												   AND CARD_AFFIL_CD = POPD.META_ATTR18)),'')  AS CARD_NM          /* 카드명 */
+	       ,NVL(DECODE(POPD.PAY_TYP_CD, 'Credit Card', POPD.META_ATTR31),'')  AS CARD_NO_INT_FLG  /* 카드무이자여부 */
+	       ,NVL(DECODE(POPD.PAY_TYP_CD, 'Credit Card', POPD.INSM_MM),'')      AS CARD_INSM_MM_CNT     /* 카드할부개월수 */
+	       ,NVL(DECODE(POPD.PAY_TYP_CD, 'Credit Card', POPD.META_ATTR12),'')  AS CARD_APRV_DTM  /* 카드승인일시 */
+	       ,NVL(DECODE(POPD.PAY_TYP_CD, 'Credit Card', POPD.META_ATTR37),'')  AS CARD_APRV_NO  /* 카드승인번호 */
+	       ,NVL(DECODE(POPD.PAY_TYP_CD, 'Credit Card', POPD.CNL_ST_CD),POPD.PAY_ST_CD)  AS CARD_PAY_ST_CD  /* 카드결제상태코드 */
+	       ,NVL(DECODE(POPD.PAY_TYP_CD, 'Bank Account', (SELECT CD_VAL FROM CMM_CMM_C WHERE CMM_GRP_CD = 'PAY001' AND CMM_CD=POPD.META_ATTR21)),'')       AS DPO_BANK_NM  /* 입금은행명 */
+	       ,NVL(DECODE(POPD.PAY_TYP_CD, 'Bank Account', POPD.META_ATTR17),'') AS DPO_ACCNT_NO  /* 입금계좌번호 */
+	       ,NVL(DECODE(POPD.PAY_TYP_CD, 'Bank Account', POPD.META_ATTR9),'')  AS DPO_PRSN_NM  /* 입금자명 */
+	       ,NVL(DECODE(POPD.PAY_TYP_CD, 'Bank Account', POPD.META_ATTR12),'') AS DPO_DTM  /* 입금일 */
+	       ,NVL(DECODE(POPD.PAY_TYP_CD, 'Bank Account', OOM.ORD_DTM + 5),'') AS DPO_DEDLN_DT  /* 입금마감일 */
+	  FROM  PAY_ORD_PAYMT_D POPD
+	       ,ORD_ORD_M OOM
+	       ,CST_ASSET_TXN_D CATD
+	 WHERE  OOM.ORD_NO = #{_c.ordNo[0].value}
+	   AND  OOM.CUST_NO = #{_c.custNo[0].value}
+	   AND  OOM.PAY_ORD_NO = POPD.PAY_ORD_NO(+)
+	   AND  OOM.PAY_ORD_NO = CATD.PAY_ORD_NO(+)
+	]]>
+	</select>
+
+
+
+	<resultMap type="iceberg.capi.order.model.orderdetail.payment.PaymentTotalRaw" id="paymentTotalRaw" >
+		<result property="cardPayTot" column="CARD_PAY_TOT"/>
+		<result property="noBkbPayTot" column="NO_BKB_PAY_TOT"/>
+		<result property="rtmBkbPayTot" column="RTM_BKB_PAY_TOT"/> 
+		<result property="celphnPayTot" column="CELPHN_PAY_TOT"/>
+		<result property="aliaPntPayTot" column="ALIA_PNT_PAY_TOT"/>
+		<result property="ktCardPayTot" column="KT_CARD_PAY_TOT"/>
+		<result property="accPayTot" column="ACCM_PAY_TOT"/>
+		<result property="tmprcvPayTot" column="TMPRCV_PAY_TOT"/>
+		<result property="gsShopGftcertPayTot" column="GS_SHOP_GFTCERT_PAY_TOT"/>
+		<result property="gsnpntPayTot" column="GSNPNT_PAY_TOT"/>
+		<result property="celphnComCoCd" column="CELPHN_COM_CO_CD"/>
+		<result property="celphnNo" column="CELPHN_NO"/>
+		<result property="cardNoMsk" column="CARD_NO_MSK"/>
+		<result property="cardNm" column="CARD_NM"/>
+		<result property="cardNoIntFlg" column="CARD_NO_INT_FLG"/>
+		<result property="cardInsmMmCnt" column="CARD_INSM_MM_CNT"/>
+	</resultMap>
+	
+	<!--
+		API : 주문상세정보 - 결제정보 조회
+		설명 : 주문에 해당하는 결제정보(총액) 조회
+		작성자 : 손영훈
+		작성일 : 2013-12-31
+		#{_c.ordNo[0].value} = "617217364"
+		#{_c.custNo[0].value} = "21288638"
+	-->
+	<select id="findPaymentTotalInfo" parameterType="criteria" resultMap="paymentTotalRaw">
+	<![CDATA[
+	SELECT  NVL(SUM(DECODE(POPD.PAY_TYP_CD, 'Credit Card', POPD.RFN_PSBL_AMT)),0) AS CARD_PAY_TOT    /* 카드결제총계 */
+	       ,NVL(SUM(DECODE(POPD.PAY_TYP_CD,'Bank Account',
+	                  DECODE(POPD.META_ATTR21,'RT',0,
+	                    DECODE(POPD.META_ATTR28,NULL,
+	                      DECODE(POPD.PAY_ST_CD,'B03',
+	                        NVL(POPD.PAY_AMT,0),'B02',NVL(POPD.PAY_AMT,0),NVL(POPD.RFN_PSBL_AMT,0)
+	                      ),NVL(POPD.RFN_PSBL_AMT,0)
+	               )),0)),0) AS NO_BKB_PAY_TOT       /* 무통장입금결제총계 */
+	       ,NVL(SUM(DECODE(POPD.PAY_TYP_CD,'Bank Account',
+	                  DECODE(POPD.META_ATTR21,'RT',
+	                    DECODE(POPD.META_ATTR28,NULL,
+	                      DECODE(POPD.PAY_ST_CD,'B03',
+	                        NVL(POPD.PAY_AMT,0),'B02',NVL(POPD.PAY_AMT,0),NVL(POPD.RFN_PSBL_AMT,0)
+	                      ),NVL(POPD.RFN_PSBL_AMT,0)
+	               ),0),0)),0) AS RTM_BKB_PAY_TOT       /* 실시간계좌이체결제총계 */
+	       ,NVL(SUM(CASE WHEN POPD.META_ATTR19 IN ('PA','LAJ') AND POPD.PAY_TYP_CD LIKE '%Point' THEN POPD.RFN_PSBL_AMT END),0) AS CELPHN_PAY_TOT       /* 휴대폰결제총계 */
+	       ,NVL(SUM(CASE WHEN POPD.META_ATTR19 NOT IN ('PA','LAJ') AND POPD.PAY_TYP_CD LIKE '%Point' THEN POPD.RFN_PSBL_AMT END),0) AS ALIA_PNT_PAY_TOT       /* 제휴포인트결제총계 */
+	       ,NVL(SUM(DECODE(POPD.PAY_TYP_CD, 'Prepaid Card', POPD.RFN_PSBL_AMT)),0) AS KT_CARD_PAY_TOT    /* KT월드패스카드결제총계 */
+	       ,NVL(SUM(DECODE(CATD.TXN_TYP_CD, 'R08', CATD.RET_PSBL_AMT)),0) AS ACCM_PAY_TOT            /* 적립금결제총계 */
+	       ,NVL(SUM(DECODE(CATD.TXN_TYP_CD, 'C01', CATD.RET_PSBL_AMT)),0) AS TMPRCV_PAY_TOT          /* 예치금결제총계 */
+	       ,NVL(SUM(DECODE(CATD.TXN_TYP_CD, 'T01', CATD.RET_PSBL_AMT)),0) AS GS_SHOP_GFTCERT_PAY_TOT /* GS샵상품권결제총계 */
+	       ,NVL(SUM(DECODE(CATD.TXN_TYP_CD, 'P08', CATD.RET_PSBL_AMT)),0) AS GSNPNT_PAY_TOT          /* GSNPOINT결제총계 */
+	       ,NVL(MAX(POPD.META_ATTR8),'')  AS CELPHN_COM_CO_CD   /* 핸드폰통신사코드 */
+	       ,NVL(MAX(POPD.META_ATTR34),'') AS CELPHN_NO         /* 핸드폰번호 */
+	       ,NVL(MAX(CASE WHEN POPD.PAY_ST_CD NOT IN ('C00','C01','C11') AND POPD.PAY_TYP_CD LIKE 'Credit Card' THEN POPD.CARD_NO_MSK END),'') AS CARD_NO_MSK       /* 카드번호 */
+	       ,NVL(MAX(CASE WHEN POPD.PAY_ST_CD NOT IN ('C00','C01','C11') AND POPD.PAY_TYP_CD LIKE 'Credit Card' THEN POPD.META_ATTR19 END),'') AS CARD_NM           /* 카드명 */
+	       ,NVL(MAX(CASE WHEN POPD.PAY_ST_CD NOT IN ('C00','C01','C11') AND POPD.PAY_TYP_CD LIKE 'Credit Card' THEN POPD.META_ATTR31 END),'N') AS CARD_NO_INT_FLG  /* 카드무이자여부 */
+	       ,NVL(MAX(CASE WHEN POPD.PAY_ST_CD NOT IN ('C00','C01','C11') AND POPD.PAY_TYP_CD LIKE 'Credit Card' THEN POPD.INSM_MM END),'0') AS CARD_INSM_MM_CNT     /* 카드할부개월수 */
+	  FROM  PAY_ORD_PAYMT_D POPD
+	       ,ORD_ORD_M OOM
+	       ,CST_ASSET_TXN_D CATD
+	 WHERE  OOM.ORD_NO     = #{_c.ordNo[0].value}
+	   AND  OOM.CUST_NO    = #{_c.custNo[0].value} -- 이 부분은 파라미터를 number타입으로 받도록
+	   AND  OOM.PAY_ORD_NO = POPD.PAY_ORD_NO(+)
+	   AND  OOM.PAY_ORD_NO = CATD.PAY_ORD_NO(+)
+	]]>
+	</select>
+	
+	
+	<resultMap type="iceberg.framework.core.criteria.KeyValueElement" id="naverAccmInfo" >
+		<result property="value" column="NAVER_ACC_RT"/>
+	</resultMap>
+	
+	<!--
+		API : 
+		설명 : 
+		작성자 : 
+		작성일 : 
+		#{_c.ordNo[0].value} = "526066460"
+		#{_c.custNo[0].value} = "30840182"
+	-->
+	<select id="findNaverAccmInfo" parameterType="criteria" resultMap="naverAccmInfo">
+	<![CDATA[
+	SELECT NAVER_PAY_ACCM.NAVER_ACC_RT
+	  FROM ( SELECT PAPAD.TOT_ACC_RT AS NAVER_ACC_RT
+	           FROM PAY_ALIA_PNT_ACC_D PAPAD
+	          WHERE PAPAD.CUST_NO = #{_c.custNo[0].value}
+	            AND PAPAD.PAY_ORD_NO = #{_c.ordNo[0].value}
+	            AND PAPAD.ACC_TYP_CD='A'
+	            AND ROWNUM = 1 ) NAVER_PAY_ACCM 
+	]]>
+	</select>
+	
+</mapper>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.basket.Smart4cStyleChangeSqlMapRepository">
+	               
+	<!-- 장바구니 선택 상품 스타일 정보 조회 -->
+	<resultMap id="basketStyleData" type="iceberg.capi.order.model.basket.Basket">
+		<result property="attrPrdCd" column="ATTR_PRD_CD"/>
+		<result property="ecAttrPrdCd" column="EC_ATTR_PRD_CD"/>
+		<result property="prdAttrColor" column="PRD_ATTR_COLOR"/>
+		<result property="prdAttrSize" column="PRD_ATTR_SIZE"/>
+		<result property="prdAttrStyle" column="PRD_ATTR_STYLE"/>
+		<result property="prdAttrGft" column="PRD_ATTR_GFT"/>
+		<result property="colorNm" column="COLOR_NM"/>
+		<result property="imgFileNm" column="IMG_FILE_NM"/>
+		<result property="tempoutYn" column="TEMPOUT_YN"/>
+	</resultMap>
+	
+	<!--
+   	내용 : 장바구니 선택 상품 스타일 정보 조회
+   	작성자 : 마윤민
+   	작성일 : 2013. 11. 12
+   
+   	#{prdCd} = 11111622
+	-->
+	<select id = "findPrdStyleSearch" parameterType="long" resultMap="basketStyleData">
+	<![CDATA[
+	SELECT PAPM.ATTR_PRD_CD AS ATTR_PRD_CD,         /*속성상품코드        */
+               PAPM.EC_ATTR_PRD_CD AS EC_ATTR_PRD_CD,   /*EC속성상품코드*/    
+               NVL(DECODE(PAPM.ATTR_VAL_1, '공통', '', PAPM.ATTR_VAL_1),'None') PRD_ATTR_COLOR, /*상품속성색상*/        
+               NVL(DECODE(PAPM.ATTR_VAL_2, '공통', '', PAPM.ATTR_VAL_2),'None') PRD_ATTR_SIZE,  /*상품속성사이즈  */      
+               NVL(DECODE(PAPM.ATTR_VAL_3, '공통', '', PAPM.ATTR_VAL_3),'None') PRD_ATTR_STYLE, /*상품속성스타일    */        
+               NVL(DECODE(PAPM.ATTR_VAL_4, '공통', '', PAPM.ATTR_VAL_4),'None') PRD_ATTR_GFT,  /*상품속성사은품          */  
+               PCID.COLOR_VAL      AS COLOR_NM,         /*색상명(colorNm)*/
+               PCID.IMG_FILE_NM    AS IMG_FILE_NM,      /*이미지명(imgFileNm)*/        
+               CASE WHEN NVL(PSD.TEMPOUT_YN,'N') = 'Y' THEN 'Y'            
+                       WHEN PAPM.SALE_STR_DTM > SYSDATE OR PAPM.SALE_END_DTM < SYSDATE THEN 'Y'
+                       WHEN NVL(POPQ.QTY, 0) < 1 THEN 'Y'    
+                       ELSE 'N' END TEMPOUT_YN   
+      FROM PRD_ATTR_PRD_M PAPM,    /*속성상품기본            */
+              PRD_CHANL_D PCD,        /*상품채널정보            */
+              PRD_COLOR_IMG_D PCID,   /*상품색상이미지정보  */      
+              PRD_STOCK_D PSD,        /*상품재고정보  */
+              (SELECT  PAPM.ATTR_PRD_CD, NVL(MAX(POPQD.ORD_PSBL_QTY) - NVL(SUM(POPTD.ORD_QTY),0), 0) AS QTY
+                 FROM  PRD_ATTR_PRD_M PAPM,                                         
+                          PRD_ORD_PSBL_QTY_D POPQD,                                      
+                          PRD_ORD_PSBL_TMP_D POPTD                                      
+                WHERE PAPM.PRD_CD = #{prdCd}                                              
+                          AND PAPM.ATTR_PRD_REP_CD = POPQD.ATTR_PRD_REP_CD     /*속성상품대표*/   
+                          AND POPQD.CHANL_GRP_CD = (SELECT CHANL_GRP_CD    /*채널그룹코드 */           
+                                                               FROM PRD_CHANL_MAPPN_D              
+                                                             WHERE CHANL_CD = 'B'  /*인터넷*/
+                                                                AND  CHANL_GRP_TYP_CD = 'A' /*채널그룹코드:주문가능수량*/)       
+                          AND POPQD.ATTR_PRD_REP_CD = POPTD.ATTR_PRD_REP_CD(+)                  
+                          AND POPQD.CHANL_GRP_CD    = POPTD.CHANL_GRP_CD(+)     /*채널그룹코드*/       
+                          AND POPTD.QTY_GBN_CD(+)   = 'ORD'    
+                GROUP BY PAPM.ATTR_PRD_CD)  POPQ
+    WHERE PAPM.PRD_CD = #{prdCd}                 /*상품코드                  */                                                  
+        AND PAPM.USE_YN = 'Y'                      /*사용여부                           */                                         
+        AND PAPM.ATTR_PRD_APRV_ST_CD = '30'        /*속성상품결재여부      */                                          
+        AND PAPM.ATTR_PRD_REP_CD = PSD.ATTR_PRD_REP_CD                                                            
+        AND PAPM.PRD_CD = PCD.PRD_CD                                            
+        AND PCD.CHANL_CD = 'P'                     /*채널구분코드    */
+        AND PCD.SALE_PSBL_YN = 'Y'                 /*판매가능여부    */
+        AND PAPM.PRD_CD = PCID.PRD_CD(+)                            
+        AND PAPM.ATTR_VAL_1 = PCID.COLOR_NM(+)     /*색상명*/
+        AND (CASE WHEN NVL(PSD.TEMPOUT_YN,'N') = 'Y' THEN 'Y' 
+                        WHEN PAPM.SALE_STR_DTM > SYSDATE OR PAPM.SALE_END_DTM < SYSDATE THEN 'Y' 
+                        ELSE 'N' END ) != 'Y' 
+        AND PAPM.ATTR_PRD_CD = POPQ.ATTR_PRD_CD(+)
+    ORDER BY EXPOS_SEQ, EC_ATTR_PRD_CD
+	]]>
+	</select>
+</mapper>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.orderdelivery.PrdOrdChkSqlMapRepository">
+
+	<select id="findOrderCheck" parameterType="criteria"  resultType="String"> 	
+		 <![CDATA[
+			SELECT  ORD_MNFC_YN AS ORDER_MAKE_YN
+			FROM 	PRD_PRD_M
+			WHERE 	PRD_CD = #{_c.prdId[0].value} 
+		 ]]>
+	</select>
+</mapper>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prd.ProductRepresentativeShopSqlMapRepository">
+	
+	<resultMap type="iceberg.capi.product.model.prd.add.ProductRepresentativeShop" id="productRepresentativeShop">
+		<result property = "shopNumber"    	column = "SHOP_NO"  />                                  
+		<result property = "level"          column = "LVL"   />
+		<result property = "shopName"                column = "SHOP_NM"  />                                  
+		<result property = "upperShopName"          column = "PARNT_SHOP_NO"   />
+		<result property = "shopFileName"    column = "SHOP_FILE_NM"  />                                  
+		<result property = "eStoreFlag"          column = "ESTORE_FLAG"   />
+		<result property = "reservedFlag2"          column = "ETC_TASK_VAL2"   />
+		<result property = "naverKnowFlag"          column = "NAVER_PSBL_YN"   />	 
+	</resultMap>
+	
+	<select id="getProductRepresentativeShop" parameterType="long" resultMap="productRepresentativeShop">
+	<![CDATA[
+	SELECT ES.SECTID                 AS SHOP_NO
+         ,(SELECT GST.NAME AS NM 
+             FROM GS_SECT_TREE GST 
+            WHERE ES.SECTID = GST.SECTID 
+              AND GST.LINK_STS='A')  AS SHOP_NM
+         ,ES.SECTPRSTID              AS PARNT_SHOP_NO
+         ,ES.LBL                     AS SHOP_FILE_NM
+         ,ES.HI_FLAG      AS ESTORE_FLAG
+         ,ES.RESERVED2    AS ETC_TASK_VAL2
+         ,LEVEL           AS LVL
+         ,NAVER_KNOW_YN   AS NAVER_PSBL_YN -- 확인필요
+     FROM EC_SECT ES  
+    WHERE ES.DBSTS = 'A'  
+    START WITH ES.SECTID = (SELECT SHOP_NO  
+                              FROM (SELECT ESP.SECTID AS SHOP_NO 
+                                          ,NVL(ESP.SECT_SEQ,99) SECT_SEQ  
+                                          ,(CASE WHEN EST.SECTID1=1079896 
+                                                 THEN '099' ELSE ES1.PRIOR_DISP_CD END) AS PRIOR_DISP_CD 
+                                      FROM EC_SECT        ES1
+                                          ,EC_SECT_PRDLST ESP
+                                          ,GS_SECT_TREE   EST 
+                                     WHERE ESP.PRDID = #{productCode}
+                                       AND ES1.SECTID = ESP.SECTID  
+                                       AND ES1.SECTID = EST.SECTID 
+                                       AND EST.LINK_STS = 'A' 
+                                       AND ES1.PRD_DISP_YN = 'Y' 
+                                       AND ES1.SECT_GUBUN = 'G'  
+                                       AND ESP.DBSTS = 'A'  
+                                       AND ES1.DBSTS = 'A'  
+                                     ORDER BY SECT_SEQ, PRIOR_DISP_CD, SHOP_NO  )  
+                             WHERE ROWNUM = 1)  
+  CONNECT BY ES.SECTID = PRIOR ES.SECTPRSTID 
+    ORDER BY LEVEL DESC 
+
+	]]>
+	</select>
+	
+</mapper>

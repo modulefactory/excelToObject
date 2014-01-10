@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.common.OrderStockCheckSqlMapRepository">
+
+	<!--
+   	내용 : 재고체크시 상품번호로 조회
+   	작성자 : 마윤민
+   	작성일 : 2013. 11. 12
+   
+   	#{prdCd} = 5547263
+	-->
+	<select id="findOrderStockCheckPrdCd" parameterType="long" resultType="Integer">
+	<![CDATA[
+	SELECT	/*+ index(POPTD IX_PRD_ORD_PSBL_TMP_D_01) */ 
+	        	NVL(POPQ.ORD_PSBL_QTY - SUM(NVL(POPTD.ORD_QTY,0)), 0) AS ORD_QTY	  
+	FROM    PRD_ATTR_PRD_M PAPM,
+				PRD_PRD_M PPM,
+				PRD_ORD_PSBL_QTY_D POPQ,
+				PRD_ORD_PSBL_TMP_D POPTD
+	WHERE   PPM.PRD_CD = #{prdCd}
+		AND 	PPM.SALE_PSBL_APRV_YN = 'Y'
+		AND 	PPM.PRD_TYP_CD <> 'S'
+		AND 	PPM.PRD_CD = PAPM.PRD_CD
+		AND 	PAPM.ATTR_PRD_REP_CD = POPQ.ATTR_PRD_REP_CD
+		AND 	POPQ.CHANL_GRP_CD = (SELECT CHANL_GRP_CD FROM PRD_CHANL_MAPPN_D WHERE CHANL_CD = 'P' AND CHANL_GRP_TYP_CD = 'A')
+		AND 	POPQ.ATTR_PRD_REP_CD = POPTD.ATTR_PRD_REP_CD(+)
+		AND 	POPQ.CHANL_GRP_CD = POPTD.CHANL_GRP_CD(+)
+		AND 	POPTD.QTY_GBN_CD(+) = 'ORD'  
+	GROUP BY POPQ.ORD_PSBL_QTY
+	]]>
+	</select>
+	
+	<!--
+	내용 : 재고체크시 속성상품번호로 조회
+	작성자 : 마윤민
+	작성일 : 2013.11.12
+	
+	#{attrPrdCd} = 5547263001
+	-->
+	<select id="findOrderStockCheckAttrPrdCd" parameterType="long" resultType="Integer">
+	<![CDATA[
+	SELECT  /*+ index(D IX_PRD_ORD_PSBL_TMP_D_01) */ 
+	        	NVL(POPQD.ORD_PSBL_QTY - SUM(NVL(POPTD.ORD_QTY,0)),0) AS ORD_QTY
+	FROM		PRD_ATTR_PRD_M PAPM,	
+				PRD_ORD_PSBL_QTY_D POPQD,	
+				PRD_ORD_PSBL_TMP_D POPTD	
+	WHERE	PAPM.ATTR_PRD_CD = #{attrPrdCd}
+		AND	PAPM.SALE_PSBL_APRV_YN = 'Y'
+		AND 	PAPM.ATTR_PRD_REP_CD = POPQD.ATTR_PRD_REP_CD
+		AND   POPQD.CHANL_GRP_CD = (SELECT CHANL_GRP_CD FROM PRD_CHANL_MAPPN_D WHERE CHANL_CD = 'P' AND CHANL_GRP_TYP_CD = 'A')	
+		AND 	POPQD.ATTR_PRD_REP_CD = POPTD.ATTR_PRD_REP_CD(+)
+		AND  	POPQD.CHANL_GRP_CD = POPTD.CHANL_GRP_CD(+)
+		AND  	POPTD.QTY_GBN_CD(+) = 'ORD'
+	GROUP BY POPQD.ORD_PSBL_QTY
+	]]>
+	</select>
+	
+	<!--
+	내용 : 재고체크시 속성상품번호로 In 조회
+	작성자 : 마윤민
+	작성일 : 2013.11.12
+	
+	#{attrPrdCd} = 5547263001
+	-->
+	<resultMap id="findOrderStockMap" type="iceberg.capi.order.model.common.OrderStockCheck">
+		<result property="attrPrdCd" column="ATTR_PRD_CD"/>
+		<result property="stockQty" column="STOCK_QTY"/>
+	</resultMap>
+	
+	<select id="findOrderStockCheckInAttrPrdCd" parameterType="criteria" resultMap="findOrderStockMap">
+	SELECT  /*+ index(D IX_PRD_ORD_PSBL_TMP_D_01) */ 
+				PAPM.ATTR_PRD_CD,
+	        	NVL(POPQD.ORD_PSBL_QTY - SUM(NVL(POPTD.ORD_QTY,0)),0) AS STOCK_QTY
+	FROM		PRD_ATTR_PRD_M PAPM,	
+				PRD_ORD_PSBL_QTY_D POPQD,	
+				PRD_ORD_PSBL_TMP_D POPTD	
+	WHERE	PAPM.ATTR_PRD_CD IN
+			<foreach collection="_c.attrPrdCd[0].value" item="item" index="index" open="(" separator="," close=")">
+		   	#{item}
+		   </foreach>
+		AND	PAPM.SALE_PSBL_APRV_YN = 'Y'
+		AND 	PAPM.ATTR_PRD_REP_CD = POPQD.ATTR_PRD_REP_CD
+		AND   POPQD.CHANL_GRP_CD = (SELECT CHANL_GRP_CD FROM PRD_CHANL_MAPPN_D WHERE CHANL_CD = 'P' AND CHANL_GRP_TYP_CD = 'A')	
+		AND 	POPQD.ATTR_PRD_REP_CD = POPTD.ATTR_PRD_REP_CD(+)
+		AND  	POPQD.CHANL_GRP_CD = POPTD.CHANL_GRP_CD(+)
+		AND  	POPTD.QTY_GBN_CD(+) = 'ORD'
+	GROUP BY PAPM.ATTR_PRD_CD,POPQD.ORD_PSBL_QTY
+
+	</select>
+</mapper>	

@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.orderpay.OrdPayIspProcWebDbSqlMapRepository">
+
+
+	<!-- 
+		내용	: ISP 인증정보
+		작성자	: 송영준
+		작성일	: 2013.11.20 신규작성
+	-->
+
+	<select id="findIspMobileSequence" 	resultType="long" >
+		<![CDATA[
+
+			SELECT GS_ORD_ISPLOG_MC_SEQ.NEXTVAL FROM DUAL
+			
+			]]>
+	</select>
+	
+		               
+	<!-- 
+		내용	: ISP 인증정보
+		작성자	: 송영준
+		작성일	: 2013.11.20 신규작성
+	-->
+
+	<update id="insertIspMobileLog" parameterType="iceberg.capi.order.model.orderpay.OrdPayIspInfo" >
+		<![CDATA[
+
+			INSERT
+			INTO GS_ORD_ISPLOG_MC
+			(	SEQNO,
+				DBSTS,
+				GUBUN,
+				CATVID,
+				CREDATE
+			)
+			VALUES
+			(
+				#{seq,jdbcType=NUMERIC} ,
+				'S' ,
+				'MC' ,
+				#{custNo,jdbcType=NUMERIC} ,
+				SYSDATE
+			)
+			
+			]]>
+	</update>
+
+
+	<!-- 
+		내용	: ISP 인증정보 조회
+		작성자	: 송영준
+		작성일	: 2013.12.19 신규작성
+	
+		#{SEQNO} = sequence number
+	-->
+	
+	<resultMap id="findIspMobileLogMap" type="iceberg.capi.order.model.orderpay.OrdPayIspInfo">
+		<result property="dbTid"							column="dbTid" />
+		<result property="dbSts"							column="dbSts" />
+		<result property="cardCode"							column="cardCode" />
+		<result property="sessionKey"						column="sessionKey" />
+		<result property="encData"							column="encData" />
+		<result property="parmCdata"						column="parmCdata" />
+	</resultMap>
+
+	<select id="findIspMobileLog" parameterType="long"  resultMap="findIspMobileLogMap">
+		<![CDATA[
+
+				 SELECT GOIM.SEQNO 				AS dbTid, 					
+			    	    GOIM.DBSTS 				AS dbSts,					
+			    	   	GOIM.KVP_CARDCODE 		AS cardCode,		
+			    	   	GOIM.KVP_SESSIONKEY 	AS sessionKey,	
+			    	   	GOIM.KVP_ENCDATA 		AS encData,			
+			    	   	GOIM.PARM_CDATA 		AS parmCdata			
+			   	FROM 	GS_ORD_ISPLOG_MC GOIM					
+			  	WHERE 	SEQNO = #{TID}
+			  	--TO-DO 아래 주석 해제해야함						
+			  	--AND 	CREDATE > SYSDATE - 2/24  
+	
+			]]>
+	</select>
+	
+
+	<!-- 
+		내용	: ISP 인증 Param 초기화
+		작성자	: 송영준
+		작성일	: 2013.12.19
+	-->
+
+	<update id="updateIspMobileParamsEmpty" parameterType="iceberg.capi.order.model.orderpay.OrdPayIspInfo" >
+		<![CDATA[
+
+			UPDATE 	GS_ORD_ISPLOG_MC               
+    		SET 	PARM_CDATA = EMPTY_CLOB()      
+  			WHERE 	SEQNO = #{TID}      
+			
+			]]>
+	</update>
+	
+	<!-- 인증코드값 for update 수행
+		내용	: 
+		작성자	: 송영준
+		작성일	: 2013.12.19
+	-->
+	<resultMap id="findIspParmCdataForUpdateMap" type="iceberg.capi.order.model.orderpay.OrdPayIspInfo">
+		<result property="parmCdata" 						column="parmCdata"	jdbcType="CLOB" javaType="java.lang.String" />
+	</resultMap>
+
+	<select id="findIspParmCdataForUpdate" parameterType="long"  resultMap="findIspParmCdataForUpdateMap">
+		<![CDATA[
+
+			SELECT GOIM.PARM_CDATA				AS parmCdata
+			 FROM GS_ORD_ISPLOG_MC GOIM 
+			 WHERE SEQNO = #{TID} FOR UPDATE
+	
+		]]>
+	</select>		
+
+	<!-- 
+		내용	: ISP 인증 Param 초기화
+		작성자	: 송영준
+		작성일	: 2013.12.19
+	-->
+
+	<update id="updateIspParmCdata" parameterType="iceberg.capi.order.model.orderpay.OrdPayIspInfo" >
+		<![CDATA[
+
+			UPDATE 	GS_ORD_ISPLOG_MC               
+    		SET 	PARM_CDATA = #{encodeData}      
+  			WHERE 	SEQNO = #{TID}      
+			
+			]]>
+	</update>
+
+
+	<!-- 
+		내용	: ISP 인증 Param 초기화
+		작성자	: 송영준
+		작성일	: 2013.12.19
+	-->
+
+	<update id="updateIspMobileLog" parameterType="iceberg.capi.order.model.orderpay.OrdPayIspInfo" >
+		<![CDATA[
+
+			UPDATE GS_ORD_ISPLOG_MC
+			SET 	DBSTS = #{dbSts} ,
+			  		KVP_SESSIONKEY = #{sessionKey} ,
+			  		KVP_ENCDATA = #{encData} ,
+			  		KVP_CARDCODE = #{cardCode}
+			WHERE 	SEQNO = #{TID}    
+			
+			]]>
+	</update>
+
+
+</mapper>

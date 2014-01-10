@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.cust.webdb.repository.rlmemshp.RlmemshpSqlMapRepository">
+		
+	<resultMap type="iceberg.capi.cust.model.rlmemshp.Rlmemshp" id="rlmemshpMap">  
+		<result property = "custNo"                     column= "CUST_NO"                       />
+	    <result property = "applyYm"                    column= "APPLY_YM"                      />
+	    <result property = "custRlmemshpGrd"            column= "CUST_RLMEMSHP_GRD"             />
+	    <result property = "m1WthinCustPayCnt"          column= "M1_WTHIN_CUST_PAY_CNT"         />
+	    <result property = "yy1WthinCustPayCnt"         column= "YY_1_WTHIN_CUST_PAY_CNT"       />
+	    <result property = "nxtMmDelSchdPayCnt"         column= "NXT_MM_DEL_SCHD_PAY_CNT"       />
+	    <result property = "m3WthinPrdrevwCnt"          column= "M3_WTHIN_PRDREVW_CNT"          />
+	    <result property = "recntM3WthinPrchHist"       column= "RECNT_M3_WTHIN_PRCH_HIST"      />
+	    <result property = "recntM3WthinPrchAmt"        column= "RECNT_M3_WTHIN_PRCH_AMT"       />
+	    <result property = "recnt1YyWthinPrchCnt"       column= "RECNT_1_YY_WTHIN_PRCH_CNT"     />
+	    <result property = "recntM3PrdrevwCnt"          column= "RECNT_M3_PRDREVW_CNT"          />
+	    <result property = "nxtMmExcptSchdPrdrevwCnt"   column= "NXT_MM_EXCPT_SCHD_PRDREVW_CNT" />
+	    <result property = "modDtm"                     column= "MOD_DTM"                       />
+	    <result property = "dailyCustPayCnt"            column= "DAILY_CUST_PAY_CNT"            />  
+	</resultMap>  
+	
+
+	<select id="findRlmemshpGrade" parameterType="criteria" resultMap="rlmemshpMap">
+	<!-- 
+		API  : 리얼멤버쉽 등급 조회
+		설명 : 고객번호, 조회년월에 따른 고객등급정보를 조회한다.  
+		 
+		#{_c.custNo[0].value}  = 38008488 
+		#{_c.applyYm[0].value}  = 201112
+	-->
+        SELECT GET.CATVID           AS CUST_NO
+              ,GET.APPLY_YM         AS APPLY_YM
+              ,GET.CUS_GRADE        AS CUST_RLMEMSHP_GRD
+              ,GET.ORD_CNT_M        AS M1_WTHIN_CUST_PAY_CNT  
+              ,GET.ORD_CNT_Y        AS YY_1_WTHIN_CUST_PAY_CNT
+              ,GET.ORD_CNT_R        AS NXT_MM_DEL_SCHD_PAY_CNT
+              ,GET.ESTIMATE_CNT     AS M3_WTHIN_PRDREVW_CNT 
+              ,GET.ORD_NEAR         AS RECNT_M3_WTHIN_PRCH_HIST
+              ,GET.ORD_NEAR_AMT     AS RECNT_M3_WTHIN_PRCH_AMT
+              ,GETE.ORD_CNT_Y       AS RECNT_1_YY_WTHIN_PRCH_CNT
+              ,GETE.ESTIMATE_CNT    AS RECNT_M3_PRDREVW_CNT
+              ,GET.ESTIMATE_CNT_R   AS NXT_MM_EXCPT_SCHD_PRDREVW_CNT
+              ,GET.UPDATE_YMD       AS MOD_DTM
+              ,NVL(GET.ORD_CNT_D,0) AS DAILY_CUST_PAY_CNT
+          FROM GS_EVENT_THEDREAM    GET
+              ,GS_EVENT_THEDREAM_EL GETE
+         WHERE GET.CATVID    = GETE.CATVID(+) 
+           AND GET.CATVID    = #{_c.custNo[0].value}
+           AND GET.APPLY_YM  = #{_c.applyYm[0].value} 
+	</select>	
+	
+ 
+</mapper>

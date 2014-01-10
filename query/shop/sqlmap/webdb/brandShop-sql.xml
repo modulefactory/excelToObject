@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.shop.webdb.repository.BrandShopSqlMapRepository">
+	
+	<resultMap type="iceberg.capi.shop.model.BrandShopInfo" id="brandShopInfoMap">
+		<result property = "brandCd"    			column = "BRAND_CD"  />                                  
+		<result property = "cornerGb"    			column = "CORNER_GB"  />                                  
+		<result property = "shopNo"    			column = "SHOP_NO"  />                                  
+		<result property = "listGb"    				column = "LIST_GB"  />                                  
+		<result property = "prdCd"    				column = "PRD_CD"  />                                  
+		<result property = "linkGb"    				column = "LINK_GB"  />
+		
+		<result property = "upperPrdClsCd"    	column = "UPPER_PRD_CLS_CD"  />                                  
+		<result property = "upperPrdClsNm"    	column = "UPPER_PRD_CLS_NM"  />                                  
+		<result property = "prdClsCd"    			column = "PRD_CLS_CD"  />                                  
+		<result property = "prdClsNm"    		column = "PRD_CLS_NM"  />                                  
+		<result property = "prdCnt"    			column = "PRD_CNT"  /> 
+	</resultMap>
+	
+	<select id="findBestBrandShopInfos" parameterType="iceberg.capi.shop.model.BrandShopInfo" resultMap="brandShopInfoMap">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품  findBestBrandShopInfos
+		API  : 베스트 브랜드 샵 정보
+		설명 : 베스트 브랜드 샵 정보
+		
+		#{brandCd} = 66374
+		#{cornerGb} = COMM
+		#{shopNo} = 0
+		#{listGb} = BEST_PRD
+		#{firstCnt} = 0
+		#{maxCnt} = 20
+		-->
+		<![CDATA[	
+		SELECT 
+			*
+		FROM (
+		    SELECT ROWNUM AS RNUM
+		            , BRANDID AS BRAND_CD
+		            , CORNER_GB AS CORNER_GB
+		            , SECTID AS SHOP_NO
+		            , LIST_GB AS LIST_GB
+		            , LINK_NUM AS PRD_CD
+		            , LINK_GB AS LINK_GB            
+		            , AUTO_YN AS AUTO_FLG
+		            , DISPLAY_FLAG AS DISPLAY_FLG                              
+		    FROM (SELECT 
+		              		GBSL.*                  
+			          FROM GS_BRAND_SECT_LIST GBSL				    
+			          WHERE GBSL.BRANDID = #{brandCd}
+			              AND GBSL.CORNER_GB = #{cornerGb}
+			              AND GBSL.SECTID = #{shopNo}
+			              AND GBSL.LIST_GB = 'BEST_PRD'		          
+			         ORDER BY GBSL.EXB_SEQ
+		        ) 
+		)
+		WHERE RNUM > #{firstCnt} AND RNUM <= #{maxCnt}
+		]]>   
+	</select>
+	
+	<select id="findBrandAllPrds" parameterType="iceberg.capi.shop.model.BrandShopInfo" resultMap="brandShopInfoMap">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품  findBrandAllPrds
+		API  : 브랜드 매장 상품 정보
+		설명 : 브랜드 매장 상품 정보
+		
+		#{brandCd} = 66374
+		#{shopNo} = 0
+		#{firstCnt} = 0
+		#{maxCnt} = 20
+		-->
+		<![CDATA[	
+		SELECT 
+			 X2.PRDID AS PRD_CD
+			, X2.NAME AS PRD_CLS_NM
+		FROM (
+		          SELECT ROWNUM AS RNUM, 
+		            VPPL.*
+		          FROM (
+			                SELECT  LINK_NUM AS PRD_CD
+			                FROM    GS_BRAND_SECT_LIST GBSL
+			                WHERE  GBSL.BRANDID = #{brandCd}
+			                     AND GBSL.SECTID = #{shopNo}                
+			                GROUP BY LINK_NUM                
+		                ) X
+		            ,STORE.V_PRD_PRD_LIST VPPL
+		            ,(SELECT PRDID AS PRD_CD
+		                        , POINT 
+		              FROM  GS_SECT_PRD_BEST GSPB
+		              WHERE BEST_CD = 'SS15' 
+		                  AND SECTID = 0
+		              ) X1
+		          WHERE X.PRD_CD = VPPL.PRDID
+		              AND X.PRD_CD = X1.PRD_CD(+)
+		          ORDER BY NVL(X1.POINT,0) DESC
+		          				, VPPL.LAST_CONF_DATE DESC
+		          				, VPPL.CREDATE DESC
+		        ) X2
+		WHERE RNUM > #{firstCnt} AND RNUM <= #{maxCnt}
+		]]>   
+	</select>
+	
+	<select id="findBrandPrdClsInfos" parameterType="criteria" resultMap="brandShopInfoMap">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품  findBrandPrdClsInfos
+		API  : 브랜드 상품 유형 정보
+		설명 : 브랜드 상품 유형 정보
+		
+		#{_c.brandCd[0].value}  = 66374
+		#{_c.cornerGb[0].value} = COMM
+		-->
+		<![CDATA[	
+		SELECT 
+		    GBS.BRANDID AS BRAND_CD
+		    , GBS.UPPER_PRD_CLS_CD AS UPPER_PRD_CLS_CD
+		    , GBS.UPPER_PRD_CLS_NM AS UPPER_PRD_CLS_NM
+		    , GBS.PRD_CLS_CD    AS PRD_CLS_CD
+		    , GBS.PRD_CLS_NM    AS PRD_CLS_NM
+		    , GBS.PRD_CNT  AS PRD_CNT
+		FROM    GS_BRAND_SECT GBS,
+		        (SELECT BRANDID
+		                , UPPER_PRD_CLS_CD
+		                , UPPER_PRD_CLS_NM 
+		                , SUM(PRD_CNT) PRD_CNT
+		         FROM  GS_BRAND_SECT
+		         WHERE BRANDID = #{_c.brandCd[0].value} 
+		           AND CORNER_GB = #{_c.cornerGb[0].value} 
+		           AND PRD_CLS_CD != '0'
+		         GROUP BY BRANDID, UPPER_PRD_CLS_CD, UPPER_PRD_CLS_NM
+		         ORDER BY PRD_CNT DESC
+		         ) X
+		WHERE GBS.BRANDID = X.BRANDID 
+		  AND GBS.BRANDID = #{_c.brandCd[0].value}
+		  AND GBS.CORNER_GB = #{_c.cornerGb[0].value} 
+		  AND GBS.PRD_CLS_CD != '0'
+		  AND GBS.UPPER_PRD_CLS_CD = X.UPPER_PRD_CLS_CD
+		ORDER BY X.PRD_CNT DESC
+		        , GBS.PRD_CNT DESC
+		        , GBS.UPPER_PRD_CLS_CD
+		]]>   
+	</select>
+</mapper>

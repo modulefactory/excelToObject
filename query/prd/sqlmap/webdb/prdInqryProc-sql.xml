@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prdInqry.PrdInqryProcSqlMapRepository">
+	<select id="createGsKnowUserNickName" parameterType="iceberg.capi.product.model.prdInqry.PrdInqryProcApiCntnt">
+	<!-- 
+		DBMS : WEBDB
+		분야 : 단품 createGsKnowUserNickName
+		API  : 상품문의 기본 정보 등록
+		설명 : 상품문의 기본 정보 등록-NickName 등록/수정 처리
+		
+		#{ecCustNo} = 2001322805
+		#{nick} = 테스트0002
+		#{custNo} = 40766021 
+	-->
+      MERGE INTO GS_KNOW_USER GKU
+            USING DUAL S
+         ON (GKU.ECUSERID = #{ecCustNo})
+       WHEN MATCHED THEN
+     UPDATE SET NICK_NAME = #{nick}
+       WHEN NOT MATCHED THEN
+     INSERT (ECUSERID, CATVID, NICK_NAME, DBSTS, CREDATE)
+     VALUES (#{ecCustNo}, #{custNo}, #{nick}, 'A', sysdate)
+	</select>
+	
+	<update id="updateReplyCnt" parameterType="iceberg.capi.product.model.prdInqry.PrdInqryProcApiCntnt">
+		UPDATE SRV_QNA_BLT_EDN_D
+		SET       ANSWR_CNT = decode(NVL(#{updReplyCnt}, 0), '+1', NVL(ANSWR_CNT,0) + 1, '-1', NVL(ANSWR_CNT,0) - 1, NVL(ANSWR_CNT,0))
+				   , BUYER_ANSWR_CNT = decode(NVL(#{updBuyerReplyCnt}, 0), '+1', NVL(BUYER_ANSWR_CNT,0) + 1, '-1', NVL(BUYER_ANSWR_CNT,0) - 1, NVL(BUYER_ANSWR_CNT,0))
+				   , MODR_ID = #{modrId}
+				   , MOD_DTM = #{modDtm}
+				   , IF_SEQ = #{ifSeq}
+				   , IF_YN = #{ifFlg}
+				   , IF_DTM = #{ifDtm}
+				   , IF_TYP_CD = #{ifTypCd}
+				   , IF_SND_SYS_ID = #{ifSndSysId}
+				   , IF_RCV_SYS_ID = #{ifRcvSysId}
+				   , OWN_SYS_ID = #{ownSysId}
+		WHERE  BLT_THG_NO = #{upperPrdInqryNo}
+	</update>
+	
+	<insert id="createBaseInfo" parameterType="iceberg.capi.product.model.prdInqry.PrdInqryProcApiCntnt">
+		INSERT INTO SRV_QNA_BLT_EDN_D
+		(
+			<if test="prdInqryNo  != null and !''.equals(prdInqryNo)">                               BLT_THG_NO   </if>
+			<if test="regDtm  != null and !''.equals(regDtm)">                                , REG_DTM   </if>
+			<if test="regrId  != null and !''.equals(regrId)">                                    , REGR_ID   </if>
+			<if test="modDtm  != null and !''.equals(modDtm)">                              , MOD_DTM   </if>
+			<if test="modrId  != null and !''.equals(modrId)">                                  , MODR_ID   </if>
+			<if test="custNo  != 0">                                                                   , CUST_NO   </if>
+			<if test="custRlmemshpGrd  != null and !''.equals(custRlmemshpGrd)">     , CUST_GRD_CD   </if>
+			<if test="nick  != null and !''.equals(nick)">                                           , NICK   </if>
+			<if test="smsSndFlg  != null and !''.equals(smsSndFlg)">                         , SMS_NTC_YN   </if>
+			<if test="celphnTelNo  != null and !''.equals(celphnTelNo)">                             , CELPHN_NO   </if>
+			<if test="emailAddr  != null and !''.equals(emailAddr)">                           , EMAIL_ADDR   </if>
+			<if test="supCd  != 0">                                                                   , SUP_CD   </if>
+			<if test="subSupCd  != null and !''.equals(subSupCd)">                           , SUB_SUP_CD   </if>
+			<if test="prdCd  != 0">                                                                   , PRD_CD   </if>
+			<if test="exposPrdNm  != null and !''.equals(exposPrdNm)">                    , PRD_NM   </if>
+			<if test="prdImg  != null and !''.equals(prdImg)">                                 , PRD_IMG_URL_NM   </if>
+			<if test="lrgClsShopNo  != 0">                                                           , LRG_CLS_SHOP_NO   </if>
+			<if test="midClsShopNo  != 0">                                                          , MID_CLS_SHOP_NO   </if>
+			<if test="ordNo  != 0">                                                                   , ORD_NO   </if>
+			<if test="prdInqryTitle  != null and !''.equals(prdInqryTitle)">                  , BLT_THG_TITLE_NM   </if>
+			<if test="prdInqryGbnCd  != null and !''.equals(prdInqryGbnCd)">             , BLT_THG_LVL_NO   </if>
+			<if test="upperPrdInqryNo  != null and !''.equals(upperPrdInqryNo)">        , UPPER_BLT_THG_NO   </if>
+			<if test="prdInqrySortSeqVal  != null and !''.equals(prdInqrySortSeqVal)"> , SORT_SEQ_VAL   </if>
+			<if test="custRegrIp  != null and !''.equals(custRegrIp)">                        , IP_ADDR   </if>
+			<if test="prdInqryStCd  != null and !''.equals(prdInqryStCd)">                  , DB_ST_CD   </if>
+			<if test="atachFileGbnCd  != null and !''.equals(atachFileGbnCd)">            , ATACH_FILE_GBN_CD   </if>
+			<if test="answrAdoptCd  != null and !''.equals(answrAdoptCd)">               , ANSWR_ADOPT_CD   </if>
+			<if test="qryCnt  != 0">                                                                   , QRY_CNT   </if>
+			<if test="answrCnt  != 0">                                                                , ANSWR_CNT   </if>
+			<if test="ordPrsnAnswrCnt  != 0">                                                        , BUYER_ANSWR_CNT   </if>
+			<if test="supAnswrCnt  != 0">                                                           , SUP_ANSWR_CNT   </if>
+			<if test="pntScore  != 0">                                                                , PNT_SCORE   </if>
+			<if test="ordPrsnFlg  != null and !''.equals(ordPrsnFlg)">                              , BUYER_YN   </if>
+			<if test="secrtArtclFlg  != null and !''.equals(secrtArtclFlg)">                   , SECRT_ARTCL_YN   </if>
+			<if test="emailAnswrRcvFlg  != null and !''.equals(emailAnswrRcvFlg)">      , EMAIL_ANSWR_RCV_YN   </if>
+			<if test="declrFlg  != null and !''.equals(declrFlg)">                                , DECLR_YN   </if>
+			<if test="ifSeq  != 0">                                                                   , IF_SEQ   </if>
+			<if test="ifFlg  != null and !''.equals(ifFlg)">                                          , IF_YN   </if>
+			<if test="ifDtm  != null and !''.equals(ifDtm)">                                      , IF_DTM   </if>
+			<if test="ifTypCd  != null and !''.equals(ifTypCd)">                                , IF_TYP_CD   </if>
+			<if test="ifMsgCntnt  != null and !''.equals(ifMsgCntnt)">                        , IF_MSG_CNTNT   </if>
+			<if test="ifSndSysId  != null and !''.equals(ifSndSysId)">                         , IF_SND_SYS_ID   </if>
+			<if test="ifRcvSysId  != null and !''.equals(ifRcvSysId)">                         , IF_RCV_SYS_ID   </if>
+			<if test="ownSysId  != null and !''.equals(ownSysId)">                           , OWN_SYS_ID   </if>
+			
+			<if test="regChanlCd  != null and !''.equals(regChanlCd)">                      , CHANL_CD   </if>
+		)
+		VALUES(
+			<if test="prdInqryNo  != null and !''.equals(prdInqryNo)">                          #{prdInqryNo}  </if>
+			<if test="regDtm  != null and !''.equals(regDtm)">                                , #{regDtm}</if>
+			<if test="regrId  != null and !''.equals(regrId)">                                    , #{regrId}</if>
+			<if test="modDtm  != null and !''.equals(modDtm)">                              , #{modDtm}</if>
+			<if test="modrId  != null and !''.equals(modrId)">                                  , #{modrId}</if>
+			<if test="custNo  != 0">                                                                   , #{custNo}</if>
+			<if test="custRlmemshpGrd  != null and !''.equals(custRlmemshpGrd)">     , #{custRlmemshpGrd}</if>
+			<if test="nick  != null and !''.equals(nick)">                                           , #{nick}</if>
+			<if test="smsSndFlg  != null and !''.equals(smsSndFlg)">                         , #{smsSndFlg}</if>
+			<if test="celphnTelNo  != null and !''.equals(celphnTelNo)">                             , #{celphnTelNo}</if>
+			<if test="emailAddr  != null and !''.equals(emailAddr)">                           , #{emailAddr}</if>
+			<if test="supCd  != 0">                                                                    , #{supCd}</if>
+			<if test="subSupCd  != null and !''.equals(subSupCd)">                           , #{subSupCd}</if>
+			<if test="prdCd  != 0">                                                                   , #{prdCd}</if>
+			<if test="exposPrdNm  != null and !''.equals(exposPrdNm)">                    , #{exposPrdNm}</if>
+			<if test="prdImg  != null and !''.equals(prdImg)">                                 , #{prdImg}</if>
+			<if test="lrgClsShopNo  != 0">                                                           , #{lrgClsShopNo}</if>
+			<if test="midClsShopNo  != 0">                                                          , #{midClsShopNo}</if>
+			<if test="ordNo  != 0">                                                                    , #{ordNo}</if>
+			<if test="prdInqryTitle  != null and !''.equals(prdInqryTitle)">                  , #{prdInqryTitle}</if>
+			<if test="prdInqryGbnCd  != null and !''.equals(prdInqryGbnCd)">             , #{prdInqryGbnCd}</if>
+			<if test="upperPrdInqryNo  != null and !''.equals(upperPrdInqryNo)">        , #{upperPrdInqryNo}</if>
+			<if test="prdInqrySortSeqVal  != null and !''.equals(prdInqrySortSeqVal)"> , #{prdInqrySortSeqVal}</if>
+			<if test="custRegrIp  != null and !''.equals(custRegrIp)">                        , #{custRegrIp}</if>
+			<if test="prdInqryStCd  != null and !''.equals(prdInqryStCd)">                  , #{prdInqryStCd}</if>
+			<if test="atachFileGbnCd  != null and !''.equals(atachFileGbnCd)">            , #{atachFileGbnCd}</if>
+			<if test="answrAdoptCd  != null and !''.equals(answrAdoptCd)">               , #{answrAdoptCd}</if>
+			<if test="qryCnt  != 0">                                                                   , #{qryCnt}</if>
+			<if test="answrCnt  != 0">                                                                , #{answrCnt}</if>
+			<if test="ordPrsnAnswrCnt  != 0">                                                        , #{ordPrsnAnswrCnt}</if>
+			<if test="supAnswrCnt  != 0">                                                           , #{supAnswrCnt}</if>
+			<if test="pntScore  != 0">                                                                , #{pntScore}</if>
+			<if test="ordPrsnFlg  != null and !''.equals(ordPrsnFlg)">                              , #{ordPrsnFlg}</if>
+			<if test="secrtArtclFlg  != null and !''.equals(secrtArtclFlg)">                   , #{secrtArtclFlg}</if>
+			<if test="emailAnswrRcvFlg  != null and !''.equals(emailAnswrRcvFlg)">      , #{emailAnswrRcvFlg}</if>
+			<if test="declrFlg  != null and !''.equals(declrFlg)">                                , #{declrFlg}</if>
+			<if test="ifSeq  != 0">                                                                      , #{ifSeq}</if>
+			<if test="ifFlg  != null and !''.equals(ifFlg)">                                          , #{ifFlg}</if>
+			<if test="ifDtm  != null and !''.equals(ifDtm)">                                      , #{ifDtm}</if>
+			<if test="ifTypCd  != null and !''.equals(ifTypCd)">                                , #{ifTypCd}</if>
+			<if test="ifMsgCntnt  != null and !''.equals(ifMsgCntnt)">                        , #{ifMsgCntnt}</if>
+			<if test="ifSndSysId  != null and !''.equals(ifSndSysId)">                         , #{ifSndSysId}</if>
+			<if test="ifRcvSysId  != null and !''.equals(ifRcvSysId)">                         , #{ifRcvSysId}</if>
+			<if test="ownSysId  != null and !''.equals(ownSysId)">                           , #{ownSysId}</if>
+			<if test="regChanlCd  != null and !''.equals(regChanlCd)">                      , #{regChanlCd}</if>
+		)
+	</insert>
+	
+	<insert id="createCntnt" parameterType="iceberg.capi.product.model.prdInqry.PrdInqryProcApiCntnt">
+		INSERT INTO SRV_BLT_THG_CNTNT_D
+		(
+			<if test="prdInqryNo  != null and !''.equals(prdInqryNo)">                               BLT_THG_NO   </if>
+			<if test="regDtm  != null and !''.equals(regDtm)">                                       , REG_DTM   </if>
+			<if test="regrId  != null and !''.equals(regrId)">                                           , REGR_ID   </if>
+			<if test="modDtm  != null and !''.equals(modDtm)">                                     , MOD_DTM   </if>
+			<if test="modrId  != null and !''.equals(modrId)">                                         , MODR_ID   </if>
+			<if test="prdInqryBodyCntnt  != null and !''.equals(prdInqryBodyCntnt)">          , QNA_BODY_CNTNT   </if>
+			<if test="srcCntnt  != null and !''.equals(srcCntnt)">                                     , SRC_CNTNT   </if>
+			<if test="ifSeq  != 0">                                                                  			   , IF_SEQ   </if>
+			<if test="ifFlg  != null and !''.equals(ifFlg)">                                                 , IF_YN   </if>
+			<if test="ifDtm  != null and !''.equals(ifDtm)">                                             , IF_DTM   </if>
+			<if test="ifTypCd  != null and !''.equals(ifTypCd)">                                       , IF_TYP_CD   </if>
+			<if test="ifMsgCntnt  != null and !''.equals(ifMsgCntnt)">                               , IF_MSG_CNTNT   </if>
+			<if test="ifSndSysId  != null and !''.equals(ifSndSysId)">                                , IF_SND_SYS_ID   </if>
+			<if test="ifRcvSysId  != null and !''.equals(ifRcvSysId)">                                , IF_RCV_SYS_ID   </if>
+			<if test="ownSysId  != null and !''.equals(ownSysId)">                                  , OWN_SYS_ID   </if>
+		)
+		VALUES(
+			<if test="prdInqryNo  != null and !''.equals(prdInqryNo)">                          #{prdInqryNo}  </if>
+			<if test="regDtm  != null and !''.equals(regDtm)">                                       , #{regDtm}   </if>
+			<if test="regrId  != null and !''.equals(regrId)">                                           , #{regrId}   </if>
+			<if test="modDtm  != null and !''.equals(modDtm)">                                     , #{modDtm}   </if>
+			<if test="modrId  != null and !''.equals(modrId)">                                         , #{modrId}   </if>
+			<if test="prdInqryBodyCntnt  != null and !''.equals(prdInqryBodyCntnt)">          , #{prdInqryBodyCntnt}   </if>
+			<if test="srcCntnt  != null and !''.equals(srcCntnt)">                                     , #{srcCntnt}   </if>
+			<if test="ifSeq  != 0">                                                                  			   , #{ifSeq}   </if>
+			<if test="ifFlg  != null and !''.equals(ifFlg)">                                                 , #{ifFlg}   </if>
+			<if test="ifDtm  != null and !''.equals(ifDtm)">                                             , #{ifDtm}   </if>
+			<if test="ifTypCd  != null and !''.equals(ifTypCd)">                                       , #{ifTypCd}   </if>
+			<if test="ifMsgCntnt  != null and !''.equals(ifMsgCntnt)">                               , #{ifMsgCntnt}   </if>
+			<if test="ifSndSysId  != null and !''.equals(ifSndSysId)">                                , #{ifSndSysId}   </if>
+			<if test="ifRcvSysId  != null and !''.equals(ifRcvSysId)">                                , #{ifRcvSysId}   </if>
+			<if test="ownSysId  != null and !''.equals(ownSysId)">                                  , #{ownSysId}   </if>
+		)
+	</insert>
+	
+	<update id="updatePrdInqryBase">
+	<!-- 
+	DBMS : WEBDB
+	분야 : 상품문의 정보(마스터) 업데이트 updatePrdInqryBase
+	API  : 상품문의
+	설명 : 상품문의 정보(마스터)를 업데이트 한다.
+	-->
+	UPDATE SRV_QNA_BLT_EDN_D  
+	   SET <if test="prdInqryNo  != null and !''.equals(prdInqryNo)">  
+	       BLT_THG_NO         = #{prdInqryNo} 
+	       </if>
+	       <if test="regDtm  != null and !''.equals(regDtm)">
+	      ,REG_DTM            = #{regDtm}
+	       </if>                        
+	       <if test="regrId  != null and !''.equals(regrId)">
+	      ,REGR_ID            = #{regrId}
+	       </if>
+	       <if test="modDtm  != null and !''.equals(modDtm)">
+	      ,MOD_DTM            = #{modDtm}
+	       </if>
+	       <if test="modrId  != null and !''.equals(modrId)">
+	      ,MODR_ID            = #{modrId}
+	       </if>
+	       <if test="custNo  != 0">        
+	      ,CUST_NO            = #{custNo}
+	       </if>                                          
+	       <if test="custRlmemshpGrd  != null and !''.equals(custRlmemshpGrd)">
+	      ,CUST_GRD_CD        = #{custRlmemshpGrd}
+	       </if>
+	       <if test="nick  != null and !''.equals(nick)">
+	      ,NICK               = #{nick}
+	       </if> 
+	       <if test="smsSndFlg  != null and !''.equals(smsSndFlg)">
+	      ,SMS_NTC_YN         = #{smsSndFlg}
+	       </if>
+	       <if test="celphnTelNo  != null and !''.equals(celphnTelNo)">
+	      ,CELPHN_NO          = #{celphnTelNo}
+	       </if>
+	       <if test="emailAddr  != null and !''.equals(emailAddr)">
+	      ,EMAIL_ADDR         = #{emailAddr}
+	       </if>
+	       <if test="supCd  != 0">
+	      ,SUP_CD             = #{supCd}
+	       </if>
+	       <if test="subSupCd  != null and !''.equals(subSupCd)">
+	      ,SUB_SUP_CD         = #{subSupCd}
+	       </if>
+	       <if test="prdCd  != 0">
+	      ,PRD_CD             = #{prdCd}
+	       </if>
+	       <if test="exposPrdNm  != null and !''.equals(exposPrdNm)">
+	      ,PRD_NM             = #{exposPrdNm}
+	       </if>
+	       <if test="prdImg  != null and !''.equals(prdImg)">
+	      ,PRD_IMG_URL_NM     = #{prdImg}
+	       </if>
+	       <if test="lrgClsShopNo  != 0">
+	      ,LRG_CLS_SHOP_NO    = #{lrgClsShopNo}
+	       </if>
+	       <if test="midClsShopNo  != 0">
+	      ,MID_CLS_SHOP_NO    = #{midClsShopNo}
+	       </if>
+	       <if test="ordNo  != 0">
+	      ,ORD_NO             = #{ordNo}
+	       </if>
+	       <if test="prdInqryTitle  != null and !''.equals(prdInqryTitle)">
+	      ,BLT_THG_TITLE_NM   = #{prdInqryTitle}
+	       </if>
+	       <if test="prdInqryGbnCd  != null and !''.equals(prdInqryGbnCd)">
+	      ,BLT_THG_LVL_NO     = #{prdInqryGbnCd}
+	       </if>
+	       <if test="upperPrdInqryNo  != null and !''.equals(upperPrdInqryNo)">
+	      ,UPPER_BLT_THG_NO   = #{upperPrdInqryNo}
+	       </if>
+	       <if test="prdInqrySortSeqVal  != null and !''.equals(prdInqrySortSeqVal)">
+	      ,SORT_SEQ_VAL       = #{prdInqrySortSeqVal}
+	       </if>
+	       <if test="custRegrIp  != null and !''.equals(custRegrIp)">
+	      ,IP_ADDR            = #{custRegrIp}
+	       </if>
+	       <if test="prdInqryStCd  != null and !''.equals(prdInqryStCd)">
+	      ,DB_ST_CD           = #{prdInqryStCd}
+	       </if>
+	       <if test="atachFileGbnCd  != null and !''.equals(atachFileGbnCd)">
+	      ,ATACH_FILE_GBN_CD  = #{atachFileGbnCd}
+	       </if>
+	       <if test="answrAdoptCd  != null and !''.equals(answrAdoptCd)">
+	      ,ANSWR_ADOPT_CD     = #{answrAdoptCd}
+	       </if>
+	       <if test="qryCnt  != 0">
+	      ,QRY_CNT            = #{qryCnt}
+	       </if>
+	       <if test="answrCnt  != 0">
+	      ,ANSWR_CNT          = #{answrCnt}
+	       </if>
+	       <if test="ordPrsnAnswrCnt  != 0">
+	      ,BUYER_ANSWR_CNT    = #{ordPrsnAnswrCnt}
+	       </if>
+	       <if test="supAnswrCnt  != 0">
+	      ,SUP_ANSWR_CNT      = #{supAnswrCnt}
+	       </if>
+	       <if test="pntScore  != 0">
+	      ,PNT_SCORE          = #{pntScore}
+	       </if>
+	       <if test="ordPrsnFlg  != null and !''.equals(ordPrsnFlg)">
+	      ,BUYER_YN           = #{ordPrsnFlg}
+	       </if>
+	       <if test="secrtArtclFlg  != null and !''.equals(secrtArtclFlg)">
+	      ,SECRT_ARTCL_YN     = #{secrtArtclFlg}
+	       </if>
+	       <if test="emailAnswrRcvFlg  != null and !''.equals(emailAnswrRcvFlg)">
+	      ,EMAIL_ANSWR_RCV_YN = #{emailAnswrRcvFlg}
+	       </if>
+	       <if test="declrFlg  != null and !''.equals(declrFlg)">
+	      ,DECLR_YN           = #{declrFlg}
+	       </if>
+	       <if test="ifSeq  != 0">
+	      ,IF_SEQ             = #{ifSeq}
+	       </if>
+	       <if test="ifFlg  != null and !''.equals(ifFlg)">
+	      ,IF_YN              = #{ifFlg}
+	       </if>
+	       <if test="ifDtm  != null and !''.equals(ifDtm)">
+	      ,IF_DTM             = #{ifDtm}
+	       </if>
+	       <if test="ifTypCd  != null and !''.equals(ifTypCd)">
+	      ,IF_TYP_CD          = #{ifTypCd}
+	       </if>
+	       <if test="ifMsgCntnt  != null and !''.equals(ifMsgCntnt)">
+	      ,IF_MSG_CNTNT       = #{ifMsgCntnt}
+	       </if>
+	       <if test="ifSndSysId  != null and !''.equals(ifSndSysId)">
+	      ,IF_SND_SYS_ID      = #{ifSndSysId}
+	       </if>
+	       <if test="ifRcvSysId  != null and !''.equals(ifRcvSysId)">
+	      ,IF_RCV_SYS_ID      = #{ifRcvSysId}
+	       </if>
+	       <if test="ownSysId  != null and !''.equals(ownSysId)">
+	      ,OWN_SYS_ID         = #{ownSysId}
+	       </if>
+	       <if test="regChanlCd  != null and !''.equals(regChanlCd)">
+	      ,CHANL_CD           = #{regChanlCd}
+	       </if>
+	 WHERE BLT_THG_NO         = #{prdInqryNo}
+	</update>
+	
+	<update id="updatePrdInqryCntnt">
+	<!-- 
+	DBMS : WEBDB
+	분야 : 상품문의 내용 업데이트 updatePrdInqryCntnt
+	API  : 상품문의
+	설명 : 상품문의 내용을 업데이트 한다.
+널인경우 생성되지 않게 처리 해야 함	
+	#{prdInqryNo} = E73800631
+	-->
+	UPDATE SRV_BLT_THG_CNTNT_D  
+	   SET <if test="prdInqryNo  != null and !''.equals(prdInqryNo)">  
+	       BLT_THG_NO         = #{prdInqryNo} 
+	       </if>
+	       <if test="prdInqryBodyCntnt  != null and !''.equals(prdInqryBodyCntnt)">
+	      ,QNA_BODY_CNTNT     = #{prdInqryBodyCntnt}
+	       </if>
+	       <if test="srcCntnt  != null and !''.equals(srcCntnt)">
+	      ,SRC_CNTNT          = #{srcCntnt}
+	       </if>
+	       <if test="ifSeq  != 0">
+	      ,IF_SEQ             = #{ifSeq}
+	       </if>
+	       <if test="ifFlg  != null and !''.equals(ifFlg)">
+	      ,IF_YN              = #{ifFlg}
+	       </if>
+	       <if test="ifDtm  != null and !''.equals(ifDtm)">
+	      ,IF_DTM             = #{ifDtm}
+	       </if>
+	       <if test="ifTypCd  != null and !''.equals(ifTypCd)">
+	      ,IF_TYP_CD          = #{ifTypCd}
+	       </if>
+	       <if test="ifMsgCntnt  != null and !''.equals(ifMsgCntnt)">
+	      ,IF_MSG_CNTNT       = #{ifMsgCntnt}
+	       </if>
+	       <if test="ifSndSysId  != null and !''.equals(ifSndSysId)">
+	      ,IF_SND_SYS_ID      = #{ifSndSysId}
+	       </if>
+	       <if test="ifRcvSysId  != null and !''.equals(ifRcvSysId)">
+	      ,IF_RCV_SYS_ID      = #{ifRcvSysId}
+	       </if>
+	       <if test="ownSysId  != null and !''.equals(ownSysId)">
+	      ,OWN_SYS_ID         = #{ownSysId}
+	       </if>
+	 WHERE BLT_THG_NO     = #{prdInqryNo}
+	</update>
+	
+</mapper>

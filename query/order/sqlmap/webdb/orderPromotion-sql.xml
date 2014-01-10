@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.promotion.OrderPromotionSqlMapRepository">
+	               
+	<!-- 
+		내용	: 상품 쇼핑지원금 조회
+		작성자	: 윤병찬
+		작성일	: 2013.10.29 신규작성
+		
+		#{_c.prdCd[0].value} = 3617459;
+		#{_c.custNo[0].value} = 9806081;
+		#{_c.chanlDtlCd[0].value} = "PA";
+		
+		주의. 조회결과가 없을수 있음  AND SYSDATE BETWEEN ST_DATE AND EN_DATE 조건 때문에..
+		
+	-->
+	<resultMap id="shopSupportAmtInfoMap" type="iceberg.capi.order.model.promotion.GsEventSupportCashDtl">
+		<result property="shopSpptStrDtm" column="SHOP_SPPT_STR_DTM"/>
+		<result property="shopSpptEndDtm" column="SHOP_SPPT_END_DTM"/>
+		<result property="shopSpptAmt" column="SHOP_SPPT_AMT"/>
+		<result property="shopSpptTitle" column="SHOP_SPPT_TITLE"/>
+	</resultMap>
+	<select id="findShopSupportAmtInfo" parameterType="criteria"  resultMap="shopSupportAmtInfoMap">
+		<![CDATA[
+			SELECT SSAI.ST_DATE AS SHOP_SPPT_STR_DTM,
+			       SSAI.EN_DATE AS SHOP_SPPT_END_DTM,
+			       NVL(SSAI.S_CASH, 0) AS SHOP_SPPT_AMT,
+			       SSAI.TITLE AS SHOP_SPPT_TITLE
+			FROM(
+			        SELECT GESC.TITLE
+			              ,GESCD.PRDID
+			              ,GESCD.S_CASH
+			              ,GESC.ST_DATE
+			              ,GESC.EN_DATE
+			          FROM GS_EVENT_SUPPORT_CASH_DTL GESCD 
+			              ,GS_EVENT_SUPPORT_CASH GESC 
+			         WHERE GESC.EVE_GB = GESCD.EVE_GB
+			           AND GESC.EVE_SEQ = GESCD.EVE_SEQ
+			           AND GESCD.DBSTS = 'A'
+			           AND GESCD.PRDID = #{_c.prdCd[0].value} 
+			           AND GESC.DBSTS = 'A'
+			           AND SYSDATE BETWEEN ST_DATE AND EN_DATE
+			           AND GESC.EVE_GB = 'SP'
+			           AND EXISTS 
+			                    (
+			                        SELECT 1
+			                          FROM DUAL
+			                         WHERE GESC.TARGET_MEDIA = 'A'
+			                        UNION ALL
+			                         SELECT 1
+			                           FROM GS_EVENT_SUPPORT_AVAIL GESA 
+			                          WHERE GESC.EVE_GB = GESA.EVE_GB
+			                            AND GESC.EVE_SEQ = GESA.EVE_SEQ
+			                            AND GESA.AVAIL_TYPE = 'MEDIA'
+			                            AND GESA.AVAIL_VAL = NVL(#{_c.chanlDtlCd[0].value}, 'PA')
+			                            AND GESA.DBSTS = 'A'
+			                    )
+			            AND EXISTS
+			            (
+			                SELECT 1
+			                  FROM DUAL
+			                 WHERE GESC.TARGET_USER = 'A'
+			                UNION ALL
+			                 SELECT 1
+			                   FROM GS_EVENT_SUPPORT_USER GES
+			                  WHERE GESC.EVE_GB = GES.EVE_GB
+			                    AND GESC.EVE_SEQ = GES.EVE_SEQ
+			                    AND GES.CUS_NUM = #{_c.custNo[0].value}
+			                    AND GES.DBSTS = 'A'                                      
+			            )
+			) SSAI
+			WHERE ROWNUM <= 1
+		]]>
+	</select>
+	
+	
+	
+	
+	<!-- 
+		내용	: 카드청구할인 조회[제외상품 관리 프로모션] - 'Y', 'Y', 'Y' 조건으로 세팅
+	 			  전상품 카드할인 정보 조회
+		작성자	: 윤병찬
+		작성일	: 2013.11.22 신규작성
+		
+		#{_c.cardCdGbnCd[0].value} = 'Y';
+		#{_c.tgtPrdExcptMthodCd[0].value} = 'Y';
+		#{_c.pmoApplyExcptYn[0].value} = 'Y';
+		
+	-->
+	<resultMap id="orderCardDiscountInExMap" type="iceberg.capi.order.model.ordersheet.OrderCardDiscountInfo">
+		<result property="pmoNo" column="PMO_NO"/>
+		<result property="image1" column="IMG_1"/>
+		<result property="image2" column="IMG_2"/>
+		<result property="title" column="TITLE"/>
+		<result property="discountDpCd" column="DISP_CD"/>
+		<result property="dcRateStr" column="DC_RT"/>
+		<result property="maxAmtStr" column="MAX_AMT"/>
+		<result property="minAmtStr" column="MIN_AMT"/>
+		<result property="cardNm" column="CARD_NM"/>
+		<result property="strDtm" column="STR_DT"/>
+		<result property="endDtm" column="END_DT"/>
+	</resultMap>	
+	<select id="findOrderCardDiscountInEx" parameterType="criteria" resultMap="orderCardDiscountInExMap">
+		<![CDATA[
+			SELECT PMO_NO
+			      ,IMG_1
+			      ,IMG_2
+			      ,TITLE
+			      ,DECODE(DISP_CD,'Y','1','0') AS DISP_CD
+			      ,DC_RT
+			      ,MAX_AMT
+			      ,MIN_AMT
+			      ,CARD_NM
+			      ,STR_DT
+			      ,END_DT
+			  FROM (SELECT 
+			               MPM.PMO_SEQ               AS PMO_NO     /*프로모션번호*/
+			              ,''                        AS IMG_1    /*이미지1*/
+			              ,''                        AS IMG_2    /*이미지2*/ 
+			              ,''                        AS D_VAL    /* EXB_SEQ */
+			              ,MPM.PMO_NM                AS TITLE      /*제목*/
+			              ,MPAD.EC_EVENT_URL_CNTNT   AS URL        /* 이벤트 URL EC */
+			              ,MPBD.DC_PRC_EXPOS_YN      AS DISP_CD /*할인가격 노출여부 */
+			              ,MPBD.CHR_DC_RT            AS DC_RT    /*할인률 */ 
+			              ,MPBD.MAX_DC_PSBL_AMT      AS MAX_AMT    /* 최대할인금액 */  
+			              ,MPBD.MIN_PAY_AMT          AS MIN_AMT    /*카드청구할인최소금액-최소결제금액*/ 
+			              ,MPBD.EC_CARD_NM           AS CARD_NM    /*카드명*/
+			              ,TO_CHAR(MPBD.CARD_APRV_STR_DTM, 'yyyymmddhh24miss')   AS STR_DT /*시작일시*/
+			              ,TO_CHAR(MPBD.CARD_APRV_END_DTM, 'yyyymmddhh24miss')   AS END_DT /*종료일시*/                                 
+			              ,DECODE(#{_c.cardCdGbnCd[0].value}, 'Y', 'EX', 'N', 'IN', '')                AS CARD_DC_GBN_CD  /*카드구분 */
+			              ,MPM.PMO_SEQ
+			              ,MPCGD.CUST_GRP_SEQ
+			          FROM MKT_PMO_M           MPM   
+			              ,MKT_PMO_CUST_GRP_D  MPCGD
+			              ,MKT_PMO_BNFT_D      MPBD
+			              ,MKT_PMO_ADD_D       MPAD
+			         WHERE MPBD.CARD_APRV_STR_DTM <= SYSDATE
+			           AND MPBD.CARD_APRV_END_DTM >= SYSDATE
+			           AND MPM.PMO_SEQ        = MPCGD.PMO_SEQ           
+			           AND MPCGD.PMO_SEQ       = MPBD.PMO_SEQ
+			           AND MPM.PMO_SEQ        = MPAD.PMO_SEQ(+)
+			           AND MPCGD.CUST_GRP_SEQ  = MPBD.CUST_GRP_SEQ 
+			           AND (MPM.EC_YN='Y' OR MPM.MC_YN='Y') /*  모바일여부 */
+			           AND MPM.PRCH_AFT_IMM_YN = 'Y'  /*  구매후 즉시지급 */  
+			           AND MPM.CARD_CHR_DC_YN  = 'Y'  /*  카드청구 */
+			           AND MPBD.BNFT_GBN_CD     = '50' /*  청구할인 */                                                  
+			           AND MPM.ST_CD = '30'           /*  상태값 */
+			           AND DECODE( #{_c.tgtPrdExcptMthodCd[0].value},'Y', MPCGD.TGT_PRD_EXCPT_MTHOD_CD, 'N', MPCGD.TGT_PRD_SEL_MTHOD_CD) = '10'            
+			           AND EXISTS(SELECT 1
+			                        FROM MKT_PMO_TGT_PRD_D   MPTR
+			                       WHERE PMO_SEQ             = MPM.PMO_SEQ
+			                         AND CUST_GRP_SEQ        = MPCGD.CUST_GRP_SEQ
+			                         AND PMO_APPLY_EXCPT_YN  = #{_c.pmoApplyExcptYn[0].value}  /* 적용 상품 여부, 'Y': 적용제외, N : 적용 */
+			                         AND APPLY_STR_DTM <= SYSDATE
+			                         AND APPLY_END_DTM >= SYSDATE) ) X
+			   ORDER BY TO_NUMBER(DC_RT) DESC, MIN_AMT DESC      
+		]]>
+	</select>	
+	
+	<!-- 
+		내용	: 카드청구할인 제외상품/대상상품 여부 조회[Count로 조회]
+		작성자	: 윤병찬
+		작성일	: 2013.11.22 신규작성
+		
+		#{_c.prdCd[0].value} = (3336207, 3330345, 3320558, 3309545);
+		#{_c.pmoSeq[0].value} = 105000;
+		
+	-->
+	<select id="findPrdCardDiscount" parameterType="criteria"  resultType="int">
+			SELECT COUNT(*) AS CNT
+		 	  FROM MKT_PMO_TGT_PRD_D
+		     WHERE PRD_CD IN 
+		   <foreach collection="_c.prdCd[0].value" item="item" index="index" open="(" separator="," close=")">
+		   	#{item}
+		   </foreach>				
+			   AND PMO_SEQ  = #{_c.pmoSeq[0].value}
+			   AND SYSDATE BETWEEN APPLY_STR_DTM 
+			                   AND APPLY_END_DTM  
+		
+	</select>	
+	
+	
+</mapper>

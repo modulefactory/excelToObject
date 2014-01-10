@@ -1,0 +1,419 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.ordermodify.OrderModifyCheckSqlMapRepository">
+
+
+
+<!--
+   내용 : 주문수정시 가능여부 체크에 필요한 정보를 가져온다.
+   작성자 : 송영준
+   작성일 : 2013. 11. 12
+   
+   #{ordNo} = 599906175
+   #{custNo} = 7608979
+-->
+	               
+	<resultMap id="orderModifyCheckMap" type="iceberg.capi.order.model.ordermodify.OrderModifyCheckInfo">
+		<result property="ordNo"                      						column="ORD_NO" />
+		<result property="ordItemNo"    									column="ORD_ITEM_NO"   />
+		<result property="ordSt"                        					column="ORD_ST"   />
+		<result property="frmlesPrdTypCd"                        			column="FRMLES_PRD_TYP_CD"   />
+	</resultMap>
+
+	<select id="findOrderModifyChekcInfo" parameterType="criteria" resultMap="orderModifyCheckMap">
+		<![CDATA[
+		
+			SELECT  /*+ ALL_ROWS */                                                                                                
+			        OOM.ORD_NO 															AS ORD_NO                                                                                          
+			       ,OID.ORD_ITEM_NO 													AS ORD_ITEM_NO
+			       ,CASE WHEN (OID.ST_CD = '31' OR OID.ST_CD = 'B1')                                                                   
+			              AND (                                                                                                    
+			                    OID.DLVS_CO_CD  IN ('HJ' ,'DH' ,'HD','HT' ,'CJ' ,'KG', 'EP' ,'ER' ,'FA'                              
+			                    ,'AJ' ,'KL' ,'YC' ,'KR' ,'TR' ,'KT' ,'SD' ,'SG' ,'ND','IN','DS','CI')                              
+			                   )                                                                                                   
+			              AND (SYSDATE - OID.DLV_FSH_DT) < 8                                                                         
+			              AND OID.DLV_FSH_SUBJ_CD = 'V'                                                                              
+			              AND (CASE WHEN (TO_NUMBER(TO_CHAR(OID.RELS_FSH_DT,'YYYYMMDD')) < '20081211')                               
+			                        THEN '3'                                                                                       
+			                        ELSE SUBSTR(OID.DLV_PICK_MTHOD_CD,0,1)                                                           
+			                        END) = '3'                                                                                     
+			             THEN '22'                                                                                                 
+			             ELSE OID.ST_CD END 											AS ORD_ST     
+			       ,PPM.FRMLES_PRD_TYP_CD 												AS FRMLES_PRD_TYP_CD                                                                           
+			  FROM   ORD_ORD_M OOM                                                                                                    
+			       , ORD_ITEM_D OID                                                                                                   
+			       , PRD_PRD_M PPM
+			       , SUP_SUP_M SSM  
+			 WHERE  OOM.CUST_NO = #{_c.custNo[0].value}
+			 AND	OOM.ORD_DTM >= ADD_MONTHS(SYSDATE, TO_NUMBER(-6))     
+			 AND 	OOM.ORD_NO = OID.ORD_NO                                                                                            
+			 AND 	OOM.ORD_NO = #{_c.ordNo[0].value}
+			 AND 	OOM.ORD_TYP_DTL_CD IN ('Sales Order')      
+			 AND 	NVL(OID.LINE_TYP_CD, '00') IN ('00', '11')     
+			 AND 	( RTRIM(OID.ST_CD) IN ('11', '12','21')     
+			      	  OR OID.RELS_FSH_DT >= ( CASE WHEN RTRIM(OID.ST_CD) = '22' THEN SYSDATE-14 END )     
+			      	  OR OID.DLV_FSH_DT  >= ( CASE WHEN RTRIM(OID.ST_CD) IN('31', 'B1') THEN SYSDATE-7 END )     
+			      	)     
+			 AND 	( OID.REP_PRD_SUP_PRD_CD IS NULL OR NVL(OID.LINE_TYP_CD, '00') = '11' )     
+			 AND 	NVL(OID.ORD_QTY,0) - NVL(OID.RTP_QTY,0) > 0    
+			 AND 	NVL(PPM.FRMLES_PRD_TYP_CD,'N') <> 'T'       
+			 AND  	NVL(OID.LINE_TYP_CD, '00') <> '07'                                                                               
+			 AND  	OID.PRD_CD = PPM.PRD_CD
+			 AND  	OID.SUP_CD = SSM.SUP_CD(+)
+			 AND  	NVL(OID.EC_EXPOS_EXCPT_YN,'N') <> 'Y'                                                                            
+			 AND  	NVL(OID.CHANL_DTL_CD,'N') NOT IN ('HE')                                                                          
+			 AND  	NVL(OOM.CHANL_CD,'P') <> 'S'			                                                                            
+			 AND  	SSM.SUP_CD NOT IN ('1012691','1012768','1012769','1012771')                                                    
+			 ORDER BY OOM.ORD_DTM DESC, OOM.ORD_NO DESC
+
+
+		 ]]>
+	</select>
+	
+
+<!--
+   내용 : 주문수정시 주문아이템 리스트를 가져온다.
+   작성자 : 송영준
+   작성일 : 2013. 11. 12
+   
+   #{ordNo} = 599906175
+-->
+<resultMap id="orderItemQrykMap" type="iceberg.capi.order.model.ordermodify.OrderItemInfo">
+		<result property="ordItemId"                      						column="ORD_ITEM_ID" />
+		<result property="ordNo"    											column="ORD_NO"   />
+		<result property="ordItemNo"                        					column="ORD_ITEM_NO"   />
+		<result property="prdCd"                        						column="PRD_CD"   />
+		<result property="prdNm"                        						column="PRD_NM"   />
+		<result property="attrPrdCd"                        					column="ATTR_PRD_CD"   />
+		<result property="attrPrdNm"                        					column="ATTR_PRD_NM"   />
+		<result property="attrPrdRepCd"                        					column="ATTR_PRD_REP_CD"   />
+		<result property="orgOrdNo"                        						column="ORG_ORD_NO"   />
+		<result property="prdInfoCmposCntnt"                        			column="PRD_INFO_CMPOS_CNTNT"   />
+</resultMap>		
+
+	<select id="findOrdItemQryInfo" parameterType="criteria" resultMap="orderItemQrykMap">
+		<![CDATA[
+		
+			SELECT	  OID.ORD_ITEM_ID 					AS ORD_ITEM_ID
+			         ,OID.ORD_NO 						AS ORD_NO
+			         ,OID.ORD_ITEM_NO 					AS ORD_ITEM_NO
+			         ,OID.PRD_CD 						AS PRD_CD
+			         ,OID.PRD_NM 						AS PRD_NM
+			         ,OID.ATTR_PRD_CD 					AS ATTR_PRD_CD
+			         ,OID.ATTR_PRD_NM 					AS ATTR_PRD_NM
+			         ,OID.ATTR_PRD_REP_CD 				AS ATTR_PRD_REP_CD
+			         ,OID.ORG_ORD_NO 					AS ORG_ORD_NO
+			         ,OID.PRD_INFO_CMPOS_CNTNT			AS PRD_INFO_CMPOS_CNTNT
+			FROM ORD_ITEM_D OID
+			WHERE OID.ORD_NO = #{_c.ordNo[0].value} 
+
+		 ]]>
+	</select>
+
+
+<!--
+   내용 : 신용카드 결제 금액 및 갯수 조회
+   작성자 : 송영준
+   작성일 : 2013. 11. 12
+   
+   #{ordNo} = 599906175
+   #{custNo} = 7608979
+-->
+<resultMap id="payInfoMap" type="iceberg.capi.order.model.ordermodify.PayMeanInfo">
+		<result property="aprvCnt"                      						column="APRV_CNT" />
+		<result property="payNo"    											column="PAY_NO"   />
+		<result property="payAmt"                        						column="PAY_AMT"   />
+</resultMap>		
+
+<select id="findCrditCardPayInfo" parameterType="criteria" resultMap="payInfoMap">
+	<![CDATA[
+	
+		SELECT  COUNT(1)								AS APRV_CNT                                       
+	            ,MIN(POPD.PAY_NO)                      	AS PAY_NO 
+	            ,SUM(POPD.PAY_AMT)                     	AS PAY_AMT   
+		  FROM  PAY_ORD_PAYMT_D POPD                              
+	           ,ORD_ORD_M OOM                                    
+		 WHERE  OOM.ORD_NO = #{_c.ordNo[0].value}                                   
+		   AND  OOM.CUST_NO = #{_c.custNo[0].value}                           
+		   AND  POPD.PAY_TYP_CD ||'' = 'Credit Card'              
+		   AND  POPD.PAY_AMT = POPD.RFN_PSBL_AMT                     
+		   AND  POPD.PAY_ST_CD IN ('C21','C23','C41','C51','C61') 
+		   AND  POPD.CNL_ST_CD IS NULL                            
+		   AND  OOM.PAY_ORD_NO = POPD.PAY_ORD_NO      
+
+	 ]]>
+</select>
+
+
+<!--
+   내용 : 무통장 실시간 결제 금액 및 갯수 조회
+   작성자 : 송영준
+   작성일 : 2013. 11. 12
+   
+   #{ordNo} = 599906175
+   #{custNo} = 7608979
+-->
+
+<select id="findNoBkbPayInfo" parameterType="criteria" resultMap="payInfoMap">
+	<![CDATA[
+	
+		SELECT  COUNT(1)                					AS APRV_CNT             
+	           ,MIN(POPD.PAY_NO)           					AS PAY_NO           
+	           ,SUM(POPD.PAY_AMT)         					AS PAY_AMT              
+		  FROM  PAY_ORD_PAYMT_D POPD                 
+		       ,ORD_ORD_M OOM              
+		 WHERE  OOM.ORD_NO  = #{_c.ordNo[0].value}                      
+		   AND  OOM.CUST_NO = #{_c.custNo[0].value}            
+		   AND  POPD.PAY_TYP_CD||'' = 'Bank Account' 
+		   AND  POPD.PAY_ST_CD IN ('B02','B03')      
+		   AND  OOM.ORD_NO  = POPD.ORD_NO(+)      
+
+	 ]]>
+</select>
+
+<!--
+   내용 : EC속성상품 코드를 조회한다.
+   작성자 : 송영준
+   작성일 : 2013. 11. 12
+   
+   #{attrPrdCd} = 11656506001
+
+-->
+
+<select id="findEcAttrPrdCdQry" parameterType="String" resultType="String">
+	<![CDATA[
+
+		SELECT PAPM.EC_ATTR_PRD_CD						AS EC_ATTR_PRD_CD
+		  FROM PRD_ATTR_PRD_M PAPM
+		 WHERE PAPM.ATTR_PRD_CD = #{attrPrdCd}
+		   AND PAPM.USE_YN = 'Y' 
+      
+
+	 ]]>
+</select>
+
+<!--
+   내용 : 주문수정시 상품정보를 조회한다.
+   작성자 : 송영준
+   작성일 : 2013. 11. 12
+   
+   #{prdCd} = 11657007
+   #{ecAttrPrdCd} = 11657007001
+
+-->
+<resultMap id="prdInfoMap" type="iceberg.capi.order.model.ordermodify.PrdInfo">
+		<result property="prdCd"													column="PRD_CD" />
+		<result property="prdNm"													column="PRD_NM" />
+		<result property="exposPrdNm"												column="EXPOS_PRD_NM" />
+		<result property="mnfcCoNm"													column="MNFC_CO_NM" />
+		<result property="prdTypCd"													column="PRD_TYP_CD" />
+		<result property="exposStCd"												column="EXPOS_ST_CD" />
+		<result property="orgpNm"													column="ORGP_NM" />
+		<result property="dlvPickMthodCd"											column="DLV_PICK_MTHOD_CD" />
+		<result property="ecAprvStCd"												column="EC_APRV_ST_CD" />
+		<result property="supCd"													column="SUP_CD" />
+		<result property="baseAccmLimitYn"											column="BASE_ACCM_LIMIT_YN" />
+		<result property="cardUseLimitYn"											column="CARD_USE_LIMIT_YN" />
+		<result property="dlvDtGuideCd"												column="DLV_DT_GUIDE_CD" />
+		<result property="operMdId"													column="OPER_MD_ID" />
+		<result property="prdGbnCd"													column="PRD_GBN_CD" />
+		<result property="bundlPrdGbnCd"											column="BUNDL_PRD_GBN_CD" />
+		<result property="salePsblYn"												column="SALE_PSBL_YN" />
+		<result property="attrPrdCd"												column="ATTR_PRD_CD" />
+		<result property="ecAttrPrdCd"												column="EC_ATTR_PRD_CD" />
+		<result property="attrPrdRepCd"												column="ATTR_PRD_REP_CD" />
+		<result property="gftTypCd"													column="GFT_TYP_CD" />
+		<result property="supPrdCd"													column="SUP_PRD_CD" />
+		<result property="supAttrPrdCd"												column="SUP_ATTR_PRD_CD" />
+		<result property="salePrc"													column="SALE_PRC" />
+</resultMap>	
+
+<select id="findPrdInfo" parameterType="Criteria" resultMap="prdInfoMap">
+	<![CDATA[
+
+	SELECT	PPM.PRD_CD                            			                      	AS PRD_CD				/*상품코드*/
+				,PPM.PRD_NM                                  			         	AS PRD_NM				/*상품명*/
+				,PNCH.EXPOS_PRD_NM                                    				AS EXPOS_PRD_NM		/*EC노출상품명*/
+				,PPM.MNFC_CO_NM                                						AS MNFC_CO_NM			/*제조사명*/
+				,PPM.PRD_TYP_CD                           							AS PRD_TYP_CD			/*매입유형코드*/
+				--,NVL(PG_PMO_PRD_PMO.FN_PRD_NO_INT(PPM.PRD_CD, 'P', SYSDATE), '0')           /*무이자할부개월수*/
+				,PPM.EXPOS_ST_CD                     								AS EXPOS_ST_CD			/*노출상태코드*/
+				,PPM.ORGP_NM                        									AS ORGP_NM /*원산지명*/	
+				,PPM.DLV_PICK_MTHOD_CD                               				AS DLV_PICK_MTHOD_CD /*배송수거방법코드*/	
+				--,PG_PMO_PRD_PMO.FN_PRD_MD_DC_PRC(PPM.PRD_CD, 'P', SYSDATE)   		AS PRD_PRICE	    /*상품가격*/
+				,PPM.EC_APRV_ST_CD                                   				AS EC_APRV_ST_CD /*EC결재상태코드*/	
+				,PPM.SUP_CD                                          				AS SUP_CD /*협력사코드*/        	
+				,NVL(PPM.BASE_ACCM_LIMIT_YN,'N')                     				AS BASE_ACCM_LIMIT_YN /*기본적립금제한여부*/ 	
+				,NVL(PPM.CARD_USE_LIMIT_YN, 'N')                     				AS CARD_USE_LIMIT_YN /*카드사용제한여부*/ 	
+				--,NVL(PG_PMO_PRD_PMO.FN_PRD_SGPAY_DC(PPM.PRD_CD, 'P', SYSDATE),'0') AS DISCOUNT_INTEREST 	/*일시불할인금액*/
+				,NVL(PPM.DLV_DT_GUIDE_CD, 'N')                       				AS DLV_DT_GUIDE_CD /*배송일자안내코드*/ 	
+				,PPM.OPER_MD_ID                             							AS OPER_MD_ID /*운영MDID*/ 	
+				,PPM.PRD_GBN_CD                             							AS PRD_GBN_CD /*상품구분*/ 	
+				,PPM.BUNDL_PRD_GBN_CD                                				AS BUNDL_PRD_GBN_CD /*묶음상품구분코드*/ 	
+				,CASE WHEN NVL(PPM.SALE_PSBL_APRV_YN, 'N') = 'Y' AND NVL(PPM.TEMPOUT_YN, 'N') = 'N' AND NVL(PCD.SALE_PSBL_YN, 'N') = 'Y' THEN  /*채널판매가능여부*/	
+					 	'Y'	ELSE 'N' 		
+					END                                             				AS SALE_PSBL_YN 	
+				,PAPM.ATTR_PRD_CD                                    				AS ATTR_PRD_CD				
+				,PAPM.EC_ATTR_PRD_CD                                 				AS EC_ATTR_PRD_CD			
+				,PAPM.ATTR_PRD_REP_CD                                				AS ATTR_PRD_REP_CD			
+				,NVL(PPM.GFT_TYP_CD, '00')                           				AS GFT_TYP_CD    
+				,PPM.SUP_PRD_CD                                      				AS SUP_PRD_CD				
+				,PAPM.SUP_ATTR_PRD_CD                                				AS SUP_ATTR_PRD_CD			
+				,PPH.SALE_PRC					                    				AS SALE_PRC
+		FROM	PRD_PRD_M 		PPM	
+				,PRD_ATTR_PRD_M 	PAPM	
+				,PRD_CHANL_D 	PCD 	
+				,PRD_NM_CHG_H	PNCH	
+				,PRD_PRC_H	    PPH   
+		WHERE	PPM.PRD_CD 	= #{_c.prdCd[0].value}
+			AND PPM.PRD_CD 	= PAPM.PRD_CD			
+			AND PAPM.EC_ATTR_PRD_CD = #{_c.ecAttrPrdCd[0].value}
+			AND PPM.PRD_CD 	= PCD.PRD_CD			
+			AND PCD.CHANL_CD 	= 'P'			
+			AND PPM.PRD_CD 	= PNCH.PRD_CD		
+			AND PPM.PRD_CD 	= PPH.PRD_CD		
+			AND SYSDATE BETWEEN PPH.VALID_STR_DTM AND PPH.VALID_END_DTM 
+			AND PPH.PRD_ATTR_GBN_CD = 'P' 
+			AND PNCH.CHANL_CD 	= 'P'		
+			AND SYSDATE BETWEEN PNCH.VALID_STR_DTM AND PNCH.VALID_END_DTM
+      
+
+	 ]]>
+</select>
+
+
+<!--
+   내용 : 속성상품명을 조회
+   작성자 : 송영준
+   작성일 : 2013. 11. 12
+   
+   #{attrPrdCd} = 11656506001
+
+-->
+
+<select id="findAttrPrdName" parameterType="String" resultType="String">
+	<![CDATA[
+
+	SELECT NVL(PAPM.ATTR_WHL_VAL, '') 				AS 	ATTR_WHL_VAL   
+	  FROM PRD_ATTR_PRD_M PAPM      	     
+	      ,PRD_PRD_M PPM             
+	 WHERE PAPM.ATTR_PRD_CD = #{attrPrdCd}
+	   AND PAPM.PRD_CD = PPM.PRD_CD 	     
+	   AND PPM.PRD_TYP_CD = 'S' 	  
+
+
+	 ]]>
+</select>
+
+<!--
+   내용 : SMTC 주문 존재여부 확인
+   작성자 : 송영준
+   작성일 : 2013. 11. 12
+   
+   #{ordNo} = 599906175
+
+-->
+
+<select id="findIsExistSmtcOrder" parameterType="Long" resultType="int">
+	<![CDATA[
+
+	SELECT  COUNT(CCM.CUST_NM) 
+	 FROM   ORD_ORD_M OOM
+	       ,CST_CUST_M CCM 
+	WHERE OOM.CUST_NO = CCM.CUST_NO  
+	  AND   OOM.ORD_CNF_YN = 'Y' 
+	  AND   CCM.CUST_ST_CD = 'Y' 
+	  AND   OOM.ORD_NO = #{ordNo}   
+
+
+	 ]]>
+</select>
+
+
+<!--
+   내용 : 주문아이템 내역을 조회
+   작성자 : 송영준
+   작성일 : 2013. 11. 12
+   
+   #{ordNo} = 599906175
+
+-->
+<resultMap id="getOrdItemsMap" type="iceberg.capi.order.model.ordermodify.OrderItemInfo">
+		<result property="prdLrgClsCd"													column="PRD_LRG_CLS_CD" />
+		<result property="prdMidClsCd"													column="PRD_MID_CLS_CD" />
+		<result property="supCd"														column="SUP_CD" />
+		<result property="mdId"															column="MD_ID" />
+		<result property="ordItemId"													column="ORD_ITEM_ID" />
+		<result property="prdCd"														column="PRD_CD" />
+</resultMap>
+	
+<select id="findOrdItems" parameterType="Long" resultMap="getOrdItemsMap">
+	<![CDATA[
+
+    SELECT SUBSTR(PPM.PRD_CLS_CD, 1, 3)   AS PRD_LRG_CLS_CD                   
+          ,SUBSTR(PPM.PRD_CLS_CD, 4, 2)   AS PRD_MID_CLS_CD                         
+          ,OID.SUP_CD                     AS SUP_CD                                                      
+          ,PPM.OPER_MD_ID                 AS MD_ID                                                                      
+          ,OID.ORD_ITEM_ID                AS ORD_ITEM_ID
+          ,PPM.PRD_CD                     AS PRD_CD               
+      FROM ORD_ORD_M      ORD                               
+          ,ORD_ITEM_D     OID                          
+          ,PRD_PRD_M      PPM                             
+     WHERE 1=1                                                   
+       AND ORD.ORD_NO      = #{ordNo}                            
+       AND ORD.ORD_NO      = OID.ORD_NO        
+       AND OID.PRD_CD      = PPM.PRD_CD            
+     ORDER BY OID.ORD_ITEM_ID      
+
+
+	 ]]>
+</select>
+	
+<!--
+   내용 : 제휴카드 여부 확인 및 실시간수신코드 여부 리턴 
+   작성자 : 송영준
+   작성일 : 2013. 11. 12
+   
+   #{cardNoEcp} = JmrRvNc8RAQVc8NMuh+5oZ+lHl10Q5Q+oklEudl92Uo=
+
+-->
+
+<select id="findAliaCardFlgQry" parameterType="String" resultType="String">
+	<![CDATA[
+
+		SELECT	NVL(PACD.RTM_RCV_GBN_CD, '') AS RTM_RCV_GBN_CD
+		  FROM	PAY_ALIA_CARD_D	PACD
+		 WHERE	CARD_NO_ECP = #{cardNoEcp}
+
+	 ]]>
+</select>
+
+
+<!--
+   내용 : 카드사 유효기간 조회 
+   작성자 : 송영준
+   작성일 : 2014. 1. 3
+   
+   #{} = 
+
+-->
+<resultMap id="findCardExpireYyyyMmMap" type="iceberg.capi.order.model.ordersheet.OrdEcCardByVanD">
+		<result property="cardValidYy"								column="CARD_VALID_YY" />
+		<result property="cardValidMm"								column="CARD_VALID_MM" />
+</resultMap>
+
+<select id="findCardExpireYyyyMm" parameterType="String" resultMap="findCardExpireYyyyMmMap">
+	<![CDATA[
+
+		SELECT NVL(OECBVD.CARD_VALID_YY, '    ') AS CARD_VALID_YY     --카드유효년도  
+		     , NVL(OECBVD.CARD_VALID_MM, '  ')   AS CARD_VALID_MM     --카드유효월     
+		FROM ORD_EC_CARD_BY_VAN_D OECBVD                                  
+		WHERE OECBVD.ST_CD = 'A'                                          
+		AND   OECBVD.CRDIT_CARD_KIND_CD||OECBVD.ISSUE_CO_CD = #{sltCardType}       
+
+	 ]]>
+</select>
+
+
+
+</mapper>

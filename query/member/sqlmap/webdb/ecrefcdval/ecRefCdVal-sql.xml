@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.member.webdb.repository.ecrefcdval.EcRefCdValSqlMapRepository">
+		
+	<resultMap type="iceberg.capi.member.model.ecrefcdval.EcRefCdVal" id="ecRefCdValMap">  
+		<result property = "cd"                     column= "CD"                       />
+	    <result property = "cdNm"                   column= "CD_NM"                      /> 
+	</resultMap>  
+	
+
+	<select id="findPrsnConslTypCdList" parameterType="criteria" resultMap="ecRefCdValMap">
+	<!-- 
+		API  : 개인상담유형코드조회
+		설명 : 개인상담유형코드를 webdb코드 테이블에서 조회한다.
+		 
+		#{_c.refSetId[0].value}  = 5423 
+	-->
+        SELECT CODE AS CD
+              ,VAL  AS CD_NM
+         FROM  EC_REFSETVAL 
+         WHERE DBSTS = 'A' 
+           AND REFSETID = #{_c.refSetId[0].value} 
+          <if test="_c.cd !=null" >
+          AND CODE in
+          	<foreach collection="_c.cd[0].value" item="item" index="index" open="(" separator="," close=")">
+				#{item}
+			 </foreach>   
+          </if>
+         ORDER BY RESERVED1
+	</select>	
+	
+
+	<select id="countSuplySupInqryExcptFlg" parameterType="criteria" resultType="int">
+	<!-- 
+		API  : 공급업체문의제외여부 조회
+		설명 : 공급업체문의제외여부를 webdb코드 테이블에서 조회한다.
+		 
+		#{_c.refSetId[0].value}  = 3060 
+		#{_c.supCd[0].value}  = '121005' 
+		#{_c.prdClsCd[0].value}  = 'A39' 
+	-->
+        SELECT COUNT(*)
+         FROM  EC_REFSETVAL 
+         WHERE DBSTS = 'A' 
+           AND REFSETID = #{_c.refSetId[0].value}  
+           AND ( VAL = #{_c.supCd[0].value} OR VAL = #{_c.prdClsCd[0].value} )
+	</select>	
+ 
+</mapper>

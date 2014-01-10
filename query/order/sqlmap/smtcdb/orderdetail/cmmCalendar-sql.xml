@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.orderdetail.AreaLeadTimeInfoSqlMapRepository">
+
+	<resultMap type="iceberg.capi.order.model.orderdetail.common.AreaLeadTimeInfo" id="areaLeadTimeInfo" >
+		<result property="date" column="DT"/> 
+		<result property="wekdyNm" column="WEKDY_NM"/> 
+		<result property="holidayFlg" column="HOLDY_YN"/> 
+	</resultMap>
+	
+	<select id="findAreaLeadTimeInfo" parameterType="criteria" resultMap="areaLeadTimeInfo">
+     SELECT DT
+           ,WEKDY_NM
+           ,HOLDY_YN
+       FROM CMM_CALND_C
+      WHERE DT > #{_c.shipDate[0].value}
+      ORDER BY DT
+	</select>
+</mapper>

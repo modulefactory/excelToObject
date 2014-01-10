@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.rental.RentPrdRsrvSqlMapRepository">
+	<!--
+		설명 : 렌탈 상담 신청 내역
+		작성자 : 유영모
+		작성일 : 2013-12-23
+	-->
+	<resultMap id="rentPrdRsrv" type="iceberg.capi.order.model.rental.RentPrdRsrv">
+		<result property="rsrvNo"          column="RSRV_NO"/>
+		<result property="rsrvDtm"         column="RSRV_DTM"/>
+		<result property="prdCd"           column="PRD_CD"/>
+		<result property="prdNm"           column="PRD_NM"/>
+		<result property="custReactCd"     column="CUST_REACT_CD"/>
+		<result property="salePrc"         column="SALE_PRC"/>
+		<result property="supCd"           column="SUP_CD"/>
+		<result property="custNm"          column="CUST_NM"/>
+		<result property="cntcTelno1"      column="CNTC_TELNO_1"/>
+		<result property="cntcTelno2"      column="CNTC_TELNO_2"/>
+		<result property="zipCd"           column="ZIPCD"/>
+		<result property="baseAddr"        column="BASE_ADDR"/>
+		<result property="dtlAddr"         column="DTL_ADDR"/>
+		<result property="noteCntnt1"      column="NOTE_CNTNT_1"/>		
+	</resultMap>
+	
+	<!--                                                               
+		내용	: 고객 렌탈 상담 신청 내역 조회(by 예약 번호)                        
+		작성자	: 유영모                                               
+		작성일	: 2013-12-23
+		#{_c.rsrvNo[0].value} = 1480995
+		#{_c.custNo[0].value} = 40766020
+	-->
+	<select id="findCustPrdRsrv" parameterType="criteria" resultMap="rentPrdRsrv">
+		<![CDATA[
+		 	SELECT ORPRD.RSRV_NO 
+			          ,ORPRD.RSRV_DTM
+			          ,ORPRD.PRD_CD
+			          ,PPM.PRD_NM 
+			          ,ORPRD.CUST_REACT_CD
+			          ,ORPRD.SALE_PRC 
+			          ,ORPRD.SUP_CD 
+			          ,CCM.CUST_NM
+			          ,ORPRD.CNTC_TELNO_1 
+			          ,ORPRD.CNTC_TELNO_2     
+			          ,ORPRD.ZIPCD
+                	  ,ORPRD.BASE_ADDR 
+                	  ,ORPRD.DTL_ADDR 
+			          ,ORPRD.NOTE_CNTNT_1
+			FROM  ORD_RENT_PRD_RSRV_D ORPRD
+			         ,PRD_PRD_M PPM 
+			         ,CST_CUST_M CCM
+			WHERE ORPRD.RSRV_NO = #{_c.rsrvNo[0].value} 
+			    AND ORPRD.CUST_NO = #{_c.custNo[0].value} 
+			    AND ORPRD.PRD_CD = PPM.PRD_CD 
+			    AND ORPRD.RSRV_NO IS NOT NULL 
+			    AND ORPRD.CUST_NO = CCM.CUST_NO
+		]]>
+	</select>
+</mapper>

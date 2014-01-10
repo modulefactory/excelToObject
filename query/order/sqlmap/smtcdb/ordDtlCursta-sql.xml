@@ -1,0 +1,634 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.orderdelivery.OrdDtlCurstaSqlMapRepository">
+
+	<!--
+		내용	: 주문상세현황을 조회하는 SQL
+		작성자	: 이동민
+		작성일	: 2013.10.29
+		          2013.11.13 쿠폰관련 변경
+
+		#{_c.ordNo[0].value} = 599857020
+		#{_c.custNo[0].value} = 7507595
+	-->
+
+    <resultMap type="iceberg.capi.order.model.orderdelivery.OrdDtlRec" id="ordDtlRec">
+        <result property="ordDt"                 		column="ORD_DT"/>
+        <result property="ordSeq"              			column="ORD_SEQ"/>
+        <result property="prdCd"                  		column="PRD_CD"/>
+        <result property="prdNm"                  		column="PRD_NM"/>
+        <result property="mnfcCoNm"               		column="MNFC_CO_NM"/>
+        <result property="ordQty"                 		column="ORD_QTY"/>
+        <result property="salePrc"         				column="SALE_PRC"/>
+        <result property="payPrc"                		column="PAY_PRC"/>
+        <result property="ordItemStCd"              	column="ORD_ITEM_ST_CD"/>
+        <result property="relsFshDt"              		column="RELS_FSH_DT"/>
+        <result property="rcvrNm"                 		column="RCVR_NM"/>
+        <result property="rcvrAddr"           			column="RCVR_ADDR"/>
+        <result property="rcvrTelno"              		column="RCVR_TELNO"/>
+        <result property="prchTypCd"              		column="PRCH_TYP_CD"/>
+        <result property="taxInvIssueFlg"         		column="TAX_INV_ISSUE_FLG"/>
+        <result property="taxTypCd"               		column="TAX_TYP_CD"/>
+        <result property="rtpQty"                 		column="RTP_QTY"/>
+        <result property="supCd"                  		column="SUP_CD"/>
+        <result property="cpnDcAmt"            			column="CPN_DC_AMT"/>
+        <result property="arsDcAmt"           			column="ARS_DC_AMT"/>
+        <result property="sgpayDcAmt"             		column="SGPAY_DC_AMT"/>
+        <result property="tmDcAmt"                		column="TM_DC_AMT"/>
+        <result property="fmlyDcAmt"              		column="FMLY_DC_AMT"/>
+        <result property="dlvPickMthodCd"         		column="DLV_PICK_MTHOD_CD"/>
+        <result property="stdUprc"						column="STD_UPRC"/>
+        <result property="uprcAdjstDtlRsnCd"            column="UPRC_ADJST_DTL_RSN_CD"/>
+        <result property="chanlCd"                		column="CHANL_CD"/>
+        <result property="cpnTypCd"						column="CPN_TYP_CD"/>
+        <result property="frmlesPrdTypCd"        		column="FRMLES_PRD_TYP_CD"/>
+        <result property="prdAttrColor"                 column="PRD_ATTR_COLOR"/>
+        <result property="prdAttrStyle"                 column="PRD_ATTR_STYLE"/>
+        <result property="prdAttrSize"                  column="PRD_ATTR_SIZE"/>
+        <result property="prdAttrGft"                  	column="PRD_ATTR_GFT"/>
+        <result property="noIntInsmMm"            		column="NO_INT_INSM_MM"/>
+        <result property="accmGivTotAmt"            	column="ACCM_GIV_TOT_AMT"/>
+        <result property="dlvFshDt"               		column="DLV_FSH_DT"/>
+        <result property="dlvPlanDt"              		column="DLV_PLAN_DT"/>
+        <result property="ordItemStChgDtm"              column="ORD_ITEM_ST_CHG_DTM"/>
+        <result property="srSubArea"              		column="SR_SUB_AREA"/>
+        <result property="dlvPickMsgCntnt"        		column="DLV_PICK_MSG_CNTNT"/>
+		<result property="pkgAmt"						column="PKG_AMT"/>
+        <result property="orgOrdNo"               		column="ORG_ORD_NO"/>
+        <result property="accmDownFlg"            		column="ACCM_DOWN_FLG"/>
+        <result property="ordItemId"              		column="ORD_ITEM_ID"/>
+        <result property="repPrdSupPrdCd"         		column="REP_PRD_SUP_PRD_CD"/>
+        <result property="repPrdSupPrdNm"         		column="REP_PRD_SUP_PRD_NM"/>
+        <result property="repPrdSaleAmt"          		column="REP_PRD_SALE_AMT"/>
+        <result property="tmpOrdNo"               		column="TMP_ORD_NO"/>
+        <result property="repPrdSupAddCntnt"      		column="REP_PRD_SUP_ADD_CNTNT"/>
+        <result property="mimTypCd"               		column="MIM_TYP_CD"/>
+        <result property="repPrdSupAttrPrdNm"     		column="REP_PRD_SUP_ATTR_PRD_NM"/>
+        <result property="ecSupOrdNo"             		column="EC_SUP_ORD_NO"/>
+        <result property="cashRcptTxnStCd"       		column="CASH_RCPT_TXN_ST_CD"/>
+        <result property="ordNo"                  		column="ORD_NO"/>
+        <result property="empDcAmt"          			column="EMP_DC_AMT"/>
+        <result property="ordDlvGrdCd"            		column="ORD_DLV_GRD_CD"/>
+        <result property="prdClsCd"               		column="PRD_CLS_CD"/>
+        <result property="ecDirdlvPrdDlvSchdDt"   		column="EC_DIRDLV_PRD_DLV_SCHD_DT"/>
+        <result property="lineTypCd"              		column="LINE_TYP_CD"/>
+        <result property="genrlCpnNo"                  	column="GENRL_CPN_NO"/>
+        <result property="genrlCpnDcRtAmt"              column="GENRL_CPN_DC_RT_AMT"/>
+        <result property="rcvrAddrCntcNo"               column="RCVR_ADDR_CNTC_NO"/>
+        <result property="rcvrAddrGbnCd"                column="RCVR_ADDR_GBN_CD"/>
+        <result property="rcvrZipcd"                  	column="RCVR_ZIPCD"/>
+        <result property="rcvrBaseAddr"               	column="RCVR_BASE_ADDR"/>
+        <result property="rcvrDtlAddr"                	column="RCVR_DTL_ADDR"/>
+        <result property="rcvrEastnChkRsltCd"        	column="RCVR_EASTN_CHK_RSLT_CD"/>
+        <result property="dlvUnulMatrCntnt"       		column="DLV_UNUL_MATR_CNTNT"/>
+        <result property="rcvrCelphnTelno"        		column="RCVR_CELPHN_TELNO"/>
+        <result property="attrPrdCd"              		column="ATTR_PRD_CD"/>
+        <result property="pleinOrdStCd"           		column="PLEIN_ORD_ST_CD"/>
+        <result property="pleinRcvrEngNm"         		column="PLEIN_RCVR_ENG_NM"/>
+        <result property="rlOrdPrsnNm"            		column="RL_ORD_PRSN_NM"/>
+        <result property="ordCnfFlg"              		column="ORD_CNF_FLG"/>
+        <result property="cardUseLimitYn"         		column="CARD_USE_LIMIT_YN"/>
+        <result property="gshsImmAccmDcAmt"          	column="GSHS_IMM_ACCM_DC_AMT"/>
+        <result property="supImmAccmDcAmt"         		column="SUP_IMM_ACCM_DC_AMT"/>
+        <result property="foryyDcAmt"        			column="FORYY_DC_AMT"/>
+        <result property="dlvpAddrNo"             		column="DLVP_ADDR_NO"/>
+        <result property="orgOrdItmId"            		column="ORG_ORD_ITM_ID"/>
+        <result property="dlvsCoNm"               		column="DLVS_CO_NM"/>
+        <result property="billDt"            			column="BILL_DT"/>
+        <result property="dirdlvOboxDlvStCd"            column="DIRDLV_OBOX_DLV_ST_CD"/>
+        <result property="ecValidDlvCd"           		column="EC_VALID_DLV_CD"/>
+        <result property="ecDlvSchdDt"            		column="EC_DLV_SCHD_DT"/>
+        <result property="dlvRequirDdcnt"        		column="DLV_REQUIR_DDCNT"/>
+        <result property="ordTypDtlCd"                 	column="ORD_TYP_DTL_CD"/>
+        <result property="ordDtm"          				column="ORD_DTM"/>
+        <result property="dlvsCoCd"               		column="DLVS_CO_CD"/>
+        <result property="oboxCd"                 		column="OBOX_CD"/>
+        <result property="arfnDt"          				column="ARFN_DT"/>
+        <result property="rsnMidCls"              		column="RSN_MID_CLS"/>
+        <result property="dittoFlg"            			column="DITTO_FLG"/>
+        <result property="chanlDtlCd"           		column="CHANL_DTL_CD"/>
+        <result property="rsrvSalePrdFlg"         		column="RSRV_SALE_PRD_FLG"/>
+        <result property="ordMnfcTypCd"           		column="ORD_MNFC_TYP_CD"/>
+        <result property="ordMnfcTypCdNm"				column="ORD_MNFC_TYP_CD_NM"/>
+        <result property="ordMnfcOrdmadReqCntnt"  		column="ORD_MNFC_ORDMAD_REQ_CNTNT"/>
+        <result property="prdTypCd"               		column="PRD_TYP_CD"/>
+        <result property="optPrdTypCd"            		column="OPT_PRD_TYP_CD"/>
+        <result property="attrPrdNm"              		column="ATTR_PRD_NM"/>
+        <result property="rsnSmlCls"              		column="RSN_SML_CLS"/>
+        <result property="rfnTypCd"              		column="RFN_TYP_CD"/>        
+    </resultMap>
+
+    <select id="findOrdDtlRecList" parameterType="criteria" resultMap="ordDtlRec">
+        SELECT /* ordDtlCursta-sql.xml, 2013.10.29 by 이동민 */
+               OOM.ORD_DTM                                                                          AS ORD_DT                           /* 주문일시 */
+              ,OID.ORD_ITEM_NO                                                                      AS ORD_SEQ                          /* 주문아이템순번 */
+              ,DECODE(OID.LINE_TYP_CD
+                     ,'11',OID.REP_PRD_SUP_PRD_CD
+                     ,NVL(PPM.PRD_CD,SDD.DLVC_CD))                                                  AS PRD_CD                           /* 상품코드    */
+              ,CASE
+                   WHEN OID.CHANL_CD IN ('P','B')
+                    AND OID.LINE_TYP_CD NOT IN ('01','02','06')
+                   THEN OID.EXPOS_PRD_NM
+                   ELSE OID.PRD_NM
+                END                                                                                 AS PRD_NM                           /* 상품명      */
+              ,PPM.MNFC_CO_NM                                                                       AS MNFC_CO_NM                       /* 제조사명 5   */
+              ,OID.ORD_QTY                                                                          AS ORD_QTY                          /* 주문수량 */
+              ,NVL(OID.STD_UPRC,0) - (FLOOR((NVL(OIPD_A01.SUP_GIV_AMT,0)+
+                                             NVL(OIPD_A01.GSHS_GIV_AMT,0))/10)*10)
+                                   + NVL(OIPD_A14.GSHS_GIV_AMT,0)                                   AS SALE_PRC                         /* 판매가격 */
+              ,NVL(OID.LAST_UPRC,0)                                                                 AS PAY_PRC                          /* 결제가격 */
+              ,CASE
+                   WHEN OID.ST_CD IN ('31','B1')
+                    AND (SYSDATE - OID.DLV_FSH_DT) <![CDATA[ < ]]> 8                                                                    /* +9/24 */
+                    AND OID.DLV_FSH_SUBJ_CD = 'V'
+                    AND SUBSTR(OID.DLV_PICK_MTHOD_CD,0,1) = '3'
+                   THEN '22'
+                   ELSE OID.ST_CD
+                END                                                                                 AS ORD_ITEM_ST_CD                   /* 주문아이템상태코드 10 */
+              ,TO_CHAR(OID.RELS_FSH_DT, 'YYYYMMDD')                                                                      AS RELS_FSH_DT                      /* 출고완료일자 */
+              ,CCAD.RCVR_NM                                                                         AS RCVR_NM                          /* 수신자명 */
+              ,CCAD.BASE_ADDR||' '||CCAD.DTL_ADDR                                                   AS RCVR_ADDR                        /* 수신자주소 */
+              ,CCAD.DLVP_TELNO                                                                      AS RCVR_TELNO                       /* 수신자전화번호 */
+              ,OID.PRCH_TYP_CD                                                                      AS PRCH_TYP_CD                      /* 매입유형코드 15 */
+              ,NVL(PPM.TAX_INV_ISSUE_YN,'N')                                                        AS TAX_INV_ISSUE_FLG                /* 세금계산서발행여부 */
+              ,OID.TAX_TYP_CD                                                                       AS TAX_TYP_CD                       /* 세금유형코드 */
+              ,OID.RTP_QTY                                                                          AS RTP_QTY                          /* 반품수량 */
+              ,OID.SUP_CD                                                                           AS SUP_CD                           /* 협력사코드 */
+              ,((NVL(OIPD_A06.GSHS_GIV_AMT,0)+NVL(OIPD_A06.SUP_GIV_AMT,0)) * NVL(OID.ORD_QTY,0)
+               +(NVL(OIPD_A07.GSHS_GIV_AMT,0)+NVL(OIPD_A07.SUP_GIV_AMT,0)) * NVL(OID.ORD_QTY,0)
+               + NVL(OIPD_A08.GSHS_GIV_AMT,0)*NVL(OID.ORD_QTY,0))                                   AS CPN_DC_AMT                       /* 쿠폰할인금액 */
+              ,NVL(OIPD_A05.GSHS_GIV_AMT,0)+NVL(OIPD_A05.SUP_GIV_AMT,0)                             AS ARS_DC_AMT                       /* ARS할인금액 */
+              ,DECODE(OIPD_A04.ADJST_DTL_REP_VAL
+                     ,'Y', NVL(OIPD_A04.GSHS_GIV_AMT,0)+
+                           NVL(OIPD_A04.SUP_GIV_AMT,0)
+                     ,0)                                                                            AS SGPAY_DC_AMT                     /* 일시불할인금액   매출할인세분화 2005.03.31*/
+              ,NVL(OIPD_A12.GSHS_GIV_AMT,0)                                                         AS TM_DC_AMT                        /* 상담원할인금액 */
+              ,NVL(OIPD_A03.GSHS_GIV_AMT,0)                                                         AS FMLY_DC_AMT                      /* 그룹사할인금액 */
+              ,OID.DLV_PICK_MTHOD_CD                                                                AS DLV_PICK_MTHOD_CD                /* 배송수거방법코드  25   */
+              ,NVL(OID.STD_UPRC,0)                                                                  AS STD_UPRC                         /* 표준단가(수량곱하지 않음) */
+              ,OIPD_A12.ADJST_DTL_RSN_CD                                                            AS UPRC_ADJST_DTL_RSN_CD            /* 단가조정상세사유코드 */
+              ,OID.CHANL_CD                                                                         AS CHANL_CD                         /* 채널코드 */
+              ,NVL(CCM.CPN_TYP_CD, '')                                                              AS CPN_TYP_CD                       /* 30 쿠폰적용타입 1:정률, 2:정액, 3:사은품, 4:정율적립, 5:정액적립 30 */
+              ,PPM.FRMLES_PRD_TYP_CD                                                                AS FRMLES_PRD_TYP_CD                /* 무형상품유형코드 */
+              ,NVL2(PAPM.ATTR_WHL_VAL,PAPM.ATTR_VAL_1,'')                                           AS PRD_ATTR_COLOR                   /* 상품속성색상 */
+              ,NVL2(PAPM.ATTR_WHL_VAL,PAPM.ATTR_VAL_2,'')                                           AS PRD_ATTR_STYLE                   /* 상품속성스타일 */
+              ,NVL2(PAPM.ATTR_WHL_VAL,PAPM.ATTR_VAL_3,'')                                           AS PRD_ATTR_SIZE                    /* 상품속성사이즈 */
+              ,NVL2(PAPM.ATTR_WHL_VAL,PAPM.ATTR_VAL_4,'')                                           AS PRD_ATTR_GFT                     /* 상품속성사은품 */
+              ,OIPD_A04.NO_INT_INSM_MM                                                              AS NO_INT_INSM_MM                   /* 무이자할부개월 */
+              ,DECODE(NVL(OID.ORD_QTY,0)
+                     ,0              ,0
+                     ,(NVL(OID.ACCM_GIV_TOT_AMT,0)/OID.ORD_QTY)*(OID.ORD_QTY-NVL(OID.RTP_QTY,0)))   AS ACCM_GIV_TOT_AMT                 /* 적립금부여총금액 */
+              ,TO_CHAR(OID.DLV_FSH_DT, 'YYYYMMDD')                                                  AS DLV_FSH_DT                       /* 배송완료일자 +9/24 */
+              ,TO_CHAR(OID.DLV_PLAN_DT, 'YYYYMMDD')                                                 AS DLV_PLAN_DT                      /* 배송계획일자 +9/24*/
+              ,TO_CHAR(OID.ST_CHG_DTM, 'YYYYMMDD')                                                  AS ORD_ITEM_ST_CHG_DTM              /* 40 주문아이템상태변경일시 +9/24*/
+              ,X.SR_SUB_AREA                                                                        AS SR_SUB_AREA                      /* 서비스요청하위AREA */ /* sr내역을 가져오기위한 row_id*/
+              ,OID.DLV_PICK_MSG_CNTNT                                                               AS DLV_PICK_MSG_CNTNT               /* 배송수거메시지내용 */
+              ,NVL(OIPD_A15.GSHS_GIV_AMT,0)                                                         AS PKG_AMT                          /* 포장금액*/
+              ,OOM.ORG_ORD_NO                                                                       AS ORG_ORD_NO                       /* 45 교환일 원주문 번호를 가져오기위해*/
+              ,DECODE(NVL(CCADTD.DOWN_YN, 'Y')
+                     ,'N', DECODE(SIGN(TRUNC(SYSDATE - OID.RELS_FSH_DT) - 100), 1,'X','N')
+                     ,'Y')                                                                          AS ACCM_DOWN_FLG                    /* 적립금다운여부 +9/24 */
+              ,OID.ORD_ITEM_ID                                                                      AS ORD_ITEM_ID                      /* 주문아이템ID */ /* 적립금다운받기위한 line itemid*/
+              ,OID.REP_PRD_SUP_PRD_CD                                                               AS REP_PRD_SUP_PRD_CD               /* 대표상품 주문수정 2004.07.19 거래처 */
+              ,OID.REP_PRD_SUP_PRD_NM                                                               AS REP_PRD_SUP_PRD_NM               /* 대표상품 주문수정 2004.07.19 거래처 상품명 */
+              ,TRIM(TO_CHAR(FLOOR(((NVL(OID.STD_UPRC,0)-
+                                  (NVL(OIPD_A01.SUP_GIV_AMT,0)+NVL(OIPD_A01.GSHS_GIV_AMT,0))))/10)*10*NVL(OID.ORD_QTY,0)+
+                                  (NVL(OIPD_A14.GSHS_GIV_AMT,0)*NVL(OID.ORD_QTY,0)),'999,999,999')) AS REP_PRD_SALE_AMT                 /* 50 대표상품 판매금액    */
+              ,NVL(OOM.TMP_ORD_NO,'')                                                               AS TMP_ORD_NO                       /* HI(2004.11) MP 이샵주문번호 */
+              ,OID.REP_PRD_SUP_ADD_CNTNT                                                            AS REP_PRD_SUP_ADD_CNTNT            /* 대표상품협력사추가내용 */ /* LG수퍼MIM(2005.03) 거래처 추가정보 54*/
+              ,SSM.MIM_TYP_CD                                                                       AS MIM_TYP_CD                       /* 몰인몰유형코드 */ /* LG수퍼MIM(2005.03) 거래처 몰인몰 코드 55 */
+              ,NVL(OID.REP_PRD_SUP_ATTR_PRD_NM,'')                                                  AS REP_PRD_SUP_ATTR_PRD_NM          /* 대표상품협력사속성상품명  56 */
+              ,OID.EC_SUP_ORD_NO                                                                    AS EC_SUP_ORD_NO                    /* 업체의 주문번호 modified by hyunsin 2005-04-22 14:33 57 */
+              ,PCRACD.TXN_ST_CD                                                                     AS CASH_RCPT_TXN_ST_CD              /* 현금영수증거래상태코드 */ /* 현금영수증 발행여부 modified by pjm 2005-05-19 58 */
+              ,PCRACD.ORD_NO                                                                        AS ORD_NO                           /* 주문번호 */ /* 오더아이디 modified by pjm 2005-05-19  59 */
+              ,NVL(OIPD_A02.GSHS_GIV_AMT,0)                                                         AS EMP_DC_AMT                       /* 임직원할인금액 modified by mj 2005-07-08 60 */
+              ,OID.ORD_DLV_GRD_CD                                                                   AS ORD_DLV_GRD_CD                   /* 주문배송등급코드 2005.11.02 (61) */
+              ,PCM.PRD_CLS_CD                                                                       AS PRD_CLS_CD                       /* 상품분류코드 2005.12.01 (62) */
+              ,TO_CHAR(OID.EC_DIRDLV_PRD_DLV_SCHD_DT, 'YYYYMMDD')                                   AS EC_DIRDLV_PRD_DLV_SCHD_DT        /* EC직송상품배송예정일자 2005.12.01(63) + 9/24 */
+              ,OID.LINE_TYP_CD                                                                      AS LINE_TYP_CD                      /* 라인유형코드 */ /* 상품형태 2006.06.28 hyunsin(64) */
+              ,OIPD_A06.CPN_NO                                                                      AS GENRL_CPN_NO                     /* 일반쿠폰번호 */
+              ,(OIPD_A06.GSHS_GIV_RT + OIPD_A06.SUP_GIV_RT)                                         AS GENRL_CPN_DC_RT_AMT              /* 일반쿠폰할인율액 */
+              ,CCAD.ADDR_CNTC_NO                                                                    AS RCVR_ADDR_CNTC_NO                /* 수신자주소연락처번호 */
+              ,CCAD.ADDR_GBN_CD                                                                     AS RCVR_ADDR_GBN_CD                 /* 수신자주소구분코드 */
+              ,CCAD.ZIPCD                                                                           AS RCVR_ZIPCD                       /* 수신자우편번호 */
+              ,CCAD.BASE_ADDR                                                                       AS RCVR_BASE_ADDR                   /* 수신자기본주소 */ /* 시(도)/동 (집)(71) */
+              ,CCAD.DTL_ADDR                                                                        AS RCVR_DTL_ADDR                    /* 수신자상세주소 */ /* 상세주소 (집)(72) */
+              ,CCAD.EASTN_CHK_RSLT_CD                                                               AS RCVR_EASTN_CHK_RSLT_CD           /* 이스턴검증결과코드 */ /* 신우편번호 변환여부 (집)(73) */
+              ,CCAD.DLV_UNUL_MATR_CNTNT                                                             AS DLV_UNUL_MATR_CNTNT              /* 배송특이사항내용 */
+              ,CCAD.DLVP_CELPHN_TELNO                                                               AS RCVR_CELPHN_TELNO                /* 수신자핸드폰전화번호 */
+              ,PAPM.ATTR_PRD_CD                                                                     AS ATTR_PRD_CD                      /* 속성상품코드 */ /* Varients Code(76) */
+              ,OID.PLEIN_ORD_ST_CD                                                                  AS PLEIN_ORD_ST_CD                  /* PLEIN주문상태코드 */ /* 해외주문내역상태(77) */
+              ,OID.PLEIN_RCVR_ENG_NM                                                                AS PLEIN_RCVR_ENG_NM                /* PLEIN수신자영문명 */ /* 영문이름(79)  */
+              ,NVL(OID.RL_ORD_PRSN_NM, '')                                                          AS RL_ORD_PRSN_NM                   /* 실주문자명  (80) */
+              ,NVL(OOM.ORD_CNF_YN, '')                                                              AS ORD_CNF_FLG                      /* 주문확정여부 (81) */
+              ,PPM.CARD_USE_LIMIT_YN                                                                AS CARD_USE_LIMIT_YN                /* (82) */
+              ,NVL(OIPD_A10.GSHS_GIV_AMT,0)                                                         AS GSHS_IMM_ACCM_DC_AMT             /* 당사즉시적립금할인금액 */ /* 즉시적립할인 내부 (83) */
+              ,NVL(OIPD_A10.SUP_GIV_AMT,0)                                                          AS SUP_IMM_ACCM_DC_AMT              /* 협력사즉시적립금할인금액 */ /* 즉시적립할인 외부 (84) */
+              ,NVL(OIPD_A11.GSHS_GIV_AMT,0)                                                         AS FORYY_DC_AMT                     /* 연간할인금액 */ /* 연간할인권 추가 (85)  2008.02.01 */
+              ,OID.DLVP_ADDR_NO                                                                     AS DLVP_ADDR_NO                     /* 배송지주소번호 */ /* 배송지 아이디   2008.06.30 (86) */
+              ,NVL((SELECT ORG_ORD_ITEM_ID
+                      FROM ORD_ITEM_DLVC_MAP_D
+                     WHERE ORG_ORD_NO = OID.ORD_NO
+                       AND DLVC_ORD_ITEM_ID = OID.ORD_ITEM_ID
+                       AND ROWNUM = 1)
+              ,OID.ORD_ITEM_ID)                                                                     AS ORG_ORD_ITM_ID                   /* 원주문품목ID */ /* 2008.07.08 배송비 그룹 정렬을 위한정보 */
+              ,CCC.CD_VAL                                                                           AS DLVS_CO_NM                       /* 택배사명 2008.07.08 (88) */
+              ,CASE
+                   WHEN OID.RELS_FSH_DT <![CDATA[ < ]]> TO_DATE('20081211', 'YYYYMMDD')
+                   THEN OID.RELS_FSH_DT
+                   ELSE OID.BILL_DT
+                END                                                                                 AS BILL_DT                          /* 매출취급일자 */ /* 매출인식일 +9/24 */
+              ,CASE
+                   WHEN (OID.RELS_FSH_DT <![CDATA[ < ]]> TO_DATE('20081211000000','yyyymmddhh24miss'))
+                   THEN 'XX'
+                   ELSE OID.DIRDLV_OBOX_DLV_ST_CD
+                END                                                                                 AS DIRDLV_OBOX_DLV_ST_CD            /* 직송합포장배송상태코드 */ /* 91 매출인식일 +9/24 */
+              ,OID.EC_VALID_DLV_CD                                                                  AS EC_VALID_DLV_CD                  /* EC유효배송코드 */ /* 92 EC Avail Del Flg */
+              ,TO_CHAR(DECODE(OID.EC_DLV_SCHD_DT
+                             ,NULL ,OID.DLV_PLAN_DT
+                             ,OID.EC_DLV_SCHD_DT)
+                      ,'YYYYMMDDHH')                                                                AS EC_DLV_SCHD_DT                   /* EC배송예정일자 +9/24 */
+              ,(SELECT DLV_REQUIR_TIME_VAL/24
+                  FROM CMM_ZIPCD_DLV_C
+                 WHERE ZIPCD = (SELECT ZIPCD
+                                  FROM CST_CUST_ADDR_D
+                                 WHERE NVL(ADDR_USE_YN,'Y') != 'N'
+                                   AND ADDR_CNTC_NO = OID.DLVP_ADDR_NO
+                                   AND ROWNUM = 1)
+                   AND ROWNUM = 1)                                                                  AS DLV_REQUIR_DDCNT                 /* 배송소요일수 */ /* 지역별 리드타임일 */
+              ,DECODE(OOM.ORD_TYP_DTL_CD
+                     ,'Sales Order',           'S'
+                     ,'Return Order',          'R'
+                     ,'Exchange Sales Order',  'E'
+                     ,'Exchange Return Order', 'R'
+                     ,'AS Remove',             'A'
+                     ,'AS Delivery',           'A'
+                     ,'AS Not Remove',         'A'
+                     ,'AS Not Delivery',       'A'
+                     ,'AS Visit',              'A'
+                     ,'Virtual Sales',         'S'
+                     ,'R')                                                                          AS ORD_TYP_DTL_CD                   /* 주문유형상세코드 */
+              ,TO_CHAR(OOM.ORD_DTM,'YYYYMMDDHH24MISS')                                              AS ORD_DTM                          /* 주문일시 */ /* 96.주문일자 yyyyMMddhh24miss 형태. +9/24 */
+              ,CCC.CMM_CD                                                                           AS DLVS_CO_CD                       /* 97. 택배사 코드 */
+              ,OID.OBOX_CD                                                                          AS OBOX_CD                          /* 98. 합포장코드 추가 */
+              ,TO_CHAR(OID.ARFN_DT, 'YYYYMMDDHH24MISS')                                             AS ARFN_DT                          /* 후환불일자 */ /* 99 환불일자 9/24 */
+              ,X.X_REASON_MID                                                                       AS RSN_MID_CLS                      /* 100 사유 중분류 */
+              ,NVL(PPM.DITTO_YN, '')                                                                AS DITTO_FLG                        /* DITTO여부 */ /* 101 디토 플래그(Y:디토상품) */
+              ,NVL(OID.CHANL_DTL_CD, '')                                                            AS CHANL_DTL_CD                     /* 채널상세코드 */ /* 102 주문소매체값 */
+              ,NVL(OID.RSRV_SALE_PRD_YN, 'N')                                                       AS RSRV_SALE_PRD_FLG                /* 103 예약상품여부 */
+              ,OID.ORD_MNFC_TYP_CD                                                                  AS ORD_MNFC_TYP_CD                  /* 주문제작유형코드 */ /* 104 [주문제작]주문제작유형 */
+              ,DECODE(OID.ORD_MNFC_TYP_CD
+                     ,'10',    '맞춤제작'
+                     ,'20',    '주문후제작'
+                     ,'30',    '주문후수입'
+                     ,'')                                                                           AS ORD_MNFC_TYP_CD_NM               /* 주문제작유형코드명 */ /* 화면분석후 생성된 컬럼 */
+              ,OID.ORD_MNFC_ORDMAD_REQ_CNTNT                                                        AS ORD_MNFC_ORDMAD_REQ_CNTNT        /* 주문제작맞춤신청내용 */ /* 105 [주문제작]맞춤제작내용 */
+              ,PPM.PRD_TYP_CD                                                                       AS PRD_TYP_CD                       /* 114 상품유형코드 */
+              ,OID.OPT_PRD_TYP_CD                                                                   AS OPT_PRD_TYP_CD                   /* 115 옵션상품유형코드(A:추가상품) */
+              ,NVL(OID.ATTR_PRD_NM, '')                                                             AS ATTR_PRD_NM                      /* 116 속성상품명 */
+              ,X.X_REASON_SML                                                                       AS RSN_SML_CLS                      /* 110 사유 소분류 */
+              ,OID.RFN_TYP_CD
+         FROM  ORD_ORD_M                        OOM
+              ,ORD_ITEM_D                       OID
+              ,ORD_ITEM_PRC_D                   OIPD_A01
+              ,ORD_ITEM_PRC_D                   OIPD_A02
+              ,ORD_ITEM_PRC_D                   OIPD_A03
+              ,ORD_ITEM_PRC_D                   OIPD_A04
+              ,ORD_ITEM_PRC_D                   OIPD_A05
+              ,ORD_ITEM_PRC_D                   OIPD_A06
+              ,ORD_ITEM_PRC_D                   OIPD_A07
+              ,ORD_ITEM_PRC_D                   OIPD_A08
+              ,ORD_ITEM_PRC_D                   OIPD_A10
+              ,ORD_ITEM_PRC_D                   OIPD_A11
+              ,ORD_ITEM_PRC_D                   OIPD_A12
+              ,ORD_ITEM_PRC_D                   OIPD_A14
+              ,ORD_ITEM_PRC_D                   OIPD_A15
+              ,ORD_ITEM_PRC_D                   OIPD_B02
+              ,PRD_PRD_M                        PPM
+              ,SUP_DLVC_D                       SDD                                                                                     /* 배송비상품 */
+              ,CST_CUST_ADDR_D                  CCAD
+              ,CPN_CPN_M                        CCM
+              ,PRD_ATTR_PRD_M                   PAPM
+              ,SUP_SUP_M                        SSM
+              ,CMM_CMM_C                        CCC
+              ,CST_CUST_ACCM_DOWN_TGT_D         CCADTD
+              ,(SELECT SSM.ORD_ITEM_ID            AS X_ORDER_ITEM_ID
+                      ,MAX(SSM.ACP_DTM)           AS X_CREATED
+                      ,MAX(SSCC.OLD_CLS_CD)       AS SR_SUB_AREA
+                      ,MAX(SSM.SR_RSN_MID_CLS_CD) AS X_REASON_MID
+                      ,MAX(SSM.SR_RSN_SML_CLS_CD) AS X_REASON_SML
+                  FROM SRV_SR_M     SSM
+                      ,SRV_SR_CLS_C SSCC
+                 WHERE SSM.SR_RSN_SML_CLS_CD = SSCC.SR_RSN_CLS_CD(+)
+                   AND SSCC.SR_RSN_CLS_TYP_CD(+) = 'SR'
+                   AND SSM.CUST_NO = '33751290'
+                   AND SSCC.OLD_CLS_CD(+) IN ('I02', 'I03', 'I04', 'C07')
+                   AND NVL(SR_PROC_ST_CD, 'Closed') = 'Open'
+                 GROUP BY SSM.ORD_ITEM_ID)      X
+              ,PAY_CASH_RCPT_APRV_CNL_D         PCRACD
+              ,PRD_CLS_M                        PCM
+         WHERE OOM.ORD_NO                       = #{_c.ordNo[0].value}
+           AND OOM.CUST_NO                      = #{_c.custNo[0].value}
+           AND OOM.ORD_NO                       = OID.ORD_NO
+           AND OID.ORD_ITEM_ID                  = OIPD_A01.ORD_ITEM_ID(+)
+           AND OID.ORD_ITEM_ID                  = OIPD_A02.ORD_ITEM_ID(+)
+           AND OID.ORD_ITEM_ID                  = OIPD_A03.ORD_ITEM_ID(+)
+           AND OID.ORD_ITEM_ID                  = OIPD_A04.ORD_ITEM_ID(+)
+           AND OID.ORD_ITEM_ID                  = OIPD_A05.ORD_ITEM_ID(+)
+           AND OID.ORD_ITEM_ID                  = OIPD_A06.ORD_ITEM_ID(+)
+           AND OID.ORD_ITEM_ID                  = OIPD_A07.ORD_ITEM_ID(+)
+           AND OID.ORD_ITEM_ID                  = OIPD_A08.ORD_ITEM_ID(+)
+           AND OID.ORD_ITEM_ID                  = OIPD_A10.ORD_ITEM_ID(+)
+           AND OID.ORD_ITEM_ID                  = OIPD_A11.ORD_ITEM_ID(+)
+           AND OID.ORD_ITEM_ID                  = OIPD_A12.ORD_ITEM_ID(+)
+           AND OID.ORD_ITEM_ID                  = OIPD_A14.ORD_ITEM_ID(+)
+           AND OID.ORD_ITEM_ID                  = OIPD_A15.ORD_ITEM_ID(+)
+           AND OID.ORD_ITEM_ID                  = OIPD_B02.ORD_ITEM_ID(+)
+           AND OIPD_A01.ADJST_DTL_CD         (+)= 'A01'                                                                                 /* 프로모션MD할인(A01) */
+           AND OIPD_A02.ADJST_DTL_CD         (+)= 'A02'                                                                                 /* 사내임직원할인(A02) */
+           AND OIPD_A03.ADJST_DTL_CD         (+)= 'A03'                                                                                 /* 그룹사할인(A03) */
+           AND OIPD_A04.ADJST_DTL_CD         (+)= 'A04'                                                                                 /* 일시불할인(A04) */
+           AND OIPD_A05.ADJST_DTL_CD         (+)= 'A05'                                                                                 /* ARS할인(A05) */
+           AND OIPD_A06.ADJST_DTL_CD         (+)= 'A06'                                                                                 /* 쿠폰할인(A06) */
+           AND OIPD_A07.ADJST_DTL_CD         (+)= 'A07'                                                                                 /* 더블쿠폰할인(A07) */
+           AND OIPD_A08.ADJST_DTL_CD         (+)= 'A08'                                                                                 /* 매체쿠폰할인(A08) */
+           AND OIPD_A10.ADJST_DTL_CD         (+)= 'A10'                                                                                 /* 즉시적립할인(A10) */
+           AND OIPD_A11.ADJST_DTL_CD         (+)= 'A11'                                                                                 /* 연간플러스할인(A11) */
+           AND OIPD_A12.ADJST_DTL_CD         (+)= 'A12'                                                                                 /* 단가조정할인(A12) */
+           AND OIPD_A14.ADJST_DTL_CD         (+)= 'A14'                                                                                 /* 가격조정(A14) */
+           AND OIPD_A15.ADJST_DTL_CD         (+)= 'A15'                                                                                 /* 포장비(A15) */
+           AND OIPD_B02.ADJST_DTL_CD         (+)= 'B02'                                                                                 /* 인터넷적립(B02) */
+           AND OID.PRD_CD                       = PPM.PRD_CD(+)
+           AND OID.PRD_CD                       = SDD.DLVC_CD(+)
+           AND OID.ORD_ITEM_ID                  = CCADTD.ORD_ITEM_ID(+)
+           AND OIPD_A06.CPN_NO                  = CCM.CPN_NO(+)
+           AND OID.DLVP_ADDR_NO                 = CCAD.ADDR_CNTC_NO
+           AND OID.ATTR_PRD_CD                  = PAPM.ATTR_PRD_CD(+)
+           AND OID.ORD_ITEM_ID                  = X.X_ORDER_ITEM_ID(+)
+           AND CCC.CMM_GRP_CD(+)                = 'PRD008'
+           AND CCC.USE_YN(+)                    = 'Y'
+           AND OID.DLVS_CO_CD                   = CCC.CMM_CD(+)
+           AND OID.SUP_CD                       = SSM.SUP_CD(+)
+           AND OOM.ORD_NO                       = PCRACD.ORD_NO(+)
+           AND PPM.PRD_CLS_CD                   = PCM.PRD_CLS_CD(+)
+           AND NVL(OID.EC_EXPOS_EXCPT_YN,'N') <![CDATA[ <> ]]> 'Y'
+        <if test='_c.ordTyp[0].value != "S"'>
+         ORDER BY OID.LINE_TYP_CD
+                 ,OID.SET_PRD_CD
+                 ,OID.SET_PRD_ORD_SEQ
+                 ,ORG_ORD_ITM_ID
+                 ,DECODE(SIGN(OOM.ORD_DTM - X.X_CREATED), -1, X.X_CREATED, OOM.ORD_DTM) DESC
+                 ,OID.ORD_ITEM_NO
+        </if>
+    </select>
+
+	<!--
+		내용	: 카드와 무통장 결제 금액을 조회하는 SQL
+		작성자	: 이동민
+		작성일	: 2013.11.06
+
+		#{_c.ordNo[0].value} = 599856308
+		#{_c.custNo[0].value} = 29180286
+	-->
+
+    <resultMap type="iceberg.capi.order.model.orderdelivery.CardNoBkbPayAmtInfo" id="cardNoBkbPayAmtInfo">
+        <result property="crditCardRfnPsblAmt"    		column="CRDIT_CARD_RFN_PSBL_AMT"/>
+        <result property="noBkbRfnPsblAmt"        		column="NO_BKB_RFN_PSBL_AMT"/>
+        <result property="vanCd"                  		column="VAN_CD"/>
+    </resultMap>
+
+    <select id="findCardNoBkbPayAmtInfo" parameterType="criteria" resultMap="cardNoBkbPayAmtInfo">
+        SELECT /* ordDtlCursta-sql.xml, 2013.11.06 by 이동민 */
+               NVL(SUM(DECODE(POPD.PAY_TYP_CD
+                             ,'Credit Card' ,NVL(POPD.RFN_PSBL_AMT,0)
+                             ,0)
+                      )
+                  ,0)           AS CRDIT_CARD_RFN_PSBL_AMT    /* 신용카드환불가능금액 */
+              ,NVL(SUM(DECODE(POPD.PAY_TYP_CD
+                             ,'Bank Account',DECODE(POPD.META_ATTR28
+                                                   ,NULL,DECODE(POPD.PAY_ST_CD
+                                                               ,'B03',NVL(POPD.PAY_AMT,0)
+                                                               ,'B02',NVL(POPD.PAY_AMT,0)
+                                                               ,NVL(POPD.RFN_PSBL_AMT,0))
+                                                   ,NVL(POPD.RFN_PSBL_AMT,0))
+                             ,0)
+                      )
+                  ,0)           AS NO_BKB_RFN_PSBL_AMT        /* 무통장환불가능금액 */
+              ,POPD.META_ATTR21 AS VAN_CD                     /* 2005.04.20 실시간 계좌이체 추가  : 입금구분 by 박민재*/
+          FROM PAY_ORD_PAYMT_D  POPD
+              ,ORD_ORD_M        OOM
+         WHERE OOM.ORD_NO       = #{_c.ordNo[0].value}
+           AND OOM.CUST_NO      = #{_c.custNo[0].value}
+           AND OOM.PAY_ORD_NO   = POPD.PAY_ORD_NO(+)
+         GROUP BY POPD.META_ATTR21
+    </select>
+
+    <!--
+		내용	: 적립금/예치금/상품권 결제 금액을 조회하는 SQL
+		작성자	: 이동민
+		작성일	: 2013.11.06
+
+		#{_c.ordNo[0].value} = 599876178
+		#{_c.custNo[0].value} = 40766021
+    -->
+
+    <resultMap type="iceberg.capi.order.model.orderdelivery.AccmTmprcvGftcertPayAmt" id="accmTmprcvGftcertPayAmt">
+        <result property="accmRfnPsblAmt"				column="ACCM_RFN_PSBL_AMT"/>
+        <result property="tmprcvRfnPsblAmt"				column="TMPRCV_RFN_PSBL_AMT"/>
+        <result property="gsShopGftcertRfnPsblAmt"		column="GS_SHOP_GFTCERT_RFN_PSBL_AMT"/>
+        <result property="gsnpntUseAmt"					column="GSNPNT_USE_AMT"/>
+    </resultMap>
+
+    <select id="findAccmTmprcvGftcertPayAmt" parameterType="criteria" resultMap="accmTmprcvGftcertPayAmt">
+        SELECT /* ordDtlCursta-sql.xml, 2013.11.06 by 이동민 */
+               NVL(SUM(DECODE(CATD.TXN_TYP_CD,'R08',CATD.RET_PSBL_AMT,0)),0) + NVL(SUM(DECODE(CATD.TXN_TYP_CD,'P08',CATD.RET_PSBL_AMT,0)),0) AS ACCM_RFN_PSBL_AMT               /* 적립금환불가능금액 */ /* 주문시 적립금사용 */
+              ,NVL(SUM(DECODE(CATD.TXN_TYP_CD,'C01',CATD.RET_PSBL_AMT,0)),0)                                                                 AS TMPRCV_RFN_PSBL_AMT             /* 예치금환불가능금액 */ /* 주문시 예치금 */
+              ,NVL(SUM(DECODE(CATD.TXN_TYP_CD,'T01',CATD.RET_PSBL_AMT,0)),0)                                                                 AS GS_SHOP_GFTCERT_RFN_PSBL_AMT    /* GS샵상품권환불가능금액 */ /* 주문시 상품권 */
+              ,NVL(SUM(DECODE(CATD.TXN_TYP_CD,'P08',CATD.RET_PSBL_AMT,0)),0)                                                                 AS GSNPNT_USE_AMT                  /* GS엔포인트환불가능금액 */ /* GS포인트사용금액 */
+          FROM ORD_ORD_M       OOM
+              ,CST_ASSET_TXN_D CATD
+         WHERE OOM.ORD_NO      = #{_c.ordNo[0].value}
+           AND OOM.CUST_NO     = #{_c.custNo[0].value}
+           AND OOM.PAY_ORD_NO  = CATD.PAY_ORD_NO(+)
+           AND CATD.TXN_TYP_CD IN ('R08','P08','C01','T01','E70')
+    </select>
+
+    <!--
+		내용	: GS 공동 상품권 정보를 조회하는 SQL
+		작성자	: 이동민
+		작성일	: 2013.11.06
+
+		#{_c.ordNo[0].value} = 179944708
+		#{_c.custNo[0].value} = 4768649
+    -->
+
+    <resultMap type="iceberg.capi.order.model.orderdelivery.GsCmmGftcertInfo" id="gsCmmGftcertInfo">
+        <result property="gsCmmGftcertPayAmt"			column="GS_CMM_GFTCERT_PAY_AMT"/>
+        <result property="cashRcptReqFlg"				column="CASH_RCPT_REQ_FLG"/>
+    </resultMap>
+
+    <select id="findGsCmmGftcertInfo" parameterType="criteria" resultMap="gsCmmGftcertInfo">
+        SELECT /* ordDtlCursta-sql.xml, 2013.11.06 by 이동민 */
+               NVL(SUM(POPD.PAY_AMT), 0)      AS GS_CMM_GFTCERT_PAY_AMT    /* GS공동상품권결제금액 */ /* 사용금액   */
+              ,MAX(NVL(POPD.META_ATTR16,'N')) AS CASH_RCPT_REQ_FLG         /* 현금영수증요청여부 */ /* 현금영수증 */
+          FROM PAY_ORD_PAYMT_D                POPD
+              ,ORD_ORD_M                      OOM
+         WHERE OOM.ORD_NO                     = #{_c.ordNo[0].value}
+           AND OOM.CUST_NO                    = #{_c.custNo[0].value}
+           AND POPD.PAY_TYP_CD                LIKE '%GS Ticket'
+           AND OOM.ORD_NO                     = POPD.PAY_ORD_NO(+)
+    </select>
+
+    <!--
+		내용	: KT월드패스카드 정보를 조회하는 SQL
+		작성자	: 이동민
+		작성일	: 2013.11.06
+
+		#{_c.ordNo[0].value} = 599047683
+		#{_c.custNo[0].value} = 39977049
+    -->
+
+    <resultMap type="iceberg.capi.order.model.orderdelivery.KtwdpsCardInfo" id="ktwdpsCardInfo">
+        <result property="ktwdpsCardPayAmt"				column="KTWDPS_CARD_PAY_AMT"/>
+        <result property="cashRcptReqFlg"				column="CASH_RCPT_REQ_FLG"/>
+    </resultMap>
+
+    <select id="findKtwdpsCardInfo" parameterType="criteria" resultMap="ktwdpsCardInfo">
+        SELECT /* ordDtlCursta-sql.xml, 2013.11.06 by 이동민 */
+               NVL(SUM(POPD.PAY_AMT), 0)      AS KTWDPS_CARD_PAY_AMT    /* KT월드패스카드결제금액 */ /* 사용금액   */
+              ,MAX(NVL(POPD.META_ATTR16,'N')) AS CASH_RCPT_REQ_FLG      /* 현금영수증요청여부 */ /* 현금영수증 */
+          FROM PAY_ORD_PAYMT_D POPD
+              ,ORD_ORD_M       OOM
+         WHERE OOM.ORD_NO      = #{_c.ordNo[0].value}
+           AND OOM.CUST_NO     = #{_c.custNo[0].value}
+           AND POPD.PAY_TYP_CD = 'Prepaid Card'
+           AND OOM.ORD_NO      = POPD.PAY_ORD_NO(+)
+    </select>
+
+    <!--
+		내용	: 예치금상품권 현금영수증요청여부를 조회하는 SQL
+		작성자	: 이동민
+		작성일	: 2013.11.06
+
+		#{_c.ordNo[0].value} = 500000002
+		#{_c.custNo[0].value} = 28414740
+    -->
+
+    <resultMap type="iceberg.capi.order.model.orderdelivery.TmprcvGftcertCashRcptReqFlg" id="tmprcvGftcertCashRcptReqFlg">
+        <result property="cashRcptReqFlg"			column="CASH_RCPT_REQ_FLG"/>
+    </resultMap>
+
+    <select id="findTmprcvGftcertCashRcptReqFlg" parameterType="criteria" resultMap="tmprcvGftcertCashRcptReqFlg">
+        SELECT /* ordDtlCursta-sql.xml, 2013.11.06 by 이동민 */
+               MAX(NVL(OOM.CASH_RCPT_REQ_YN,'N')) AS CASH_RCPT_REQ_FLG        /*주문시 적립금사용*/
+          FROM ORD_ORD_M OOM
+              ,CST_ASSET_TXN_D CATD
+         WHERE OOM.ORD_NO      = #{_c.ordNo[0].value}
+           AND OOM.CUST_NO     = #{_c.custNo[0].value}
+           AND OOM.PAY_ORD_NO  = CATD.PAY_ORD_NO(+)
+           AND CATD.TXN_TYP_CD IN ('C01', 'T01')                              /*C01:예치금사용(주문),T01:상품권사용*/
+    </select>
+
+    <!--
+		내용	: 네이버 마일리지 정보 가져오기
+		작성자	: 이동민
+		작성일	: 2013.11.14
+
+		#{_c.custNo[0].value} = 30840182
+		#{_c.ordNo[0].value} = 526033365
+    -->
+
+    <resultMap type="iceberg.capi.order.model.orderdelivery.NaverMilgeInfo" id="naverMilgeInfo">
+    	<result property="naverMilgeAccRt"			column="NAVER_MILGE_ACC_RT"/>
+    </resultMap>
+
+    <select id="findNaverMilgeInfo" parameterType="criteria" resultMap="naverMilgeInfo">
+        SELECT /* ordDtlCursta-sql.xml, 2013.11.14 by 이동민 */
+               PAPAD.TOT_ACC_RT   AS NAVER_MILGE_ACC_RT    /* 네이버마일리지총적립율 */
+          FROM PAY_ALIA_PNT_ACC_D PAPAD
+         WHERE PAPAD.CUST_NO      = #{_c.custNo[0].value}
+           AND PAPAD.PAY_ORD_NO   = #{_c.ordNo[0].value}
+           AND PAPAD.ACC_TYP_CD   = 'A'
+           AND ROWNUM             = 1
+    </select>
+
+    <!--
+		내용	: 제휴포인트 정보 가져오기
+		작성자	: 이동민
+		작성일	: 2013.12.05
+
+		#{_c.ordNo[0].value} = 599856912
+		#{_c.custNo[0].value} = 40766020
+    -->
+
+    <resultMap type="iceberg.capi.order.model.orderdelivery.AlpntInfo" id="alpntInfo">
+    	<result property="alpntPayAmt"					column="ALPNT_PAY_AMT"/>
+    </resultMap>
+
+    <select id="findAlpntInfo" parameterType="criteria" resultMap="alpntInfo">
+        SELECT /* ordDtlCursta-sql.xml, 2013.12.05 by 이동민 */
+               NVL(SUM(PAPD.PAY_AMT), 0) AS ALPNT_PAY_AMT    /* 제휴포인트결제금액 */
+          FROM PAY_ORD_PAYMT_D           PAPD
+              ,ORD_ORD_M                 OOM
+         WHERE OOM.ORD_NO                = #{_c.ordNo[0].value}
+           AND OOM.CUST_NO               = #{_c.custNo[0].value}
+           AND PAPD.PAY_TYP_CD           = 'Point'
+           AND OOM.ORD_NO                = PAPD.PAY_ORD_NO(+)
+    </select>
+
+    <!--
+		내용	: 출고완료일자에 배송소요일수를 더한 값을 가져온다.
+		작성자	: 이동민
+		작성일	: 2013.11.08
+
+		#{_c.tmpRelsFshDt[0].value} = 20131108
+    -->
+
+    <resultMap type="iceberg.capi.order.model.orderdelivery.RelsFshDtPlusDlvRequirDdcnt" id="relsFshDtPlusDlvRequirDdcnt">
+        <result property="dt"							column="DT"/>
+        <result property="wekdyNm"						column="WEKDY_NM"/>
+        <result property="holdyFlg"						column="HOLDY_FLG"/>
+    </resultMap>
+
+    <select id="findRelsFshDtPlusDlvRequirDdcnt" parameterType="criteria" resultMap="relsFshDtPlusDlvRequirDdcnt">
+        SELECT /* ordDtlCursta-sql.xml, 2013.11.08 by 이동민 */
+               DT                                                                     /* 일자 */
+              ,WEKDY_NM                                                               /* 요일명 */
+              ,HOLDY_YN    AS HOLDY_FLG                                               /* 휴일여부 */
+          FROM CMM_CALND_C
+         WHERE DT <![CDATA[ > ]]> TO_DATE(#{_c.tmpRelsFshDt[0].value}, 'YYYYMMDD')    /* -9/24 */
+         ORDER BY DT
+    </select>
+
+	<!--
+		내용	: 해당 상품의 주문번호를 조회한다.
+		작성자	: 신슬기
+		작성일	: 2013.11.14 신규작성
+
+		#{_c.custNo[0].value} = 30481119
+		#{_c.prdCd[0].value} = 11731301
+    -->
+  	<select id="findOrderNumber" parameterType="criteria" resultType="long">
+		<![CDATA[
+        SELECT /* ordDtlCursta-sql.xml findOrderNumber, 작성시기 2013.11.11 */
+               NVL(MAX(OOM.ORD_NO),0)          AS ORD_NO
+		  FROM ORD_ORD_M                       OOM
+              ,ORD_ITEM_D                      OID
+              ,PRD_PRD_M                       PPM
+         WHERE OOM.CUST_NO                     = #{_c.custNo[0].value}
+           AND DECODE(OID.LINE_TYP_CD
+                     ,'11',OID.REP_PRD_SUP_PRD_CD
+                     ,PPM.PRD_CD)              = #{_c.prdCd[0].value}
+           AND OOM.ORD_TYP_DTL_CD              IN ('Sales Order','Virtual Sales','Exchange Sales Order')
+           AND RTRIM(OID.ST_CD)                IN ('31','12','21','22')
+           AND OOM.ORD_DTM                     >= ADD_MONTHS(SYSDATE, -24)
+           AND NVL(OID.EC_EXPOS_EXCPT_YN, 'N') <> 'Y'
+           AND OOM.ORD_NO                      = OID.ORD_NO
+           AND OID.PRD_CD                      = PPM.PRD_CD
+         ORDER BY OOM.ORD_NO DESC
+		 ]]>
+	</select>
+
+</mapper>

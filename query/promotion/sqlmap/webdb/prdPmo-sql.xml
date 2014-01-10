@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.promotion.webdb.repository.prd.PrdPmoSqlMapRepository">
+
+	<resultMap type="iceberg.capi.promotion.model.prd.PrdPmoBase" id="resultPrdPmoBase"  >
+		<result property = "pmoNo" 					column = "PMO_NO"/>
+		<result property = "prdPmoSeq" 				column = "PRD_PMO_SEQ"/>
+		<result property = "prdCd" 					column = "PRD_CD"/>
+		<result property = "prdNm" 					column = "PRD_NM"/>
+		<result property = "gftSelQty" 				column = "GFT_SEL_QTY"/>
+		<result property = "mandFlg" 				column = "MAND_FLG"/>
+		<result property = "addCmposGbnCd" 			column = "ADD_CMPOS_GBN_CD"/>
+		<result property = "gftGbnCd" 				column = "GFT_GBN_CD"/>
+		<result property = "gftPrdCd" 				column = "GFT_PRD_CD"/>
+		<result property = "gftSeq" 				column = "GFT_SEQ"/>
+		<result property = "validStrDtm" 			column = "VALID_STR_DTM"/>
+		<result property = "validEndDtm" 			column = "VALID_END_DTM"/>
+		<result property = "offerTypCd" 		    column = "OFFER_TYP_CD"/>
+		<result property = "applyPriorRank" 		column = "APPLY_PRIOR_RANK"/>
+	</resultMap>
+	
+	<select id="fineOnePrdPmoSale" parameterType="criteria" resultMap="resultPrdPmoBase">
+	<!-- 
+		DBMS : WEBDB
+		분야 : 프로모션 fineOnePrdPmoSale
+		API  : 상품 프로모션 SALE 정보 조회
+		설명 : 상품 프로모션 SALE 정보 조회
+		
+		#{_c.offerTypCd[0].value} = 11
+		#{_c.prdCd[0].value} = 5546780
+		#{_c.cmmBaseChanl[0].value} = P
+	-->
+	<![CDATA[
+      SELECT PSD.PRD_CD          AS PRD_CD
+            ,PSD.VALID_STR_DTM   AS VALID_STR_DTM
+            ,PSD.VALID_END_DTM   AS VALID_END_DTM
+            ,PSD.OFFER_TYP_CD    AS OFFER_TYP_CD
+        FROM PMO_SIMPL_D    PSD
+       WHERE PSD.OFFER_TYP_CD     = #{_c.offerTypCd[0].value}   --프로모션 타입
+         AND PSD.VALID_STR_DTM   <= SYSDATE
+         AND PSD.VALID_END_DTM   >= SYSDATE
+         AND PSD.APRV_ST_CD       ='30'
+         AND PSD.PRD_CD           = #{_c.prdCd[0].value}
+         AND PSD.CHANL_CD         = #{_c.cmmBaseChanl[0].value}          /*채널코드-기본:P*/
+         AND PSD.APPLY_PRIOR_RANK = PG_PMO_PRD_PMO.FN_PRD_APPLY_PRIOR_RANK( #{_c.prdCd[0].value}, #{_c.cmmBaseChanl[0].value}, SYSDATE)
+         AND ROWNUM = 1
+		]]>
+		
+	</select>
+	
+	<select id="getPrdSimplePromotionList" resultMap="resultPrdPmoBase" parameterType="criteria">
+	<!-- 
+      DBMS : WEBDB
+      분야 : 프로모션 getPrdSimplePromotionList
+      API  : 상품 프로모션 요약 정보 조회
+      설명 : 상품 프로모션 요약 정보 조회
+      
+      #{_c.prdCd[0].value} = 10840099
+   -->
+	<![CDATA[
+	   SELECT PSD.PMO_NO                   AS PMO_NO
+	         ,PSD.PRD_PMO_SEQ              AS PRD_PMO_SEQ
+	         ,PSD.PRD_CD                   AS PRD_CD
+	         ,NVL(PSD.GFT_SEL_QTY, 0)      AS GFT_SEL_QTY
+	         ,PSGD.MAND_YN                 AS MAND_FLG
+	         ,PSGD.ADD_CMPOS_GBN_CD        AS ADD_CMPOS_GBN_CD
+	         ,CASE WHEN PSGD.MAND_YN = 'Y' AND PSGD.ADD_CMPOS_GBN_CD = 'G' THEN 'MAND' --필수
+	               WHEN PSGD.MAND_YN = 'N' AND PSGD.ADD_CMPOS_GBN_CD = 'G' THEN 'SEL'  --선택
+	               WHEN PSGD.ADD_CMPOS_GBN_CD = 'D' THEN 'DLV'                         --배송
+	           END                         AS GFT_GBN_CD        /* 사은품 구분코드 */
+	         ,PSGD.GFT_PRD_CD              AS GFT_PRD_CD
+	         ,PSGD.GFT_SEQ                 AS GFT_SEQ		   
+	    FROM  PMO_SIMPL_D      PSD
+	         ,PMO_SIMPL_GFT_D  PSGD
+	   WHERE PSD.PRD_CD = #{_c.prdCd[0].value}
+	     AND SYSDATE BETWEEN PSD.VALID_STR_DTM AND PSD.VALID_END_DTM
+	     AND PSD.APPLY_PRIOR_RANK = PG_PMO_PRD_PMO.FN_PRD_APPLY_PRIOR_RANK(PSD.PRD_CD, #{_c.cmmBaseChanl[0].value}, SYSDATE)	/* 채널코드-(현재:모바일B,EC:P,OAHU:S) */
+	     AND PSD.OFFER_TYP_CD = '13'
+	     AND PSD.TGT_GBN_CD   = 'P'
+	     AND PSD.APRV_ST_CD   = '30'
+	     AND PSD.CHANL_CD IN ('A', 'P')
+	     AND PSD.PMO_NO   = PSGD.PMO_NO
+	     AND PSD.PRD_PMO_SEQ = PSGD.PRD_PMO_SEQ
+	     AND PSGD.USE_YN  = 'Y'   
+	     AND PSGD.ADD_CMPOS_GBN_CD IN ('G','D') 
+	   ORDER BY PSGD.MAND_YN DESC
+	           ,PSGD.GFT_SEQ DESC 
+	]]>
+	</select>
+	
+	<select id="getAttrPrdPmotionGiftList" resultMap="resultPrdPmoBase">
+	<!-- 
+		DBMS : WEBDB
+		분야 : 프로모션 getAttrPrdPmotionGiftList
+		API  : 상품 프로모션 사은품 정보 조회
+		설명 : 상품 프로모션 사은품 정보 조회
+		
+		#{_c.prdCd[0].value} = 10840099
+	-->	
+	<![CDATA[
+	SELECT PSD.PMO_NO                        AS PMO_NO
+	      ,PSD.APPLY_PRIOR_RANK              AS APPLY_PRIOR_RNK
+		  ,PSD.PRD_PMO_SEQ					 AS PRD_PMO_SEQ
+	      ,NVL(PSD.GFT_SEL_QTY, 0)           AS GFT_SEL_QTY
+		  ,PSGD.MAND_YN                      AS MAND_FLG
+		  ,PSGD.GFT_PRD_CD                   AS GFT_PRD_CD
+	  FROM PMO_SIMPL_D			PSD
+		  ,PMO_SIMPL_GFT_D		PSGD
+	 WHERE PSD.PRD_CD = #{prdCd}
+	   AND PSD.APPLY_PRIOR_RANK = PG_PMO_PRD_PMO.FN_PRD_APPLY_PRIOR_RANK(#{prdCd}, 'P', SYSDATE)
+	   AND SYSDATE BETWEEN PSD.VALID_STR_DTM AND PSD.VALID_END_DTM
+	   AND PSD.OFFER_TYP_CD = '13'
+	   AND PSD.TGT_GBN_CD = 'A'
+	   AND PSD.APRV_ST_CD = '30'
+	   AND PSD.CHANL_CD IN ('A', 'P')
+	   AND PSD.PMO_NO = PSGD.PMO_NO
+	   AND PSD.PRD_PMO_SEQ = PSGD.PRD_PMO_SEQ
+	   AND PSGD.USE_YN = 'Y'
+	   AND PSGD.ADD_CMPOS_GBN_CD IN ('G', 'D')
+	 ORDER BY PSGD.MAND_YN DESC
+		     ,PSGD.GFT_SEQ ASC
+	]]>
+	</select>
+	
+	<select id="getGftPrdCd" parameterType="long" resultType="long">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 프로모션 getGftPrdCd
+		API  : EC이벤트 사은품 번호 조회
+		설명 : EC이벤트 사은품 번호 조회
+		
+		#{prdCd} = 4185624
+	-->
+	SELECT FN_PRD_GFT_ATTR_PRD(SFEIE_GET_BONUSPRDID( #{prdCd} )) AS GFT_PRD_CD
+	  FROM DUAL		
+	</select>
+
+	<select id="getPrdInfoByCpnNo" parameterType="long" resultMap="resultPrdPmoBase">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 프로모션 getPrdInfoByCpnNo
+		설명 : 쿠폰번호로 상품명, 코드 조회
+		
+		#{cpnNo} = 000001
+	-->
+    SELECT /*+ leading(CCM)           
+           index(CCM PK_CPN_CPN_M)      
+           index(CTD PK_CPN_TGT_D) */ 
+           CTD.PRD_CD	AS PRD_CD        
+          ,PPM.PRD_NM	AS PRD_NM 
+      FROM CPN_CPN_M CCM,    
+           CPN_TGT_D CTD,    
+           PRD_PRD_M PPM        
+     WHERE CCM.CPN_NO 						= #{cpnNo}
+       AND CCM.CPN_NO 						= CTD.CPN_NO    
+       AND CTD.PRD_CD 						= PPM.PRD_CD
+       AND CCM.CPN_TGT_TYP_CD 				IN ('YC') 
+       AND NVL(PPM.BUNDL_PRD_GBN_CD,'X') 	!= '20' 
+       AND ROWNUM 				   <![CDATA[<=]]> 2	
+	</select>	
+	
+		
+</mapper>

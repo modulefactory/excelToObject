@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.util.CmmCdInfoQrySqlMapRepository">
+	               
+	<!-- 
+		내용	: 제휴카드 코드를 조회한다.
+		작성자	: 송영준
+		작성일	: 2013.11.19 신규작성
+	
+		#{cdNm} = BC21
+	-->
+	
+	<resultMap id="aliaCardCdQryMap" type="iceberg.capi.order.model.util.CmmCdInfo">
+		<result property="code"							column="CODE" />
+	</resultMap>
+
+	<select id="aliaCardCdQry" parameterType="String"  resultMap="aliaCardCdQryMap">
+		<![CDATA[
+
+			SELECT CODE            			AS CODE
+			  FROM EC_REFSETVAL     
+			 WHERE REFSETID = 5333  
+			   AND VAL      = #{cdNm}     
+	
+			]]>
+	</select>
+	
+	<!-- 
+		내용	: 공통코드 관련 정보를 조회한다.
+		작성자	: 송영준
+		작성일	: 2013.12.24 신규작성
+	
+		#{refsetvalid} = 130371
+	-->
+	<resultMap id="findEcRefsetvalMap" type="iceberg.capi.order.model.util.CmmCdInfo">
+		<result property="refsetvalid"							column="REFSETVALID" />
+		<result property="code"									column="CODE" />
+		<result property="val"									column="VAL" />
+		<result property="dscr"									column="DSCR" />
+		<result property="refsetid"								column="REFSETID" />
+		<result property="reserved1"							column="RESERVED1" />
+		<result property="reserved2"							column="RESERVED2" />
+	</resultMap>
+
+	<select id="findEcRefsetval" parameterType="criteria"  resultMap="findEcRefsetvalMap">
+			SELECT ER.REFSETVALID				AS REFSETVALID,
+				   ER.CODE						AS CODE,
+				   ER.VAL						AS VAL,
+				   ER.DSCR						AS DSCR,
+				   ER.REFSETID					AS REFSETID,
+				   ER.RESERVED1					AS RESERVED1,
+				   ER.RESERVED2					AS RESERVED2
+			FROM 	EC_REFSETVAL ER
+			WHERE	1=1
+			<if test="_c.refsetid != null and _c.refsetid[0].value != null ">
+				AND     ER.REFSETID = #{_c.refsetid[0].value}
+			</if>
+			<if test="_c.dbsts != null and _c.dbsts[0].value != null "> 
+				AND     ER.DBSTS 	= #{_c.dbsts[0].value}
+			</if>
+			<if test="_c.code != null and _c.code[0].value != null ">
+				AND     ER.CODE = #{_c.code[0].value}
+			</if>
+			<if test="_c.refsetvalid != null and _c.refsetvalid[0].value != null  ">
+				AND     ER.REFSETVALID = #{_c.refsetvalid[0].value}
+			</if>
+	</select>
+	
+	
+	<!-- 
+		내용	: 제휴 협력사 고객 동의 여부 조회
+		작성자	: 송영준
+		작성일	: 2013.12.24 신규작성
+	
+		
+	-->
+	<select id="findAliaAgreeCust" parameterType="criteria"  resultType="String">
+		<![CDATA[			
+			SELECT NVL(CCAIH.AGREE_YN, 'N') AS AGREE_YN
+			FROM CST_CUST_AGREE_INFO_H CCAIH
+			WHERE SYSDATE BETWEEN CCAIH.VALID_STR_DTM AND CCAIH.VALID_END_DTM
+			  AND CCAIH.CUST_NO = #{_c.custNo[0].value}
+			  AND CCAIH.AGREE_ITM_CD = #{_c.agreeItmCd[0].value} 
+		]]>
+	</select>
+
+</mapper>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.member.smtcdb.repository.DiscountCouponTransactionInfomationSqlMapRepository">
+
+
+	<resultMap type="iceberg.capi.member.model.DiscountCouponTransactionRecord" id="discountCouponTransactionRecordMap">
+		<result property="pageIndex" column="PAGE_IDX"/>
+		<result property="totalCount" column="TOTAL_COUNT"/>
+		<result property="transactionDayAndTime" column="TXN_DTM"/>
+		<result property="noteContentText" column="NOTE_CNTNT_TEXT"/>
+		<result property="orderItemNumber" column="ORD_ITEM_NO"/>
+		<result property="transactionAmount" column="TXN_AMT"/>
+		<result property="validityEndDate" column="VALID_END_DT"/>
+		<result property="validityBalance" column="VALID_BALNC"/>
+		<result property="orderNumber" column="ORD_NO"/>
+		<result property="transactionTypeCode" column="TXN_TYP_CD"/>
+		<result property="transactionReasonCode" column="TXN_RSN_CD"/>
+		<result property="noteContent" column="NOTE_CNTNT"/>
+	</resultMap>
+ 
+
+	<select id="findDestructionScheduleDiscountCoupon" parameterType="long"  resultMap="discountCouponTransactionRecordMap">
+		SELECT TO_CHAR(VALID_END_DT,'YYYYMMDD') AS VALID_END_DT
+		      ,SUM(VALID_BALNC)                 AS VALID_BALNC
+		  FROM CST_DCCPN_TXN_D
+		 WHERE DCCPN_NO = 'E' || #{customerNumber}
+		   AND VALID_BALNC  > 0
+		   AND VALID_END_DT = (SELECT MIN(VALID_END_DT) AS PLUS_DATE
+		                         FROM CST_DCCPN_TXN_D
+		                        WHERE VALID_END_DT BETWEEN SYSDATE 
+		                                               AND SYSDATE + 30
+		                          AND DCCPN_NO = 'E' || #{customerNumber}
+		                          AND VALID_BALNC > 0)
+		 GROUP BY TO_CHAR(VALID_END_DT,'YYYYMMDD')		
+	</select>
+	
+	<select id="findDiscountCouponTransactionInformationList" parameterType="criteria" resultMap="discountCouponTransactionRecordMap">
+		SELECT T1.*
+		  FROM (SELECT CEIL(ROWNUM / #{_p.pageItemSize})            AS pageIdx
+		              ,TA.*
+		          FROM (SELECT TO_CHAR(CDTD.TXN_DTM,'YYYYMMDD')        AS TXN_DTM
+		                      ,(CASE
+		                        WHEN CCC.CMM_CD IN ('P04'
+		                                           ,'P05'
+		                                           ,'P08'
+		                                           ,'P09'
+		                                           ,'P06') 
+		                        THEN CDTD.NOTE_CNTNT
+		                        ELSE CCC.CD_VAL
+		                         END)                                  AS NOTE_CNTNT_TEXT
+		                      ,CDTD.ORD_ITEM_NO
+		                      ,CDTD.TXN_AMT
+		                      ,TO_CHAR(CDTD.VALID_END_DT,'YYYYMMDD')   AS VALID_END_DT
+		                      ,CDTD.ORD_NO
+		                      ,SUBSTR(CDTD.TXN_TYP_CD,0,1)             AS TXN_TYP_CD
+		                      ,CDTD.TXN_RSN_CD
+		                      ,CDTD.NOTE_CNTNT
+		                  FROM CST_DCCPN_TXN_D CDTD
+		                      ,CMM_CMM_C       CCC                             /*코드값을 select 시 서브쿼리사용대신에 조인으로 처리*/
+		                 WHERE CDTD.TXN_RSN_CD = CCC.CMM_CD
+		                   AND CDTD.DCCPN_NO = 'E' || #{_c.customerNumber[0].value}
+		                   AND CDTD.TXN_DTM BETWEEN TO_DATE(#{_c.startDate[0].value},'YYYYMMDD') 
+		                                        AND TO_DATE(#{_c.endDate[0].value},'YYYYMMDD') + 0.99999
+		                   AND NVL(CDTD.EXPOS_PRHB_YN,'N') != 'Y'
+		                   AND CCC.CMM_GRP_CD = 'AST012'
+		                 ORDER BY CDTD.TXN_DTM DESC) TA
+		       ) T1
+		 WHERE pageIdx = #{_p.pageNumber}	
+	</select>
+	
+	<select id="countDiscountCouponTransactionInformationList" parameterType="criteria"  resultType="long">
+		SELECT count(1)                         
+		  FROM CST_DCCPN_TXN_D CDTD               
+		      ,CMM_CMM_C CCC                    
+		 WHERE CDTD.TXN_RSN_CD = CCC.CMM_CD         
+		   AND CDTD.DCCPN_NO   = 'E'||#{_c.customerNumber[0].value}
+		   AND CDTD.TXN_DTM  BETWEEN TO_DATE(#{_c.startDate[0].value},'YYYYMMDD') 
+		                         AND TO_DATE(#{_c.endDate[0].value},'YYYYMMDD') + 0.99999
+		   AND NVL(CDTD.EXPOS_PRHB_YN,'N') != 'Y'
+		   AND CCC.CMM_GRP_CD               = 'AST012' 
+	</select>
+</mapper>

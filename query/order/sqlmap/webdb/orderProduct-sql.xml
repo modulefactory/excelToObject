@@ -1,0 +1,1297 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.product.OrderProductSqlMapRepository">
+
+	<resultMap id="styleInfoMap" type="iceberg.capi.order.model.product.StyleInfo">
+		<result property="prdItemId"                 column="PRDITMID"/>
+		<result property="colorDesc"                 column="COLOR_DESC"/>
+		<result property="sizeDesc"                  column="SIZE_DESC"/>
+		<result property="styleDesc"                 column="STYLE_DESC"/>
+		<result property="freeGiftDesc"              column="FREE_GIFT_DESC"/>
+		<result property="variantsDesc"              column="VARIANTS_DESC"/>
+	</resultMap>
+
+	<resultMap id="styleInfoDescMap" type="iceberg.capi.order.model.product.StyleInfo">
+		<result property="prdItemId"                 column="PRDITMID"/>
+		<result property="variantsDesc"              column="VARIANTS_DESC"/>
+		<result property="variantsCode"              column="VARIANTS_CODE"/>
+		<result property="prdTypCd"                  column="PRD_TYP_CD"/>
+	</resultMap>
+
+	<resultMap id="prdAdultInfoMap" type="iceberg.capi.order.model.product.PrdAdultInfo">
+		<result property="sectCheck"                 column="SECT_CHECK"/>
+		<result property="prdCheck"                  column="PRD_CHECK"/>
+	</resultMap>
+
+	<resultMap id="styleTitleNameMap" type="iceberg.capi.order.model.product.StyleTitleName">
+		<result property="styleTitleName1"             column="TITLE1"/>
+		<result property="styleTitleName2"             column="TITLE2"/>
+		<result property="styleTitleName3"             column="TITLE3"/>
+		<result property="styleTitleName4"             column="TITLE4"/>
+		<result property="styleTitleType"              column="TITLETYPE"/>
+	</resultMap>
+	<resultMap id="prdInfo" type="iceberg.capi.order.model.product.PrdInfo">
+		<result property="prdTypCd"         column="PRD_TYP_CD"/>
+		<result property="noIntInsmMm"      column="NO_INT_INSM_MM"/>
+		<result property="salePrc"          column="SALE_PRC"/>
+		<result property="supCd"            column="SUP_CD"/>
+		<result property="prdGbnCd"         column="PRD_GBN_CD"/>
+		<result property="bundlPrdGbnCd"    column="BUNDL_PRD_GBN_CD"/>
+		<result property="ordLimitQty"      column="ORD_LIMIT_QTY"/>
+		<result property="gftTypCd"         column="GFT_TYP_CD"/>
+	</resultMap>
+	<resultMap id="prdInfoMap" type="iceberg.capi.order.model.product.PrdInfo">
+		<result property="attrPrdRepCd"      column="ATTR_PRD_REP_CD"      />
+		<result property="attrVal1"          column="ATTR_VAL_1"           />
+		<result property="attrPrdRepNm"      column="ATTR_PRD_REP_NM"      />
+		<result property="attrPrdCd"         column="ATTR_PRD_CD"          />
+		<result property="attrWhlVal"        column="ATTR_WHL_VAL"         />
+		<result property="prdCd"             column="PRD_CD"               />
+		<result property="prdInfoCmposCntnt" column="PRD_INFO_CMPOS_CNTNT" />
+		<result property="prdTypCd"          column="PRD_TYP_CD"           />
+	</resultMap>
+
+	<!--
+		내용	: [SR02130816028]_상품코드에 기준 별 제한정보 조회
+		작성자	: 윤병찬
+		작성일	: 2013.10.29 신규작성
+
+		#{_c.udaGbnCd[0].value}   = '10';
+		#{_c.udaNo[0].value} = 61;
+		#{_c.prdCd[0].value} = 3652997;
+	-->
+
+	<select id="findPrdLimitYN" parameterType="criteria"  resultType="String">
+		<![CDATA[
+			SELECT CASE WHEN SUM(CNT) > 0
+			            THEN 'Y'
+			            ELSE 'N'
+			        END                  AS LIMIT_YN
+			  FROM ( SELECT COUNT(1) AS CNT
+			           FROM PRD_UDA_D PUD
+			          WHERE PUD.UDA_GBN_CD = #{_c.udaGbnCd[0].value}
+			            AND PUD.UDA_NO     = #{_c.udaNo[0].value}
+			            AND PUD.USE_YN     = 'Y'
+			            AND PUD.VALID_END_DTM >  SYSDATE
+			            AND PUD.VALID_STR_DTM <= SYSDATE
+			            AND PUD.UDA_VAL    ='Y'
+			            AND PUD.PRD_CD     = #{_c.prdCd[0].value})
+			]]>
+	</select>
+
+	<!--
+		내용	: 성인상품 여부 확인
+		작성자	: 윤병찬
+		작성일	: 2013.10.29 신규작성
+
+		#{prdCd} = 3652997;
+	-->
+	<select id="findIsPrdAdult" parameterType="long"  resultType="String">
+		<![CDATA[
+			SELECT NVL(ADULT_CERT_YN,'N') AS ADULT_CERT_YN
+			  FROM PRD_PRD_M
+			 WHERE PRD_CD = #{prdCd}
+		]]>
+	</select>
+
+	<!--
+		내용	: 핸드폰 인증 필요여부조회
+		작성자	: 윤병찬
+		작성일	: 2013.11.18 신규작성
+
+		#{prdCd} = 3652997;
+	-->
+	<select id="findNeedHandPhoneConfirmYn" parameterType="long"  resultType="long">
+		<![CDATA[
+			SELECT COUNT(SECTID) AS CELPHN_CERT_CNT
+			  FROM EC_SECT_PRDLST
+			 WHERE SECTID IN
+			                (
+			                    SELECT SECTID
+			                    FROM EC_SECT
+			                    WHERE
+			                        SECT_GUBUN = 'G'
+			                        AND DBSTS = 'A'
+			                        START WITH SECTID IN
+			                                            (
+			                                            SELECT CODE
+			                                            FROM EC_REFSETVAL
+			                                            WHERE
+			                                                REFSETID = 5338         /* 핸드폰인증이 필요한 중분류매장번호 체크 */
+			                                                AND DBSTS = 'A'
+			                                            )
+			                    CONNECT BY SECTPRSTID = PRIOR SECTID
+			                )
+			    AND PRDID = #{prdCd}
+			    AND DBSTS = 'A'
+		]]>
+	</select>
+
+	<!--
+		내용	: 상품 스타일 조회
+		작성자 : 박노정
+		작성일 : 2013.11.13
+
+		#{prdCd} = 11462098;
+		#{attrPrdCd} = 11462098003;
+	-->
+
+	<select id="findStyle" parameterType="criteria" resultMap="styleInfoMap">
+		SELECT PAPM.ATTR_PRD_CD                            AS PRDITMID
+		      ,DECODE(PPM.PRD_TYP_CD,'G','',ATTR_VAL_1)   AS COLOR_DESC
+		      ,DECODE(PPM.PRD_TYP_CD,'G','',ATTR_VAL_2)   AS SIZE_DESC
+		      ,DECODE(PPM.PRD_TYP_CD,'G','',ATTR_VAL_3)   AS STYLE_DESC
+		      ,DECODE(PPM.PRD_TYP_CD,'G','',ATTR_VAL_4)   AS FREE_GIFT_DESC
+		      ,DECODE(PPM.PRD_TYP_CD,'G','',ATTR_WHL_VAL) AS VARIANTS_DESC
+		  FROM PRD_ATTR_PRD_M PAPM
+		      ,PRD_PRD_M PPM
+		 WHERE PAPM.PRD_CD = #{_c.prdCd[0].value}
+		   AND PAPM.USE_YN = 'Y'
+		   AND PPM.PRD_TYP_CD = 'S'
+		   AND PAPM.PRD_CD = PPM.PRD_CD
+		   <choose>
+		       <when test="_c.attrPrdCd != null and _c.attrPrdCd[0].value != ''">
+		           AND PAPM.ATTR_PRD_CD = #{_c.attrPrdCd[0].value}
+		       </when>
+		       <otherwise>
+		           AND PAPM.ATTR_PRD_CD IS NULL
+		       </otherwise>
+		   </choose>
+	</select>
+
+	<!--
+	   	내용 : 상품 성인여부 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 13
+
+	   	#{prdId} = 40766020
+	-->
+
+	<select id="findPrdAdult" parameterType="criteria" resultMap="prdAdultInfoMap">
+		SELECT NVL(SECT_CHECK, 'N') AS SECT_CHECK
+		     , PRD_CHECK
+		  FROM
+		       (SELECT
+		               (SELECT 'X' AS SECTCHECK
+		                  FROM DUAL
+		                 WHERE EXISTS
+		                             (SELECT SECTID
+		                                FROM EC_SECT
+		                               WHERE DBSTS       = 'A'
+		                                 AND RESERVED2   = 'Y'
+		                               START WITH SECTID = (SELECT SECTID
+		                                                      FROM (SELECT ES.SECTID
+		                                                              FROM EC_SECT ES, EC_SECT_PRDLST ESP
+		                                                             WHERE ESP.PRDID     = #{_c.prdId[0].value}
+		                                                               AND ES.SECTID     = ESP.SECTID
+		                                                               AND ES.SECT_GUBUN = 'G'
+		                                                               AND ESP.DBSTS     = 'A'
+		                                                               AND ES.DBSTS      = 'A'
+		                                                             ORDER BY ESP.SECT_SEQ, ES.PRIOR_DISP_CD, ESP.SECTID)
+		                                                     WHERE ROWNUM = 1)
+		                             CONNECT BY SECTID = PRIOR SECTPRSTID)
+		               ) AS SECT_CHECK
+					       , (SELECT NVL(ADULT_CERT_YN, 'N')
+					            FROM PRD_PRD_M
+					           WHERE PRD_CD = #{_c.prdId[0].value}) AS PRD_CHECK
+					    FROM DUAL
+		       )
+	</select>
+
+	<!--
+	   	내용 : 상품 스타일 유형 코드 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 26
+
+	   	#{prdCd} = 11462095
+	-->
+
+	<select id="findPrdStyleType" parameterType="long" resultType="String">
+		SELECT NVL(PRD_TYP_CD, 'G') AS PRD_TYP_CD
+		  FROM PRD_PRD_M
+		 WHERE PRD_CD = #{prdCd}
+	</select>
+
+	<!--
+	   	내용 : 상품 스타일 상세 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 26
+
+	   	#{prdCd} = 11462095
+	-->
+
+	<select id="findStyleInfoDesc" parameterType="long" resultMap="styleInfoDescMap">
+		SELECT A.EC_ATTR_PRD_CD       AS PRDITMID
+		     , A.ATTR_WHL_VAL         AS VARIANTS_DESC
+		     , A.ATTR_PRD_CD          AS VARIANTS_CODE
+		     , NVL(C.PRD_TYP_CD, 'G') AS PRD_TYP_CD
+		  FROM PRD_ATTR_PRD_M A
+		     , PRD_CHANL_D B
+		     , PRD_PRD_M C
+		 WHERE A.PRD_CD                         = #{prdCd}
+		   AND A.PRD_CD                         = B.PRD_CD
+		   AND B.PRD_CD                         = C.PRD_CD
+		   AND B.CHANL_CD                       = 'P'
+		   AND NVL(A.SALE_STR_DTM, SYSDATE - 1) <![CDATA[<]]> SYSDATE
+		   AND NVL(A.SALE_END_DTM, SYSDATE + 1) > SYSDATE
+		   AND A.USE_YN                         = 'Y'
+		   AND A.ATTR_PRD_APRV_ST_CD            = '30'
+	</select>
+
+	<!--
+	   	내용 : 상품 스타일 상세 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 26
+
+	   	#{prdCd} = 11462095
+	-->
+
+	<select id="findStyleTitleName" parameterType="long" resultMap="styleTitleNameMap">
+		 SELECT NVL(B.ATTR_TYP_NM1, 'None') AS TITLE1
+		      , NVL(B.ATTR_TYP_NM2, 'None') AS TITLE2
+		      , NVL(B.ATTR_TYP_NM3, 'None') AS TITLE3
+		      , NVL(B.ATTR_TYP_NM4, 'None') AS TITLE4
+		      , NVL(B.ATTR_TYP_EXPOS_CD, 'L') AS TITLETYPE
+		   FROM PRD_PRD_M B
+		  WHERE B.PRD_CD = #{prdCd}
+	</select>
+
+
+
+	<!--
+		내용	: 상품배송제한 여부 조회 - 우편번호, 상품코드로 조회
+		작성자	: 윤병찬
+		작성일	: 2013.11.28 신규작성
+
+		#{_c.prdCd[0].value} = (3336207, 3330345, 3320558, 3309545);
+		#{_c.refsetId[0].value}   = 10303;
+
+		현재 데이타 조회 안됨. EC_REFSETVAL
+	-->
+	<select id="findStockbreedingPrd" parameterType="criteria"  resultType="int">
+			SELECT COUNT(1)
+			FROM   GS_SECT_TREE GST,
+			       EC_SECT_PRDLST ESP
+			WHERE 1=1
+			AND    GST.DBSTS ='A'
+			AND    GST.LINK_STS ='A'
+			AND    ESP.SECTID = GST.SECTID
+			AND    ESP.DBSTS = 'A'
+			AND    ESP.PRDID IN
+		 <foreach collection="_c.prdCd[0].value" item="item" index="index" open="(" separator="," close=")">
+		   	#{item}
+		 </foreach>
+			AND    EXISTS (
+					SELECT CODE
+			        FROM   EC_REFSETVAL ER
+			        WHERE  1=1
+			        AND    ER.REFSETID = #{_c.refsetId[0].value}
+			        AND    ER.DBSTS = 'A'
+			        AND    ER.CODE IN (GST.SECTID1,GST.SECTID2,GST.SECTID3)
+				  )
+	</select>
+	<!--
+		   	내용 : 상품정보를 조회한다.
+		   	작성자 : 신슬기
+		   	작성일 : 2013.12.02
+
+		   	#{prdCd} = 11731301
+	-->
+	<select id = "findPrdInfo" parameterType="long" resultMap="prdInfo">
+		<![CDATA[
+           SELECT PPM.PRD_TYP_CD                       /*상품유형코드*/
+                 ,NVL(PG_PMO_PRD_PMO.FN_PRD_NO_INT(PPM.PRD_CD, 'P', SYSDATE), '0') AS NO_INT_INSM_MM   /*무이자개월수*/
+                 ,PG_PMO_PRD_PMO.FN_PRD_MD_DC_PRC(PPM.PRD_CD, 'P', SYSDATE)        AS SALE_PRC /*판매가격*/
+                 ,PPM.SUP_CD                     /*협력사코드*/
+                 ,PPM.PRD_GBN_CD                 /*상품구분*/
+                 ,PPM.BUNDL_PRD_GBN_CD           /*묶음상품구분코드*/
+                 ,PPM.ORD_LIMIT_QTY              /*구매제한수량*/
+                 ,PPM.GFT_TYP_CD				       /*사은품 유형 코드*/
+            FROM  PRD_PRD_M      PPM             /*상품기본정보 : EC동기화*/
+                 ,PRD_CHANL_D    PCD             /*상품채널정보 : EC동기화*/
+                 ,PRD_NM_CHG_H   PNCH
+	         WHERE PPM.PRD_CD    = #{prdCd}
+              AND PPM.PRD_CD    = PCD.PRD_CD
+              AND PPM.SALE_PSBL_APRV_YN = 'Y'
+              AND PCD.CHANL_CD  = 'P'
+              AND PPM.PRD_CD    = PNCH.PRD_CD
+              AND PNCH.CHANL_CD = 'P'
+              AND SYSDATE BETWEEN PNCH.VALID_STR_DTM
+                              AND PNCH.VALID_END_DTM
+		]]>
+	</select>
+	<!--
+		   	내용 : 상품 일시불 할인 금액을 조회
+		   	작성자 : 신슬기
+		   	작성일 : 2013.12.02
+
+		   	#{prdCd} = 11731301
+	-->
+	<select id = "findSgpayDcFlg" parameterType="long" resultType="long">
+		<![CDATA[
+           SELECT TO_NUMBER(NVL(PG_PMO_PRD_PMO.FN_PRD_SGPAY_DC(#{prdCd}, 'P', SYSDATE),'0'))
+             FROM DUAL
+		]]>
+	</select>
+
+	<!--
+		   	내용 : EC속성 상품코드로 상품 가격 조회
+		   	작성자 : 신슬기
+		   	작성일 : 2013.12.04
+
+		   	#{ecAttrPrdCd} = 11355859001
+	-->
+	<select id = "findEcAttrPriceInfo" parameterType="long" resultType="long">
+		<![CDATA[
+	        SELECT PG_PMO_PRD_PMO.FN_ATTR_PRD_MD_DC_PRC( #{ecAttrPrdCd}, 'P', SYSDATE)
+	          FROM DUAL
+		]]>
+	</select>
+	
+	
+	<!--
+		   	내용 : 상품의 업체코드를 가져온다.
+		   	작성자 : 윤병찬
+		   	작성일 : 2013.12.16
+
+		   	#{prdCd} = 11731301
+	-->
+	<select id = "findSuppCode" parameterType="long" resultType="String">
+		<![CDATA[
+	        SELECT	SUP_CD
+	          FROM	PRD_PRD_M
+	         WHERE	PRD_CD = #{prdCd} 
+		]]>
+	</select>
+	
+	<!--
+		   	내용 : 상품의 매장코드 목록을 돌려준다 (M 중매장)
+		   	작성자 : 윤병찬
+		   	작성일 : 2013.12.16
+
+		   	#{prdCd} = 11731301
+	-->
+	<select id = "findSectCodeM" parameterType="long" resultType="String">
+		<![CDATA[
+			  SELECT DECODE(NVL(A.SECTPRSTID,0),0,B.SSECTID,A.SECTID ) SECTID
+			    FROM EC_SECT A,  
+			         (SELECT A.SECTID SSECTID,A.SECTPRSTID SSECTPRSTID 
+			            FROM EC_SECT A,	 
+			                 ( SELECT SECTPRSTID 
+			                     FROM EC_SECT 
+			                    WHERE SECTID IN (SELECT SECTID 
+			                                       FROM EC_SECT_PRDLST 
+			                                      WHERE PRDID = #{prdCd} 
+			                                        AND DBSTS ='A') 
+			                 ) B 
+			           WHERE A.SECTID = B.SECTPRSTID 
+			             AND A.DBSTS = 'A'
+			         ) B 
+			   WHERE A.SECTID(+) = B.SSECTPRSTID 
+			     AND A.DBSTS(+) = 'A' 
+		]]>
+	</select>	
+	
+	
+	<!--
+		   	내용 : 상품의 매장코드 목록을 돌려준다 (S 소매장)
+		   	작성자 : 윤병찬
+		   	작성일 : 2013.12.16
+
+		   	#{prdCd} = 11731301
+	-->
+	<select id = "findSectCodeS" parameterType="long" resultType="String">
+		<![CDATA[
+			  SELECT A.SECTID SSECTID
+			    FROM EC_SECT A,	 
+			         (SELECT SECTPRSTID 
+			            FROM EC_SECT 
+			           WHERE SECTID IN (SELECT SECTID 
+			                              FROM EC_SECT_PRDLST 
+			                             WHERE PRDID = #{prdCd}
+			                               AND DBSTS ='A') 
+			         ) B 
+			    WHERE A.SECTID = B.SECTPRSTID 
+			      AND A.DBSTS     = 'A'              
+		]]>
+	</select>		
+	
+	
+	<!--
+		   	내용 : 적립금/GS&POINT 사용제한 상품 여부 체크
+		   	작성자 : 윤병찬
+		   	작성일 : 2013.12.16
+
+		   	_c.prdCd[0].value = {4848336,4848337}
+	-->
+	<select id = "findGsPointUsePrdCheck" parameterType="criteria" resultType="int">
+		
+				 SELECT  COUNT(*) CNT
+				   FROM  PRD_UDA_C PUC
+						,PRD_UDA_D PUD
+				  WHERE PUC.UDA_GBN_CD = PUD.UDA_GBN_CD
+				    AND PUC.UDA_NO = PUD.UDA_NO
+					AND PUC.UDA_GBN_CD 	= '10'
+					AND PUC.UDA_NO 		= 21
+					AND PUD.PRD_CD IN
+	 		<foreach collection="_c.prdCd[0].value" item="item" index="index" open="(" separator="," close=")">
+			   	#{item}
+			 </foreach>					
+					AND PUC.USE_YN 		= 'Y'
+					AND PUD.USE_YN 		= 'Y'
+					AND SYSDATE BETWEEN PUD.VALID_STR_DTM 
+					                AND PUD.VALID_END_DTM         
+		
+	</select>		
+	
+	
+	<!--
+		내용	: 주문생성시 smart4c에 주문요청하기전 조회하는 상품정보
+		작성자 : 윤병찬
+		작성일 : 2013.12.16
+
+		_c.prditmId[0].value = {5546813001, 5546813003};
+		_c.delvPrditmId[0].value = {1920625, 1961151};
+	-->
+	<resultMap id="prdListByEcOrdMap" type="iceberg.capi.order.model.product.PrdListExt">
+		<result property="multiCd"					column="MULTI_CODE"/>
+		<result property="baseAccmLimitFlg"			column="BASE_ACCM_LIMIT_YN"/>
+		<result property="prchPrc"					column="LAST_COST"/>
+		<result property="prdCd"					column="PRD_CD"/>
+		<result property="supCd"					column="SUP_CD"/>
+		<result property="repPrdCd"					column="REP_PRD_CD"/>
+		<result property="prdGbnCd"					column="PRD_GBN_CD"/>
+		<result property="aliveon"					column="ALIVEON"/>
+		<result property="dlvsCoCd"					column="DLVS_CO_CD"/>
+		<result property="operCdId"					column="OPER_MD_ID"/>
+		<result property="prdClsCd1"				column="PRD_CLASS1"/>
+		<result property="prdClsCd2"				column="PRD_CLASS2"/>
+		<result property="prdClsCd"					column="PRD_CLS_CD"/>
+		<result property="cardUseLimitFlg"			column="CARD_LIMIT"/>
+		<result property="prdRelspAddrCd"			column="PRD_RELSP_ADDR_CD"/>
+		<result property="dittoFlg"					column="DITTO_YN"/>
+		<result property="attrPrdCd"				column="ATTR_PRD_CD"/>
+		<result property="mdDcPrc"					column="CART_PRD_PRICE"/>
+		<result property="attrWhlVal"				column="ATTR_WHL_VAL"/>
+		<result property="ecAttrPrdCd"				column="EC_ATTR_PRD_CD"/>
+		<result property="mimTypCd"					column="MIM_TYP_CD"/>
+		<result property="accmSupShrRt"				column="JUKLIB_RATE"/>
+		<result property="media"					column="MEDIA"/>
+		<result property="dlvcLimitAmt"				column="DLVC_BASE_AMT"/>
+		<result property="prdNm"					column="PRD_NAME"/>
+		<result property="prdCpnMaxDcAmt"			column="CPN_MAX_DC_AMT"/>
+		<result property="preOrdTypCd"				column="PRE_ORD_TYP_CD"/>
+		<result property="preOrdBroadDt"			column="PRE_ORD_BROAD_DT"/>
+		<result property="preOrdBroadDtStr"			column="PRE_ORD_BROAD_DT_STR"/>
+		<result property="gsnpntNoGivFlg"			column="GSNPNT_NO_GIV_YN"/>
+		<result property="prdNm1"					column="PRD_NAME1"/>
+		<result property="prdNm2"					column="PRD_NAME2"/>
+		<result property="prdNm3"					column="PRD_NAME3"/>
+		<result property="ordMnfcFlg"				column="ORD_MNFC_YN"/>
+		<result property="rsrvSalePrdFlg"			column="RSRV_SALE_PRD_YN"/>
+		<result property="instlDlvPrdFlg"			column="INSTL_DLV_PRD_YN"/>
+		<result property="catvStdRelsDdcnt"			column="PLAN_DLVPRD_TERM_DDCNT"/>
+		<result property="avgDlvDdcnt"				column="EC_AVG_DAYS"/>
+		<result property="gftTypCd"					column="GFT_TYP_CD"/>
+		<result property="fmlyDcLimitFlg"			column="FAMILY_LIMIT_YN"/>
+		<result property="prdPmoDcInfo"				column="PRD_PMO_TOKEN_COMMA_STR"/>
+	</resultMap>
+	<select id="findPrdListByEcOrd" parameterType="criteria" resultMap="prdListByEcOrdMap">
+	<![CDATA[
+			SELECT  /*+ ORDERED USE_NL(PAPM PPM PCD LB PPH PNCH) */
+			       '8' || PPM.PRD_CD AS MULTI_CODE
+			     , NVL(PPM.BASE_ACCM_LIMIT_YN,'N') BASE_ACCM_LIMIT_YN
+			     , NVL(PPH.PRCH_PRC,0) AS LAST_COST
+			     , PPM.PRD_CD
+			     , NVL(PPM.SUP_CD,'0') AS SUP_CD
+			     , PPM.REP_PRD_CD
+			     , PPM.PRD_GBN_CD
+			     , NVL((SELECT 'Y'
+			            FROM LGEC_PGM LP,
+			                 LGEC_PGM_DTL LPD
+			            WHERE LPD.GOODS_CODE = PPM.PRD_CD
+			            AND LP.BROAD_DATE = LPD.BROAD_DATE
+			            AND LP.BROAD_DATE <= SYSDATE + 30/1440
+			            AND LP.CLOSING_DATE >= SYSDATE - 30/1440
+			            AND ROWNUM <= 1), 'N')
+			       ALIVEON
+			     , NVL(PPM.DLVS_CO_CD, '') DLVS_CO_CD
+			     , PPM.OPER_MD_ID
+			     , SUBSTR(PPM.PRD_CLS_CD, 1, 3) PRD_CLASS1
+			     , SUBSTR(PPM.PRD_CLS_CD, 4, 2) PRD_CLASS2
+			     , PPM.PRD_CLS_CD AS PRD_CLS_CD             					/*상품분류코드(전체)*/
+			     , PPM.CARD_USE_LIMIT_YN AS CARD_LIMIT                       /*카드사용제한여부*/
+			     , CASE WHEN PPM.PRD_RELSP_ADDR_CD IS NULL THEN
+			       (
+			           SELECT
+			                  NVL(SAD.SUP_ADDR_CD, '00') AS SUP_ADDR_CD
+			             FROM SUP_ADDR_D SAD
+			            WHERE SAD.SUP_CD = PPM.SUP_CD
+			              AND SAD.USE_YN = 'A'
+			              AND SAD.BASE_RELSP_YN = 'Y'
+			              AND ROWNUM = 1
+			       )
+			         ELSE PPM.PRD_RELSP_ADDR_CD
+			       END  PRD_RELSP_ADDR_CD
+			     , PPM.DITTO_YN
+			     , PAPM.ATTR_PRD_CD
+			     , PG_PMO_PRD_PMO.FN_ATTR_PRD_MD_DC_PRC(PAPM.EC_ATTR_PRD_CD, 'P', SYSDATE) AS CART_PRD_PRICE
+			     , PAPM.ATTR_WHL_VAL
+			     , PAPM.EC_ATTR_PRD_CD
+			     , NVL(SSM.MIM_TYP_CD, '') MIM_TYP_CD
+			     , NVL(SSM.ACCM_SUP_SHR_RT, 0) JUKLIB_RATE
+			     , LB.MEDIA
+			     , CASE WHEN NVL(PPM.CHR_DLVC_CD, 0) > 0 THEN
+			              (SELECT NVL(SDD.DLVC_LIMIT_AMT, 0)
+			                 FROM SUP_DLVC_D SDD
+			                WHERE SDD.DLVC_CD = PPM.CHR_DLVC_CD)
+			           ELSE SSM.CHR_DLV_STD_AMT
+			       END  AS DLVC_BASE_AMT
+			     , TRIM(PNCH.EXPOS_PRD_NM) AS PRD_NAME
+			     , DECODE(PPM.CPN_MAX_DC_AMT, 0, NULL, PPM.CPN_MAX_DC_AMT) CPN_MAX_DC_AMT
+			     , NVL(PPM.PRE_ORD_TYP_CD, 'N') PRE_ORD_TYP_CD
+			     , PPM.PRE_ORD_BROAD_DT
+			     , TO_CHAR(PPM.PRE_ORD_BROAD_DT,'YYYYMMDDHH24MISS')  PRE_ORD_BROAD_DT_STR
+			     , PPM.GSNPNT_NO_GIV_YN
+			     , NVL(PNCH.EXPOS_PMO_NM, '') AS PRD_NAME1
+			     , NVL(PNCH.EXPOS_PRD_NM, '') AS PRD_NAME2
+			     , TRIM(NVL(PNCH.EXPOS_PR_SNTNC_NM,'')) AS PRD_NAME3
+			     , PPM.ORD_MNFC_YN
+			     , PPM.RSRV_SALE_PRD_YN
+			     , PPM.INSTL_DLV_PRD_YN
+			     , NVL(PCD.STD_RELS_DDCNT, 0) PLAN_DLVPRD_TERM_DDCNT
+			     , DECODE(NVL(PPM.ORD_MNFC_YN,'N'), 'Y', 0, DECODE(NVL(PPM.RSRV_SALE_PRD_YN,'N'), 'Y', 0,
+				     NVL( (SELECT PCDDD.AVG_DLV_DDCNT_VAL
+					      FROM   PRD_CLS_DLV_DAY_D PCDDD
+						  WHERE  PCDDD.PRD_CLS_CD = PPM.PRD_CLS_CD
+						    AND  PCDDD.SUP_CD = PPM.SUP_CD
+							AND  NVL(PCDDD.EXPOS_YN, 'Y') = 'Y'
+							AND  ROWNUM = 1) ,0)
+				   )) EC_AVG_DAYS
+				 , PPM.GFT_TYP_CD
+				 , CASE WHEN SUBSTR(PPM.PRD_CLS_CD, 0, 3) IN ('A39','A41','A43','B31') OR PPM.GFT_TYP_CD <> '00' OR PPM.CARD_USE_LIMIT_YN = 'Y' OR PPM.REP_PRD_YN = 'Y' THEN 'Y'
+			            ELSE 'N'
+			       END FAMILY_LIMIT_YN
+				 , CASE WHEN PPH.SALE_PRC > 0 THEN PG_PMO_PRD_PMO.FN_PRD_DC_PMO(PPM.PRD_CD, 'P', SYSDATE, 'Y')
+				        ELSE ''
+				   END PRD_PMO_TOKEN_COMMA_STR
+			 FROM   PRD_ATTR_PRD_M PAPM
+			       ,PRD_PRD_M PPM
+			       ,SUP_SUP_M SSM
+			       ,LGEC_BY230 LB
+			       ,PRD_PRC_H PPH
+			       ,PRD_NM_CHG_H PNCH
+			       ,PRD_CHANL_D PCD
+			 WHERE  PAPM.EC_ATTR_PRD_CD IN
+	]]>		 
+		 <foreach collection="_c.prditmId[0].value" item="item" index="index" open="(" separator="," close=")">
+		   	#{item}
+		 </foreach>
+	<![CDATA[	 
+			   AND  PAPM.PRD_CD = PPM.PRD_CD
+			   AND  SSM.SUP_CD = PPM.SUP_CD
+			   AND  PPM.OPER_MD_ID = LB.MD_ID(+)
+			   AND  LB.STATUS(+) = 'Y'
+			   AND  PPM.PRD_CD = PPH.PRD_CD
+			   AND  PPH.PRD_ATTR_GBN_CD = 'P'
+			   AND  PPH.VALID_STR_DTM  <= SYSDATE
+			   AND  PPH.VALID_END_DTM  >= SYSDATE
+			   AND  PPM.PRD_CD = PNCH.PRD_CD
+			   AND  PNCH.CHANL_CD = 'P'
+			   AND  PNCH.VALID_STR_DTM  <= SYSDATE
+			   AND  PNCH.VALID_END_DTM  >= SYSDATE
+			   AND  PPM.PRD_CD = PCD.PRD_CD(+)
+			   AND  PCD.CHANL_CD(+) = 'B'
+			 UNION ALL
+			 SELECT
+			       '8' || DLVC_CD AS MULTI_CODE
+			     , 'N' AS BASE_ACCM_LIMIT_YN
+			     , 0 AS LAST_COST
+			     , DLVC_CD AS PRD_CD
+			     , NVL(SUP_CD,'0') SUP_CD
+			     , 0 AS REP_PRD_CD
+			     , '' AS PRD_GBN_CD
+			     , 'N' AS ALIVEON
+			     , '' AS DLVS_CO_CD
+			     , MD_ID AS OPER_MD_ID
+			     , '' AS PRD_CLASS1
+			     , '' AS PRD_CLASS2
+			     , '' AS PRD_CLS_CD
+			     , 'N' AS CARD_LIMIT
+			     , '' AS PRD_RELSP_ADDR_CD
+			     , '' AS DITTO_YN
+			     , 0 AS ATTR_PRD_CD
+			     , DLVC_AMT AS CART_PRD_PRICE
+			     , '' AS ATTR_WHL_VAL
+			     , DLVC_CD AS EC_ATTR_PRD_CD
+			     , '' AS MIM_TYP_CD
+			     , 0 AS JUKLIB_RATE
+			     , '' AS MEDIA
+			     , DLVC_LIMIT_AMT AS DLVC_BASE_AMT
+			     , '배송비' AS PRD_NAME
+			     , NULL AS CPN_MAX_DC_AMT
+			     , 'N' AS PRE_ORD_TYP_CD
+			     , NULL AS PRE_ORD_BROAD_DT
+			     , '' AS PRE_ORD_BROAD_DT_STR
+			     , '' AS GSNPNT_NO_GIV_YN
+			     , '' AS PRD_NAME1
+			     , '배송비' AS PRD_NAME2
+			     , '' AS PRD_NAME3
+			     , '' AS ORD_MNFC_YN
+			     , '' AS RSRV_SALE_PRD_YN
+			     , '' AS INSTL_DLV_PRD_YN
+			     , 0 AS PLAN_DLVPRD_TERM_DDCNT
+			     , 0 AS EC_AVG_DAYS
+			     , '' AS GFT_TYP_CD
+			     , '' AS FAMILY_LIMIT_YN
+				 , '' AS PRD_PMO_TOKEN_COMMA_STR
+			 FROM   SUP_DLVC_D
+			 WHERE  DLVC_CD IN
+	]]>		 
+		 <foreach collection="_c.delvPrditmId[0].value" item="item" index="index" open="(" separator="," close=")">
+		   	#{item}
+		 </foreach>			 
+	</select>	
+	
+
+	<!--
+		   	내용 : 임직원/그룹사/제휴임직원 할인이 적용된 경우 프로모션정보[MD/ARS/일시불할인] 조회
+		   	작성자 : 윤병찬
+		   	작성일 : 2013.12.16
+
+		   	#{_c.prdId[0].value} = 
+		 	#{_c.prdId[0].value} = 
+	-->
+	<select id = "findFamilyPromtionInfo" parameterType="criteria" resultType="String">
+	<![CDATA[
+			SELECT	PG_PMO_PRD_PMO.FN_PRD_FAMILY_DC_PMO(
+			                                              #{_c.prdCd[0].value}
+			                                            , 'P'
+			                                            , SYSDATE
+			                                            , 'Y'
+			                                            , #{_c.familyDcAmt[0].value}
+			                                           ) 
+			  FROM DUAL 
+	]]>		  
+	</select>		
+	
+	
+
+	<!--
+		   	내용 : 속성상품 조회
+		   	작성자 : 박노정
+		   	작성일 : 2014.01.06
+
+		   	#{attrPrdCd} = 2888061001
+	-->
+	<select id="findPrdAttrInfo" parameterType="long" resultMap="prdInfoMap">
+		<![CDATA[
+			SELECT PAPM.ATTR_PRD_REP_CD
+			    , PAPM.ATTR_VAL_1
+			    , PAPM.ATTR_VAL_1 || ' , ' || PAPM.ATTR_VAL_2 || ' , ' || PAPM.ATTR_VAL_3 || ' , ' || PAPM.ATTR_VAL_4 AS ATTR_PRD_REP_NM
+			    , PAPM.ATTR_PRD_CD
+			    , NVL(PAPM.ATTR_WHL_VAL, '') AS ATTR_WHL_VAL
+			    , PAPM.PRD_CD
+			    , PPD.PRD_INFO_CMPOS_CNTNT
+			    , NVL(PPM.PRD_TYP_CD, 'G') AS PRD_TYP_CD
+			 FROM PRD_ATTR_PRD_M PAPM
+			    , PRD_PRD_M PPM
+			    , PRD_PRD_D PPD
+			WHERE PAPM.ATTR_PRD_CD     = #{attrPrdCd}
+			  AND PAPM.PRD_CD          = PPM.PRD_CD
+			  AND PAPM.PRD_CD          = PPD.PRD_CD
+		]]>
+	</select>
+
+	<!--
+		   	내용 : 랜탈상품여부
+		   	작성자 : 신슬기
+		   	작성일 : 2013.12.04
+
+		   	#{prdCd} = 11731301
+	-->
+	<select id = "findIsRentalPrd" parameterType="long" resultType="String">
+		<![CDATA[
+			SELECT 	NVL(FRMLES_PRD_TYP_CD,'N') AS isRental
+			  FROM 	PRD_PRD_M
+			 WHERE 	PRD_CD = #{prdCd}
+			   AND 	USE_YN = 'Y'
+		]]>
+	</select>
+	
+	
+		<resultMap id="findBundlPrdDtlData" type="iceberg.capi.order.model.preCalc.PreCalc">
+		<result property="prdCd" column="PRD_CD"/>
+		<result property="exposStCd" column="EXPOS_ST_CD"/>
+		<result property="tmpoutYn" column="TEMPOUT_YN"/>
+		<result property="prdNm" column="PRD_NM"/>
+		<result property="prdTypCd" column="PRD_TYP_CD"/>
+		<result property="attrTypExposCd" column="ATTR_TYP_EXPOS_CD"/>
+		<result property="frmlesPrdTypCd" column="FRMLES_PRD_TYP_CD"/>
+		<result property="prdGbnCd" column="PRD_GBN_CD"/>
+		<result property="setPrdGbnCd" column="SET_PRD_GBN_CD"/>
+		<result property="oboxCd" column="OBOX_CD"/>
+		<result property="prdOboxCd" column="PRD_OBOX_CD"/>
+		<result property="dlvPickMthodCd" column="DLV_PICK_MTHOD_CD"/>
+		<result property="instlDlvPrdFlg" column="INSTL_DLV_PRD_FLG"/>
+		<result property="installCost" column="INSTALL_COST"/>
+		<result property="supCd" column="SUP_CD"/>
+		<result property="cardUseLimitFlg" column="CARD_USE_LIMIT_FLG"/>
+		<result property="salePrc" column="SALE_PRC"/>
+		<result property="prdPrc" column="PRD_PRC"/>
+		<result property="noIntMmCnt" column="NO_INT_MM_CNT"/>
+		<result property="accAmt" column="ACC_AMT"/>
+		<result property="insmAmt" column="INSM_AMT"/>
+		<result property="prdUrl" column="PRD_URL"/>
+		<result property="cpnApplyTypCd" column="CPN_APPLY_TYP_CD"/>
+		<result property="dcMrkGbnCd" column="DC_MRK_GBN_CD"/>
+		<result property="immAccmDcLimitFlg" column="IMM_ACCM_DC_LIMIT_FLG"/>
+		<result property="livbrodFlg" column="LIVBROD_FLG"/>
+		<result property="immJuklibAmt" column="IMM_JUKLIB_AMT"/>
+		<result property="dlvAmt" column="DLV_AMT"/>
+		<result property="shipAmt" column="SHIP_AMT"/>
+		<result property="prdClscd" column="PRD_CLS_CD"/>
+		<result property="bundlPrdGbnCd" column="BUNDL_PRD_GBN_CD"/>
+	</resultMap>
+	
+	<resultMap id="findPrdDtlData" type="iceberg.capi.order.model.preCalc.PreCalc">
+		<result property="prdCd" column="PRD_CD"/>
+		<result property="exposStCd" column="EXPOS_ST_CD"/>
+		<result property="tmpoutYn" column="TEMPOUT_YN"/>
+		<result property="prdNm" column="PRD_NM"/>
+		<result property="prdTypCd" column="PRD_TYP_CD"/>
+		<result property="attrTypExposCd" column="ATTR_TYP_EXPOS_CD"/>
+		<result property="frmlesPrdTypCd" column="FRMLES_PRD_TYP_CD"/>
+		<result property="prdGbnCd" column="PRD_GBN_CD"/>
+		<result property="setPrdGbnCd" column="SET_PRD_GBN_CD"/>
+		<result property="oboxCd" column="OBOX_CD"/>
+		<result property="prdOboxCd" column="PRD_OBOX_CD"/>
+		<result property="dlvPickMthodCd" column="DLV_PICK_MTHOD_CD"/>
+		<result property="chrynDlvFlg" column="CHRYN_DLV_FLG"/>
+		<result property="instlDlvPrdFlg" column="INSTL_DLV_PRD_FLG"/>
+		<result property="installCost" column="INSTALL_COST"/>
+		<result property="supCd" column="SUP_CD"/>
+		<result property="cardUseLimitFlg" column="CARD_USE_LIMIT_FLG"/>
+		<result property="salePrc" column="SALE_PRC"/>
+		<result property="prdPrc" column="PRD_PRC"/>
+		<result property="noIntMmCnt" column="NO_INT_MM_CNT"/>
+		<result property="accAmt" column="ACC_AMT"/>
+		<result property="insmAmt" column="INSM_AMT"/>
+		<result property="prdUrl" column="PRD_URL"/>
+		<result property="cpnApplyTypCd" column="CPN_APPLY_TYP_CD"/>
+		<result property="dcMrkGbnCd" column="DC_MRK_GBN_CD"/>
+		<result property="immAccmDcLimitFlg" column="IMM_ACCM_DC_LIMIT_FLG"/>
+		<result property="livbrodFlg" column="LIVBROD_FLG"/>
+		<result property="immJuklibAmt" column="IMM_JUKLIB_AMT"/>
+		<result property="dlvAmt" column="DLV_AMT"/>
+		<result property="shipAmt" column="SHIP_AMT"/>
+		<result property="prdClscd" column="PRD_CLS_CD"/>
+		<result property="bundlPrdGbnCd" column="BUNDL_PRD_GBN_CD"/>
+	</resultMap>
+	
+	<resultMap id="findStyleNameData" type="iceberg.capi.order.model.preCalc.PreCalc">
+		<result property="attrTypNm1" 			column="ATTR_TYP_NM1"/>
+		<result property="attrTypNm2" 			column="ATTR_TYP_NM2"/>
+		<result property="attrTypNm3" 			column="ATTR_TYP_NM3"/>
+		<result property="attrTypNm4" 			column="ATTR_TYP_NM4"/>
+	</resultMap>
+	
+	<resultMap id="findSetPrdIdsData" type="iceberg.capi.order.model.preCalc.PreCalc">
+		<result property="cmposPrdCd1" 		column="CMPOS_PRD_CD1"/>
+		<result property="cmposPrdCd2" 		column="CMPOS_PRD_CD2"/>
+		<result property="prdCd" 					column="PRD_CD"/>
+	</resultMap>
+	
+	<resultMap id="findPrdCardDiscountAllData" type="iceberg.capi.order.model.preCalc.PreCalc">
+		<result property="pmoNo" 			column="PMO_NO"/>
+		<result property="img_1" 			column="IMG_1"/>
+		<result property="img_2" 			column="IMG_2"/>
+		<result property="dValue" 			column="D_VALUE"/>
+		<result property="title" 				column="TITLE"/>
+		<result property="url" 				column="URL"/>
+		<result property="displayCd" 		column="DISPLAY_CD"/>
+		<result property="dcRate" 			column="DC_RATE"/>
+		<result property="maxAmt" 		column="MAX_AMT"/>
+		<result property="minAmt" 		column="MIN_AMT"/>
+		<result property="cardNm" 		column="CARD_NM"/>
+		<result property="strDate" 		column="STR_DATE"/>
+		<result property="endDate" 		column="END_DATE"/>
+		<result property="cardDcGbnCd" column="CARD_DC_GBN_CD"/>
+	</resultMap>
+
+		
+	<!--
+   	내용 : 세트상품정보 : 상품명, 무이자, 할부개월수, 적립금
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 03
+
+   	#{_c.prdCd[0].value} = 11130036
+   	-->
+	<select id = "findBundlPrdDtl" parameterType = "criteria" resultMap = "findBundlPrdDtlData">
+	<![CDATA[
+	SELECT PRD_CD
+		,EXPOS_ST_CD                                
+		,TEMPOUT_YN                            
+		,PRD_NM                              
+		,PRD_TYP_CD                                     
+		,ATTR_TYP_EXPOS_CD                                    
+		,FRMLES_PRD_TYP_CD                                   
+		,PRD_GBN_CD                                      
+		,SET_PRD_GBN_CD                                      
+		,OBOX_CD                             
+		,PRD_OBOX_CD                             
+		,DLV_PICK_MTHOD_CD                                   
+		,INSTL_DLV_PRD_FLG                                
+		,INSTALL_COST                                
+		,SUP_CD                                   
+		,CARD_USE_LIMIT_FLG                                  
+		,SALE_PRC                                    
+		,PRD_PRC                                    
+		,NO_INT_MM_CNT                                       
+		,ACC_AMT                                      
+		,DECODE (NO_INT_MM_CNT, 0, 0, (ROUND ((PRD_PRC / NO_INT_MM_CNT) * 0.1) * 10)) INSM_AMT                       
+		,PRD_URL                                     
+		,CPN_APPLY_TYP_CD                                
+		,DC_MRK_GBN_CD                                 
+		,IMM_ACCM_DC_LIMIT_FLG                               
+		,LIVBROD_FLG                                 
+		,IMM_JUKLIB_AMT                              
+		,DLV_AMT                                  
+		,SHIP_AMT                                    
+		,PRD_CLS_CD	                                
+		,BUNDL_PRD_GBN_CD                       
+	FROM (  
+		SELECT PPM.PRD_CD AS PRD_CD                /*상품코드*/             
+				,PPM.EXPOS_ST_CD AS EXPOS_ST_CD    /*노출상태코드*/                      
+				,NVL(PPM.TEMPOUT_YN,'N') AS TEMPOUT_YN                                       /*일시품절여부*/                      
+				,FN_PRD_EXPOS_NM(PPM.PRD_CD, 'P', SYSDATE) AS PRD_NM                                 /*상품명(노출프로모션명||노출상품명||노출홍보문구명)*/    
+				,PPM.PRD_TYP_CD AS PRD_TYP_CD          /*상품유형코드*/                      
+				,NVL(PPM.ATTR_TYP_EXPOS_CD, 'L') ATTR_TYP_EXPOS_CD                                          /*속성유형노출코드*/                  
+				,NVL(PPM.FRMLES_PRD_TYP_CD,'X') AS FRMLES_PRD_TYP_CD                                       /*무형상품유형코드*/                  
+				,PPM.PRD_GBN_CD AS PRD_GBN_CD           /*상품구분코드*/                      
+				,NVL(PPM.BUNDL_PRD_GBN_CD, 'N') AS SET_PRD_GBN_CD                                          /*묶음상품구분코드*/                  
+				,TRIM(PPM.OBOX_CD) AS OBOX_CD                                              /*합포장코드*/                        
+				,TRIM(SSM.PRD_OBOX_CD) AS PRD_OBOX_CD  	                                    /*직송합포장협력사여부*/          
+				,PPM.DLV_PICK_MTHOD_CD AS DLV_PICK_MTHOD_CD /*배송수거방법코드*/                  
+				,NVL(PPM.INSTL_DLV_PRD_YN, 'N') AS INSTL_DLV_PRD_FLG                                    /*설치배송상품여부*/                  
+				,PPH.INSTL_COST AS INSTALL_COST     /*설치비용*/                          
+				,PPM.SUP_CD AS SUP_CD            /*협력사코드*/                        
+				,PPM.CARD_USE_LIMIT_YN AS CARD_USE_LIMIT_FLG/*카드사용제한여부*/                  
+				,PPH.SALE_PRC AS SALE_PRC           /*판매가격*/                          
+				,T2.PRDPRICE AS PRD_PRC            
+				,T2.MUIJA AS NO_INT_MM_CNT                 /*무이자개월수*/            
+				,T2.JUKLIB AS ACC_AMT               /*적립금액*/                          
+				,SUBSTR(PPM.PRD_CD,1,2 ) || '/' || SUBSTR(PPM.PRD_CD,3,2) || '/' || TO_CHAR(PPM.PRD_CD) || '_W1.JPG' AS PRD_URL        
+				,DECODE(PPM.CPN_APPLY_TYP_CD, '09', 'Y', 'N') AS CPN_APPLY_TYP_CD                      /*쿠폰적용유형코드*/                  
+				,NVL(PPM.DC_MRK_GBN_CD, '01') AS DC_MRK_GBN_CD                                       /*할인표시구분코드*/                  
+				,NVL(PPM.IMM_ACCM_DC_LIMIT_YN, 'N') AS IMM_ACCM_DC_LIMIT_FLG                               /*즉시적립금할인제한여부*/            
+				,NVL((                             
+					SELECT 'Y' AS ALIVEON           
+					FROM LGEC_PGM LP
+						,LGEC_PGM_DTL LPD
+					WHERE LPD.GOODS_CODE = PPM.PRD_CD 
+						AND LP.BROAD_DATE = LPD.BROAD_DATE   
+						AND LP.BROAD_DATE <= SYSDATE 
+						AND LP.CLOSING_DATE >= SYSDATE     
+					),'N') AS LIVBROD_FLG 
+				,0 AS IMM_JUKLIB_AMT 
+				,CASE WHEN NVL(PPM.CHR_DLVC_CD, 0) > 0    
+					THEN PG_PMO_PRD_PMO.FN_PRD_MD_DC_PRC(PPM.CHR_DLVC_CD, 'P', SYSDATE)              
+					ELSE PG_PMO_PRD_PMO.FN_PRD_MD_DC_PRC(PPM.CHR_DLVC_CD, 'P', SYSDATE)              
+					END AS DLV_AMT         
+				,CASE WHEN NVL(PPM.CHR_DLVC_CD, 0) > 0    
+					THEN (SELECT NVL(DLVC_LIMIT_AMT, 0)                                      /*배송비제한금액*/            
+						     FROM SUP_DLVC_D   /*협력사배송비정보 TABLE*/     
+						   WHERE DLVC_CD = PPM.CHR_DLVC_CD                                     /*배송비코드*/    ) 
+					ELSE (SELECT DLVC_AMT     /*배송비금액*/   
+						    FROM SUP_DLVC_D       
+						 WHERE DLVC_CD = PPM.CHR_DLVC_CD)
+					END AS SHIP_AMT 
+				,NVL(LTRIM(RTRIM(PPM.PRD_CLS_CD)), '@@@@@@@@') AS PRD_CLS_CD                      /*상품분류코드*/                      
+				,PPM.BUNDL_PRD_GBN_CD             	/*묶음상품구분코드(10->해외세트,20->세트상품(신규))*/                         
+		FROM PRD_PRD_M PPM
+				,PRD_PRC_H PPH
+				,SUP_SUP_M SSM
+				,(SELECT T1.PRD_CD
+					,SUM(T1.PRDPRICE) AS PRDPRICE
+					,MIN(T1.MUIJA) AS MUIJA
+					,SUM(T1.JUKLIB) AS JUKLIB
+				FROM (SELECT PPM1.PRD_CD      
+								,PG_PMO_PRD_PMO.FN_PRD_MD_DC_PRC(PBPD.CMPOS_PRD_CD, 'P', SYSDATE) AS PRDPRICE     
+								,NVL( PG_PMO_PRD_PMO.FN_PRD_NO_INT(PBPD.CMPOS_PRD_CD, 'P', SYSDATE), 0) AS MUIJA                        /*무이자개월수*/
+								,NVL( PG_PMO_PRD_PMO.FN_PRD_ACCM(PBPD.CMPOS_PRD_CD, 'P', SYSDATE, PPH.SALE_PRC, 'N'), 0) AS JUKLIB        /*적립금액*/  
+						FROM PRD_PRD_M PPM1       /*상품기본정보*/  
+								,PRD_BUNDL_PRD_D PBPD       /*묶음상품정보*/   
+								,PRD_PRC_H PPH       /*가격이력정보*/  
+						WHERE PPM1.PRD_CD = #{_c.prdCd[0].value}
+							AND PPM1.PRD_CD = PBPD.PRD_CD
+							AND PBPD.CMPOS_PRD_CD = PPH.PRD_CD 
+							AND PPH.PRD_ATTR_GBN_CD = 'P' 
+							AND SYSDATE BETWEEN PPH.VALID_STR_DTM AND PPH.VALID_END_DTM) T1 
+				GROUP BY T1.PRD_CD) T2
+		WHERE PPM.PRD_CD = T2.PRD_CD               
+			AND PPM.PRD_CD = PPH.PRD_CD               
+			AND PPM.SUP_CD = SSM.SUP_CD
+			AND PPM.USE_YN = 'Y' 
+			AND PPM.SALE_END_DTM >= SYSDATE 
+			AND PPH.PRD_ATTR_GBN_CD = 'P'           
+			AND SYSDATE BETWEEN PPH.VALID_STR_DTM AND PPH.VALID_END_DTM        
+	) 
+	]]>
+	</select>
+	
+	<!--
+   	내용 : 상품정보 : 상품명, 무이자, 할부개월수, 적립금
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 03
+
+   	#{_c.prdCd[0].value} = 11130036
+   	-->
+	<select id = "findPrdDtl" parameterType = "criteria" resultMap = "findPrdDtlData">
+	<![CDATA[
+	SELECT PRD_CD	
+			,EXPOS_ST_CD  
+			,TEMPOUT_YN  	
+			,PRD_NM
+			,PRD_TYP_CD       
+			,ATTR_TYP_EXPOS_CD      
+			,FRMLES_PRD_TYP_CD     
+			,PRD_GBN_CD        
+			,SET_PRD_GBN_CD        
+			,OBOX_CD   	
+			,PRD_OBOX_CD   	
+			,DLV_PICK_MTHOD_CD     
+			,CHRYN_DLV_FLG     
+			,INSTL_DLV_PRD_FLG  
+			,INSTL_COST  
+			,SUP_CD     
+			,CARD_USE_LIMIT_FLG    
+			,SALE_PRC      
+			,PRD_PRC      
+			,NO_INT_MM_CNT         
+			,ACC_AMT        
+			,DECODE (NO_INT_MM_CNT, 0, 0, (ROUND ((ACC_AMT / NO_INT_MM_CNT) * 0.1) * 10)) INSM_AMT             
+			,PRD_URL       
+			,CPN_APPLY_TYP_CD  
+			,DC_MRK_GBN_CD   
+			,IMM_ACCM_DC_LIMIT_FLG 
+			,LIVBROD_FLG   
+			,IMM_JUKLIB_AMT
+			,DLV_AMT    
+			,SHIP_AMT
+			,PRD_CLS_CD
+			,BUNDL_PRD_GBN_CD
+	FROM (  
+		SELECT PPM.PRD_CD AS PRD_CD                     /*상품코드*/   	
+				,PPM.EXPOS_ST_CD AS EXPOS_ST_CD         /*노출상태코드*/  	
+				,NVL(PPM.TEMPOUT_YN,'N') TEMPOUT_YN/*일시품절여부*/  	
+				,FN_PRD_EXPOS_NM(PPM.PRD_CD, 'P', SYSDATE) AS PRD_NM                                 /*상품명(노출프로모션명||노출상품명||노출홍보문구명)*/  
+				,PPM.PRD_TYP_CD AS PRD_TYP_CD               /*상품유형코드*/  	
+				,NVL(PPM.ATTR_TYP_EXPOS_CD, 'L') ATTR_TYP_EXPOS_CD/*속성유형노출코드*/          
+				,NVL(PPM.FRMLES_PRD_TYP_CD,'X') AS FRMLES_PRD_TYP_CD                                       /*무형상품유형코드*/          
+				,PPM.PRD_GBN_CD AS PRD_GBN_CD                /*상품구분코드*/  	
+				,NVL(PPM.BUNDL_PRD_GBN_CD, 'N') AS SET_PRD_GBN_CD/*묶음상품구분코드*/          
+				,TRIM(PPM.OBOX_CD) AS OBOX_CD    /*합포장코드*/
+				,TRIM(SSM.PRD_OBOX_CD) AS PRD_OBOX_CD  	                                    /*직송합포장협력사여부*/                                     
+				,PPM.DLV_PICK_MTHOD_CD AS DLV_PICK_MTHOD_CD      /*배송수거방법코드*/          
+				,PPM.CHR_DLV_YN AS CHRYN_DLV_FLG      /*유무료배송여부*/          
+				,NVL(PPM.INSTL_DLV_PRD_YN, 'N') AS INSTL_DLV_PRD_FLG                                    /*설치배송상품여부*/          
+				,PPH.INSTL_COST AS INSTL_COST          /*설치비용*/  
+				,PPM.SUP_CD AS SUP_CD                 /*협력사코드*/
+				,PPM.CARD_USE_LIMIT_YN AS CARD_USE_LIMIT_FLG     /*카드사용제한여부*/          
+				,PPH.SALE_PRC AS SALE_PRC                /*판매가격*/  
+				,PG_PMO_PRD_PMO.FN_PRD_MD_DC_PRC(PPM.PRD_CD, 'P', SYSDATE) PRD_PRC                                  
+				,PG_PMO_PRD_PMO.FN_PRD_NO_INT(PPM.PRD_CD, 'P', SYSDATE) NO_INT_MM_CNT                      /*무이자개월수*/    
+				,PG_PMO_PRD_PMO.FN_PRD_ACCM(PPM.PRD_CD, 'P', SYSDATE, PPH.SALE_PRC, 'N') ACC_AMT      /*적립금액*/  
+				,SUBSTR(PPM.PRD_CD,1,2 ) || '/' || SUBSTR(PPM.PRD_CD,3,2) || '/' || TO_CHAR(PPM.PRD_CD) || '_W1.JPG' PRD_URL   	
+				,DECODE(PPM.CPN_APPLY_TYP_CD, '09', 'Y', 'N') AS CPN_APPLY_TYP_CD                      /*쿠폰적용유형코드*/          
+				,NVL(PPM.DC_MRK_GBN_CD, '01') AS DC_MRK_GBN_CD                                       /*할인표시구분코드*/          
+				,NVL(PPM.IMM_ACCM_DC_LIMIT_YN, 'N') AS IMM_ACCM_DC_LIMIT_FLG                               /*즉시적립금할인제한여부*/    
+				,NVL((
+					SELECT 'Y' ALIVEON                                 
+					FROM LGEC_PGM LP                                  
+					,LGEC_PGM_DTL LPD
+					WHERE LPD.GOODS_CODE = PPM.PRD_CD                     
+						AND LP.BROAD_DATE = LPD.BROAD_DATE                 
+						AND LP.BROAD_DATE <= SYSDATE                     
+						AND LP.CLOSING_DATE >= SYSDATE                   
+					),'N') AS LIVBROD_FLG                                   
+				,0 AS IMM_JUKLIB_AMT                                     
+				,(SELECT NVL(SUP.DLVC_AMT, 0) 				/*EC_PRD.KHS_PRICE [배송비금액] 테이블 분리*/  		
+				FROM SUP_DLVC_D SUP 						/*협력사배송비정보*/  
+				WHERE SUP.DLVC_CD = PPM.CHR_DLVC_CD 		/*배송비코드*/	   
+					AND SUP.USE_YN = 'Y' ) AS DLV_AMT	/*사용여부*/	      
+				,CASE WHEN NVL(PPM.CHR_DLVC_CD, 0) > 0                  
+					THEN (SELECT NVL(DLVC_LIMIT_AMT, 0)                                      /*배송비제한금액*/ 
+						FROM SUP_DLVC_D        /*협력사배송비정보 TABLE*/	
+						WHERE DLVC_CD = PPM.CHR_DLVC_CD                                     /*배송비코드*/	) 
+					ELSE (SELECT  DLVC_AMT          /*배송비금액*/      
+						FROM SUP_DLVC_D 
+						WHERE DLVC_CD = PPM.CHR_DLVC_CD   	)   
+					END AS SHIP_AMT                                 
+				,NVL(LTRIM(RTRIM(PPM.PRD_CLS_CD)), '@@@@@@@@') AS PRD_CLS_CD                      /*상품분류코드*/  	
+				,BUNDL_PRD_GBN_CD       /*묶음상품구분코드(10->해외세트,20->세트상품(신규))*/         
+		FROM PRD_PRD_M PPM
+				,PRD_PRC_H PPH
+				,SUP_SUP_M SSM 		
+		WHERE PPM.PRD_CD = PPH.PRD_CD       
+			AND PPM.SUP_CD = SSM.SUP_CD 
+			AND PPM.PRD_CD = #{_c.prdCd[0].value}	
+			AND PPM.USE_YN = 'Y'      
+			AND PPM.SALE_END_DTM >= SYSDATE          
+			AND PPH.PRD_ATTR_GBN_CD = 'P' 	
+			AND SYSDATE BETWEEN PPH.VALID_STR_DTM AND PPH.VALID_END_DTM   		
+		)      
+	]]>
+	</select>
+		
+	<!--
+   	내용 : 스타일 라벨 정보
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 02
+
+   	#{_c.prdCd[0].value} = 11111622
+	-->
+	<select id = "findStyleName" parameterType = "criteria" resultMap = "findStyleNameData">
+	<![CDATA[
+    SELECT NVL(PPM.ATTR_TYP_NM1,'색상') AS ATTR_TYP_NM1   	/*속성유형명1(컬러, 향 등 여러가지 값이 들어갈수 있음)*/
+               ,NVL(PPM.ATTR_TYP_NM2,'크기') AS ATTR_TYP_NM2   	/*속성유형명2       */
+               ,NVL(PPM.ATTR_TYP_NM3,'스타일') AS ATTR_TYP_NM3   	/*속성유형명3       */
+               ,NVL(PPM.ATTR_TYP_NM4,'사은품') AS ATTR_TYP_NM4    	/*속성유형명4       */
+      FROM PRD_PRD_M  PPM
+    WHERE PPM.PRD_CD = #{_c.prdCd[0].value}
+    	AND USE_YN = 'Y'
+    ]]>
+	</select>
+	
+	
+	<!--
+   	내용 : 스타일 라벨 정보
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 02
+
+   	#{_c.prdCd[0].value} = 11111622
+	-->
+	<select id = "findSetPrdIds" parameterType = "criteria" resultMap = "findSetPrdIdsData">
+	<![CDATA[
+    SELECT PBPD.CMPOS_PRD_CD AS CMPOS_PRD_CD1         
+			,PBPD1.CMPOS_PRD_CD AS CMPOS_PRD_CD2         
+			,PBPD1.PRD_CD  
+	FROM PRD_BUNDL_PRD_D PBPD                    
+			,PRD_BUNDL_PRD_D PBPD1                    
+			,( 
+			SELECT DECODE( ROWNUM, 1, CMPOS_PRD_CD) MIN_CMPOS_PRD_CD        
+					,DECODE( ROWNUM, 2, CMPOS_PRD_CD) MAX_CMPOS_PRD_CD        
+					,PRD_CD                        
+			FROM PRD_BUNDL_PRD_D PBPD             
+			WHERE PBPD.PRD_CD = #{_c.prdCd[0].value}              
+				AND ROWNUM < 3                    
+			) TB1       
+	WHERE PBPD.CMPOS_PRD_CD = TB1.MIN_CMPOS_PRD_CD 
+		AND PBPD1.CMPOS_PRD_CD = TB1.MAX_CMPOS_PRD_CD 
+    ]]>
+	</select>
+	
+		
+	<!--
+   	내용 : 일시불 할인금액
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 03
+
+   	#{_c.prdCd[0].value} = 11111622
+	-->
+	<select id = "findlumpSum" parameterType = "criteria" resultType = "long">
+	<![CDATA[
+    SELECT SUM(PG_PMO_PRD_PMO.FN_PRD_SGPAY_DC(CMPOS_PRD_CD, 'P', SYSDATE, 'N')) AS CMPOS_PRD_CD
+      FROM PRD_BUNDL_PRD_D
+     WHERE PRD_CD = #{_c.prdCd[0].value}	
+    ]]>
+	</select>
+	
+	<!--
+   	내용 : 일시불 할인금액1
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 03
+
+   	#{_c.prdCd[0].value} = 11111622
+	-->
+	<select id = "findlumpSum1" parameterType = "criteria" resultType = "long">
+	<![CDATA[
+    SELECT TO_NUMBER( PG_PMO_PRD_PMO.FN_PRD_SGPAY_DC(#{_c.prdCd[0].value}	, 'P', SYSDATE, 'N')) AS CMPOS_PRD_CD
+       FROM DUAL	
+    ]]>
+	</select>
+	
+	<!--
+   	내용 : 카드청구할인 제외/대상 프로모션 조회
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 06
+
+   	#{_c.prdCd[0].value} = 11111622
+	-->
+	<select id = "findPrdCardDiscountAll" parameterType = "criteria" resultMap = "findPrdCardDiscountAllData">
+	<![CDATA[
+	SELECT	PMO_NO
+			,IMG_1
+			,IMG_2
+			,D_VALUE
+			,TITLE
+			,URL
+			,DECODE(DISPLAY_CD,'Y',1,0) AS DISPLAY_CD
+			,DC_RATE
+			,MAX_AMT
+			,MIN_AMT
+			,CARD_NM
+			,STR_DATE
+			,END_DATE
+			,CARD_DC_GBN_CD
+	FROM	(
+			SELECT MPM.PMO_SEQ AS PMO_NO   				/*프로모션번호*/
+					,''   AS IMG_1 				/*이미지1*/
+					,''   AS IMG_2 				/*이미지2*/ 
+					,''   AS D_VALUE 				/* EXB_SEQ */
+					,MPM.PMO_NM AS TITLE  					/*제목*/
+					,MPA.EC_EVENT_URL_CNTNT  AS URL    					/* 이벤트 URL EC */
+					,MPA.SNRM_EVENT_URL_CNTNT AS URL_1    				/*시니어몰이벤트URL내용 */
+					,MPB.DC_PRC_EXPOS_YN AS DISPLAY_CD 			/*할인가격 노출여부 */
+					,MPB.CHR_DC_RT  AS DC_RATE   	 			/*할인률 */ 
+					,MPB.MAX_DC_PSBL_AMT AS MAX_AMT    			/* 최대할인금액*/  
+					,MPB.MIN_PAY_AMT  AS MIN_AMT 				/*카드청구할인최소금액-최소결제금액*/ 
+					,MPB.EC_CARD_NM  AS CARD_NM 				/*카드명*/
+					,TO_CHAR(MPB.CARD_APRV_STR_DTM, 'yyyymmddhh24miss') AS STR_DATE 				/*시작일시*/
+					,TO_CHAR(MPB.CARD_APRV_END_DTM, 'yyyymmddhh24miss') AS END_DATE 				/*종료일시*/
+					,'EX'  AS CARD_DC_GBN_CD	/*카드구분 */
+			FROM MKT_PMO_M MPM   
+					,MKT_PMO_CUST_GRP_D  MPCG
+					,MKT_PMO_BNFT_D MPB
+					,MKT_PMO_ADD_D MPA
+			WHERE MPB.CARD_APRV_STR_DTM 	<= SYSDATE
+				AND MPB.CARD_APRV_END_DTM >= SYSDATE             
+				AND MPM.PMO_SEQ  = 	MPCG.PMO_SEQ           
+				AND MPCG.PMO_SEQ = 	MPB.PMO_SEQ
+				AND MPM.PMO_SEQ = 	MPA.PMO_SEQ(+)           
+				AND MPCG.CUST_GRP_SEQ  = 	MPB.CUST_GRP_SEQ
+				AND MPM.EC_YN    = 	'Y'        /*   	-- EC 여부           */          
+				AND MPM.PRCH_AFT_IMM_YN  = 	'Y'           /*	-- 구매후 즉시지급  */
+				AND MPM.CARD_CHR_DC_YN  = 	'Y'          /* 	-- 카드청구  */
+				AND MPB.BNFT_GBN_CD  = '50'          /*	-- 청구할인   */
+				AND MPCG.TGT_PRD_EXCPT_MTHOD_CD = '10'		                 
+				AND MPM.ST_CD = '30'             -- 상태값     
+				AND NOT EXISTS (  /*	-- NOT EXISTS 가 아니고 EXISTS   */
+					SELECT 1
+					FROM MKT_PMO_TGT_PRD_D   MPTR
+					WHERE PMO_SEQ          = MPM.PMO_SEQ
+						AND CUST_GRP_SEQ   = MPCG.CUST_GRP_SEQ
+						AND PMO_APPLY_EXCPT_YN  = 'Y' 								/*적용제외 상품*/
+						AND APPLY_STR_DTM       <= SYSDATE
+						AND APPLY_END_DTM       >= SYSDATE
+						AND PRD_CD = #{_c.prdCd[0].value}
+					) 
+			UNION ALL   
+			SELECT MPM.PMO_SEQ AS PMO_NO   				/*프로모션번호*/
+					,''    AS IMAGE_1 				/*이미지1*/
+					,''    AS IMAGE_2 				/*이미지2*/
+					,''    AS D_VALUE 				/* EXB_SEQ */
+					,MPM.PMO_NM                			AS TITLE  					/*제목*/
+					,MPA.EC_EVENT_URL_CNTNT AS URL    					/* 이벤트 URL EC */
+					,MPA.SNRM_EVENT_URL_CNTNT AS URL_1    				/*시니어몰이벤트URL내용 */
+					,MPB.DC_PRC_EXPOS_YN   AS DISPLAY_CD 			/*할인가격 노출여부 */
+					,MPB.CHR_DC_RT   AS DC_RATE    			/*할인률 */
+					,MPB.MAX_DC_PSBL_AMT  AS MAX_AMT    			/* 최대금액 수정 */
+					,MPB.MIN_PAY_AMT    AS MIN_AMT 				/*카드청구할인최소금액*/ 
+					,MPB.EC_CARD_NM    AS CARD_NM 				/*카드명*/
+					,TO_CHAR(MPB.CARD_APRV_STR_DTM, 'yyyymmddhh24miss') AS STR_DATE 				/*시작일시*/
+					,TO_CHAR(MPB.CARD_APRV_END_DTM, 'yyyymmddhh24miss') AS END_DATE 				/*종료일시*/
+					,'IN'      AS CARD_DC_GBN_CD  	/*카드구분 */
+			FROM MKT_PMO_M MPM   
+					,MKT_PMO_CUST_GRP_D MPCG
+					,MKT_PMO_BNFT_D MPB
+					,MKT_PMO_ADD_D MPA
+			WHERE MPB.CARD_APRV_STR_DTM 	<= SYSDATE
+				AND MPB.CARD_APRV_END_DTM >= SYSDATE
+				AND MPM.PMO_SEQ = MPCG.PMO_SEQ           
+				AND MPCG.PMO_SEQ = MPB.PMO_SEQ
+				AND MPM.PMO_SEQ = MPA.PMO_SEQ(+)           
+				AND MPCG.CUST_GRP_SEQ = MPB.CUST_GRP_SEQ
+				AND MPM.EC_YN   = 'Y'         /*  -- EC 여부         */                         
+				AND MPM.PRCH_AFT_IMM_YN   = 'Y'       /*    -- 구매후 즉시지급 */ 
+				AND MPM.CARD_CHR_DC_YN    = 'Y'       /*    -- 카드청구*/
+				AND MPB.BNFT_GBN_CD         = '50'      /*   -- 청구할인     */
+				AND MPCG.TGT_PRD_SEL_MTHOD_CD  = '10'        
+				AND MPM.ST_CD = '30'    /*    -- 상태값      */
+				AND EXISTS (
+					SELECT 1
+					FROM MKT_PMO_TGT_PRD_D MPTR
+					WHERE PMO_SEQ   = MPM.PMO_SEQ
+						AND CUST_GRP_SEQ = MPCG.CUST_GRP_SEQ
+						AND PMO_APPLY_EXCPT_YN = 'N' /*적용 상품*/
+						AND APPLY_STR_DTM  <= SYSDATE
+						AND APPLY_END_DTM    >= SYSDATE
+						AND PRD_CD    = #{_c.prdCd[0].value}
+					)
+			)
+	ORDER BY TO_NUMBER(DC_RATE) DESC, MIN_AMT DESC  
+    ]]>
+	</select>
+	
+	<!--
+   	내용 : 즉시적립 할인금액
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 06
+   	
+	#{_c.prdCd[0].value} = 11130036
+	-->
+	<select id = "findImmJuklibAmt" parameterType = "criteria" resultType = "Long">
+	<![CDATA[
+	SELECT NVL(IMM_ACCM_DC_RT, 0) AS IMM_ACCM_DC_RT
+	   FROM PRD_PRD_M
+	 WHERE PRD_CD = #{_c.prdCd[0].value}
+    ]]>
+	</select>
+	
+	<!--
+   	내용 : 즉시적립 할인금액2
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 06
+
+	#{_c.prdCd[0].value} = 11130036
+	#{_c.prdprc[0].value} = 0
+	#{_c.immJuklibAmt[0].value} = 0
+	-->
+	<select id = "findImmJuklibAmt2" parameterType = "criteria" resultType = "Long">
+	<![CDATA[
+	SELECT TRUNC(PG_PMO_PRD_PMO.FN_PRD_ACCM(#{_c.prdCd[0].value}, 'P', SYSDATE, #{_c.prdprc[0].value}) * #{_c.immJuklibAmt[0].value}, -1)
+	   FROM DUAL
+    ]]>
+	</select>
+	
+	<!--
+   	내용 : 일시불할인 금액 기준을 임직원할인가 제외한 금액으로 수정
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 06
+   	
+	#{_c.price[0].value} = 0
+	#{_c.prdCd[0].value} = 11130036
+	-->
+	<select id = "findFamilyLumpSum" parameterType = "criteria" resultType = "Long">
+	<![CDATA[
+	SELECT SUM( PG_PMO_PRD_PMO.FN_PRD_FAMILY_SGPAY_DC(CMPOS_PRD_CD, 'P', SYSDATE, 'N', #{_c.price[0].value}))
+	   FROM PRD_BUNDL_PRD_D
+	 WHERE PRD_CD = #{_c.prdCd[0].value}
+    ]]>
+	</select>
+	
+	<!--
+   	내용 : 일시불할인 금액 기준을 임직원할인가 제외한 금액으로 수정1
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 06
+
+	-->
+	<select id = "findFamilyLumpSum1" parameterType = "criteria" resultType = "Long">
+	<![CDATA[
+	SELECT TO_NUMBER( PG_PMO_PRD_PMO.FN_PRD_FAMILY_SGPAY_DC( #{_c.prdCd[0].value}, 'P', SYSDATE, 'N', #{_c.price[0].value}))
+	   FROM DUAL
+    ]]>
+	</select>
+
+</mapper>

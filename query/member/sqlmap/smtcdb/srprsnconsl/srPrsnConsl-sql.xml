@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.member.smtcdb.repository.srprsnconsl.SrPrsnConslSqlMapRepository">
+
+	<resultMap type="iceberg.capi.member.model.SrPrsnConsl" id="srPrsnConslMap" >
+		<result property="mailOrBltOrgNo" column="MAIL_OR_BLT_ORG_NO"/> 
+		<result property="questTitleNm" column="QUEST_TITLE_NM"/>  
+		<result property="custMailAddr" column="CUST_MAIL_ADDR"/> 
+		<result property="regDtm" column="REG_DTM"/> 
+		<result property="inConslTypCdVal" column="IN_CONSL_TYP_CD_VAL"/> 
+		<result property="answrStCd" column="ANSWR_ST_CD"/>  
+		<result property="ordNo" column="ORD_NO"/>   
+		<result property="prdCd" column="PRD_CD"/>   
+		<result property="prdNm" column="PRD_NM"/>   
+		<result property="ordDtm" column="ORD_DTM"/>   
+		<result property="supCd" column="SUP_CD"/>  
+		<result property="answrPrsnId" column="ANSWR_PRSN_ID"/>  
+		<result property="questCntnt" column="QUEST_CNTNT"/>  
+		<result property="inConslTypCd" column="IN_CONSL_TYP_CD"/>  
+		<result property="ordItemId" column="ORD_ITEM_ID"/>  
+		<result property="answrModDtm" column="ANSWR_MOD_DTM"/>  
+		<result property="answrCntnt" column="ANSWR_CNTNT"/>  
+		<result property="workGbnCd" column="WORK_GBN_CD"/>  
+	</resultMap>
+	
+	<select id="findSrPrsnConslList" parameterType="criteria" resultMap="srPrsnConslMap">
+	<!-- 
+		API  : 서비스요청개인상담 리스트
+		설명 : 고객번호로 서비스요청개인상담 리스트 조회한다.
+		//@1 : 개편이후건만 노출
+		
+		#{_p.pageItemSize} = 10
+		#{_c.custNo[0].value}  = 4353536
+		#{_p.pageNumber} = 1
+	-->
+	 <![CDATA[
+        SELECT X1.*
+          FROM (SELECT CEIL(ROWNUM / #{_p.pageItemSize} )          AS PAGEIDX
+                      ,X.*
+                  FROM (SELECT SPCD.MAIL_OR_BLT_ORG_NO             AS MAIL_OR_BLT_ORG_NO  
+                              ,SPCD.QUEST_TITLE_NM                 AS QUEST_TITLE_NM    
+                              ,NVL(SPCD.CUST_MAIL_ADDR, 'NotMail') AS CUST_MAIL_ADDR    
+                              ,TO_CHAR(SPCD.REG_DTM, 'YYYYMMDD')   AS REG_DTM 
+                              ,CCC.CD_VAL                          AS IN_CONSL_TYP_CD_VAL   
+                              ,DECODE(SPCD.ANSWR_ST_CD
+                                     ,'U', 'Y'
+                                     ,'N')                         AS ANSWR_ST_CD   
+                         FROM  SRV_PRSN_CONSL_D SPCD  
+                              ,CMM_CMM_C        CCC  
+                         WHERE SPCD.CUST_NO                = #{_c.custNo[0].value} 
+                           AND NVL(SPCD.ANSWR_ST_CD, 'A')  <> 'D'  
+                           AND SPCD.REG_DTM                > TO_DATE('20040412', 'yyyymmdd')  /* @1*/ 
+                           AND SPCD.MAIL_OR_BLT_GBN_CD     = 'M'   
+                           AND SPCD.IN_CONSL_TYP_CD        = CCC.CMM_CD(+)   
+                           AND CCC.CMM_GRP_CD(+)           = 'SRV021'   
+                           AND CCC.USE_YN(+)               = 'Y'   
+                        ORDER BY SPCD.REG_DTM DESC ) X
+               ) X1
+        WHERE PAGEIDX = #{_p.pageNumber} 
+	 ]]>
+	</select>
+	
+	<select id="countSrPrsnConslList" parameterType="criteria"  resultType="long">
+	<!-- 
+		API  : 서비스요청개인상담 리스트 갯수
+		설명 : 고객번호로 서비스요청개인상담 리스트 총개수를  조회한다.
+		//@1 : 개편이후건만 노출
+		 
+		#{_c.custNo[0].value}  = 4353536 
+	-->
+	 <![CDATA[
+        SELECT COUNT(1) 
+         FROM  SRV_PRSN_CONSL_D SPCD   
+         WHERE SPCD.CUST_NO                = #{_c.custNo[0].value} 
+           AND NVL(SPCD.ANSWR_ST_CD, 'A')  <> 'D'  
+           AND SPCD.REG_DTM                > TO_DATE('20040412', 'yyyymmdd')  /* @1*/ 
+           AND SPCD.MAIL_OR_BLT_GBN_CD     = 'M'    	
+	 ]]>
+	</select>
+	
+	<select id="findSrPrsnConslDtl" parameterType="long" resultMap="srPrsnConslMap">
+	<!-- 
+		API  : 서비스요청개인상담 상세
+		설명 : 메일/게시원번호로 서비스요청개인상담 상세를 조회한다.  
+		 
+		#{mailOrBltOrgNo}  = 3426946 
+	-->
+        SELECT 
+              SPCD.QUEST_TITLE_NM                       AS QUEST_TITLE_NM   
+              ,SPCD.ORD_NO                              AS ORD_NO 
+              ,SPCD.PRD_CD                              AS PRD_CD 
+              ,SPCD.PRD_NM                              AS PRD_NM 
+              ,TO_CHAR(SPCD.ORD_DTM,'YYYYMMDDHH24MISS') AS ORD_DTM   
+              ,SPCD.SUP_CD                              AS SUP_CD 
+              ,SPCD.ANSWR_PRSN_ID                       AS ANSWR_PRSN_ID 
+              ,TO_CHAR(SPCD.REG_DTM,'YYYYMMDD')         AS REG_DTM
+              ,SPCD.QUEST_CNTNT                         AS QUEST_CNTNT  
+              ,SPCD.IN_CONSL_TYP_CD                     AS IN_CONSL_TYP_CD 
+              ,CCC.CD_VAL                               AS IN_CONSL_TYP_VAL
+              ,SSM.ORD_ITEM_ID                          AS ORD_ITEM_ID  
+              ,DECODE(SPCD.ANSWR_ST_CD          
+                     ,'U',  'Y'                 
+                     ,'N')                              AS ANSWR_ST_CD 
+              ,DECODE(SPCD.ANSWR_ST_CD
+                     ,'U', TO_CHAR(SPCD.ANSWR_MOD_DTM,'YYYYMMDDHH24MISS')
+                     ,NULL)                             AS ANSWR_MOD_DTM
+              ,DECODE(SPCD.ANSWR_ST_CD 
+                     ,'U', SPCD.ANSWR_CNTNT
+                     ,'')                               AS ANSWR_CNTNT  
+              ,CASE 
+                  WHEN SPCD.WORK_GBN_CD  = 'S01' 
+                   AND SPCD.ANSWR_PRSN_ID IS NOT NULL 
+                  THEN 'S03' 
+                  ELSE WORK_GBN_CD  
+               END                                      AS WORK_GBN_CD
+         FROM  SRV_PRSN_CONSL_D SPCD  
+              ,CMM_CMM_C        CCC   
+              ,SRV_SR_M         SSM  
+         WHERE SPCD.MAIL_OR_BLT_ORG_NO = #{mailOrBltOrgNo}
+           AND SPCD.MAIL_OR_BLT_GBN_CD = 'M'   
+           AND SPCD.IN_CONSL_TYP_CD    = CCC.CMM_CD(+)  
+           AND SPCD.SR_NO              = SSM.SR_NO(+) 
+           AND CCC.CMM_GRP_CD(+)       = 'SRV021'   
+           AND CCC.USE_YN(+)           = 'Y'   
+	</select>
+</mapper>

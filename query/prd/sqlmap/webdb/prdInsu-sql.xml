@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prd.PrdInsuSqlMapRepository">
+
+	<resultMap type="iceberg.capi.product.model.prd.add.PrdInsu" id="prdInsuMap">
+		<result property = "mdId"           column = "MD_ID"  />        <!--	교환편도왕복코드	-->
+		<result property = "insuLink"       column = "INSU_LINK"  />    <!--	교환반품배송비금액	-->
+		<result property = "isInsuFlg"     	column = "ISINSU"  />     	<!--	교환반품배송비제한금액	-->
+		
+	</resultMap>
+	
+	<select id="getPrdInsu" parameterType="criteria" resultMap="prdInsuMap">
+
+	<!-- 
+	설명 : 보험상품 단건 조회
+	
+	prdCd
+
+	-->
+	
+	
+	<![CDATA[
+		SELECT  PRDID,                                                                                                                              
+		        NAME,                                                                                                                             
+		        MFR,                                                                                                                              
+		        SALETYPE,                                                                                                                         
+		        ADDDESC,                                                                                                                          
+		        PRDTYPE,                                                                                                                          
+		        DECODE(NVL(SUBSTR(PROPERTY, 6, 1), '0'), '1', 'M', (DECODE(NVL(SUBSTR(PROPERTY, 5, 1), '0'), '1', 'M', ''))) AS M_FLAG, /*동영상여부*/ 
+		        DISPLAY_FLAG,                                                                                                                     
+		        MD_ID,                                                                                                                            
+		        INSU_LINK,                                                                                                                        
+		        INSU_PRICE,                                                                                                                       
+		        (   SELECT NVL(MAX(SEQ),0) AS VOD_SEQ                                                                                             
+		            FROM                                                                                                                          
+		            (   SELECT  Y.SEQ                                                                                                             
+		                FROM    LGEC_VIDEO_PRD X,                                                                                                  
+		                        LGEC_VIDEO_MGR Y                                                                                                  
+		                WHERE   X.PRDID = #{_c.prdCd[0].value}                                                                                                       
+		                AND     X.DBSTS = 'A'                                                                                                  
+		                AND     X.SEQ = Y.SEQ                                                                                                  
+		                AND     Y.DBSTS = 'A'                                                                                                  
+		                AND     Y.GUB_KEY IN ('C', 'P')                                                                                        
+		                AND     Y.SETTLE_INFO = '30'                                                                                           
+		                GROUP BY Y.SEQ                                                                                                            
+		            )                                                                                                                             
+		        ) AS VOD_SEQ,                                                                                                                     
+		        DECODE ( (  SELECT  B.REFSETID                                                                                                    
+		                    FROM    EC_REFSETVAL b                                                                                                
+		                    WHERE   B.REFSETID IN (2123, 2124)                                                                                    
+		                    AND     B.CODE = MD_ID                                                                                                
+		                    AND     B.DBSTS = 'A')                                                                                                
+		                    , '2123', 'INSU', '2124', 'OB', 'N') AS ISINSU  /*보험삼품&옴브즈맨 여부*/                                                      
+		FROM                                                                                                                                      
+		(                                                                                                                                         
+		    SELECT  A.PRD_CD AS PRDID,                                                                                                             
+		            NVL(B.EXPOS_PRD_NM,'') || NVL(B.EXPOS_PMO_NM,'') || NVL(B.EXPOS_PR_SNTNC_NM,'') AS NAME,                                      
+		            A.MNFC_CO_NM AS MFR,                                                                                                          
+		            DECODE (SIGN (  NVL (A.SALE_END_DTM, TO_DATE ('9999', 'yyyy'))                                                                
+		                              - sysdate                                                                                                   
+		                             ),                                                                                                           
+		                        -1, '05',                                                                                                         
+		                        A.ORD_PRD_TYP_CD                                                                                                  
+		            ) AS SALETYPE,                                                                                                                
+		            C.DESCD_EXPLN_CNTNT AS ADDDESC,                                                                                               
+		            A.PRD_TYP_CD AS PRDTYPE,                                                                                                      
+		            LPAD (NVL ((SELECT SUM (DECODE (M.UDA_NO,                                                                                      
+		                                            1003, 1,                                                                                      
+		                                            1004, 10,                                                                                     
+		                                            1005, 100,                                                                                    
+		                                            1006, 1000,                                                                                   
+		                                            1007, 10000,                                                                                  
+		                                            1008, 100000,                                                                                 
+		                                            1009, 1000000,                                                                                
+		                                            1010, 10000000,                                                                               
+		                                            1011, 100000000,                                                                              
+		                                            1012, 1000000000,                                                                             
+		                                            1013, 10000000000,                                                                            
+		                                            0                                                                                             
+		                                           )                                                                                              
+		                                    )                                                                                                      
+		                         FROM   PRD_UDA_D N     --LGEC_PRD_CHAR N                                                                         
+		                               ,PRD_UDA_C M     --LGEC_PRD_CHAR_CD M                                                                      
+		                         WHERE  N.UDA_NO = M.UDA_NO                                                                                       
+		                         AND    M.USE_YN = 'Y'                                                                                            
+		                         AND    N.PRD_CD = A.PRD_CD                                                                                       
+		                         AND    N.VALID_STR_DTM <= sysdate                                                                                
+		                         AND    NVL (N.VALID_END_DTM, sysdate) >= sysdate),                                                               
+		                         0                                                                                                                
+		                        ),                                                                                                                
+		                        11,                                                                                                               
+		                        0                                                                                                                 
+		            ) AS PROPERTY,                                                                                                                
+		            NVL (A.EXPOS_ST_CD, 'N') AS DISPLAY_FLAG,                                                                                      
+		            A.OPER_MD_ID AS MD_ID,                                                                                                         
+		            NVL(SETVAL.DSCR,'') AS INSU_LINK,                                                                                              
+		            NVL(SETVAL.VER_ID,'') AS INSU_PRICE                                                                                            
+		    FROM    PRD_PRD_M A         --EC_PRD A                                                                                                
+		           ,PRD_NM_CHG_H B      --LGEC_PRD_DTL B                                                                                          
+		           ,PRD_DESCD_HTML_D C  --LGEC_PRD_TECHDESC C                                                                                     
+		           ,EC_REFSETVAL SETVAL                                                                                                           
+		    WHERE   A.PRD_CD = #{_c.prdCd[0].value}                                                                                                                 
+		    AND A.PRD_CD = B.PRD_CD                                                                                                               
+		    AND B.CHANL_CD = 'P'                                                                                                                  
+		    AND SYSDATE BETWEEN B.VALID_STR_DTM AND B.VALID_END_DTM                                                                               
+		    AND A.PRD_CD = C.PRD_CD                                                                                                               
+		    AND C.CHANL_CD = 'P'                                                                                                                  
+		    AND A.USE_YN = 'Y'                                                                                                                    
+		    AND NVL (A.GFT_TYP_CD, '00') = '00'     /*사은품유형코드*/                                                                                  
+		    AND SETVAL.REFSETID(+) = 3030                                                                                                         
+		    AND SETVAL.CODE(+) = A.PRD_CD                                                                                                         
+		) 
+		]]>                                                                                                                                     
+	</select>
+</mapper>

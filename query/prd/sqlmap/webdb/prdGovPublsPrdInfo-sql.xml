@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prd.PrdGovPublsPrdInfoRepository">
+	
+	<resultMap type="iceberg.capi.product.model.prd.add.GovPublsPrdInfo" id="govPublsPrdInfoResult">
+		<result column="GOV_PUBLS_ITM_NM"		property="govPublsItmNm"/>
+		<result column="GOV_PUBLS_ITM_CNTNT" 	property="govPublsItmVal"/>
+	</resultMap>
+	
+	<select id="getPrdGovPublsPrdInfo" resultMap="govPublsPrdInfoResult">
+	<!-- 
+		내용		: 상품일반정보(정부고시항목)
+		작성자	: 박성하
+		작성일	: 2013.12.31
+		
+		#{productCode} = 10251049
+	-->
+		<![CDATA[
+		SELECT PGPID.GOV_PUBLS_ITM_NM		AS GOV_PUBLS_ITM_NM		/*정부고시항목명*/
+		      ,PGPPD.GOV_PUBLS_ITM_CNTNT 	AS GOV_PUBLS_ITM_CNTNT	/*정부고시항목내용*/
+		  FROM PRD_GOV_PUBLS_PRD_D PGPPD
+		      ,PRD_GOV_PUBLS_ITM_D PGPID
+		 WHERE PGPPD.GOV_PUBLS_ITM_CD = PGPID.GOV_PUBLS_ITM_CD
+		   AND PGPPD.GOV_PUBLS_PRD_GRP_CD = PGPID.GOV_PUBLS_PRD_GRP_CD
+		   AND PGPPD.PRD_CD = #{productCode} 		/*상품코드*/
+		   AND PGPPD.EXPOS_YN = 'Y' 				/*노출여부*/
+		   AND PGPID.EXPOS_YN = 'Y' 				/*노출여부*/
+		 ORDER BY 
+		       PGPPD.EXPOS_SEQ 						/*노출순서*/			
+		]]>
+	</select>
+
+</mapper>

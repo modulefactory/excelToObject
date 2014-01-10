@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.coupon.CouponSqlMapRepository">
+	               
+	
+	<!--
+	   	내용 : 쿠폰의 상품적용타입이 사용가능매장코드(YA || NA)일 경우 해당상품의
+	           매장코드, 매장명을 조회한다. 결과값이 1개이면 매장명을 표출시키기위함
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 11
+	   
+	   	#{cpnNo} = '133778'
+	-->
+	<resultMap id="prdCdCntMap" type="com.lgeshop.ec.wm.cbeans.CouponSect">
+		<result property="sectid" column="EC_SHOP_NO"/>
+		<result property="name" column="SECT_NM"/>
+	</resultMap>
+	<select id="findSectCnt" parameterType="String" resultMap="prdCdCntMap">
+	<![CDATA[
+		SELECT	/*+ leading(A)  		 
+				index(A PK_CPN_CPN_M) 	 
+				index(B PK_CPN_TGT_D) */ 
+				CTD.EC_SHOP_NO
+		       ,ES.NAME	AS SECT_NM
+		FROM 	CPN_CPN_M CCM
+		       ,CPN_TGT_D CTD
+		       ,EC_SECT ES				
+		WHERE 	CCM.CPN_NO = #{cpnNo}			
+			AND CCM.CPN_NO = CTD.CPN_NO		
+			AND CCM.CPN_TGT_TYP_CD IN ('YA', 'NA')  
+			AND CTD.EC_SHOP_NO = ES.SECTID	
+			AND ROWNUM <= 2					
+	]]>
+	</select>	
+	
+	
+	
+	
+	<!--
+	   	내용 : 적립금/할인 쿠폰 한도 계산
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 11
+	   
+	   	#{prdCd} = 133778
+	-->
+	<select id="findLimitInfo" parameterType="long" resultType="long">
+	<![CDATA[
+		SELECT FN_CPN_DC_LIMIT(#{prdCd},SYSDATE) AS LIMIT
+		  FROM DUAL
+	]]>
+	</select>
+	
+	
+	<!--
+	   	내용 : 중분류 매장 쿠폰에 걸려있는 매장 존재여부 조회
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 11
+	   
+	   	#{_c.prdCd[0].value} = 653123
+	   	#{_c.ecShopNo[0].value} = 8917, 21640
+	-->
+	<select id="findCouponSectCodeMInCnt" parameterType="criteria" resultType="int">
+			SELECT  COUNT(*) CNT
+			  FROM 	EC_SECT ES
+			       ,(
+			            SELECT 	ES.SECTID AS SSECTID
+			                  , ES.SECTPRSTID AS SSECTPRSTID
+			              FROM 	EC_SECT ES
+			                   ,(
+			                        SELECT 	SECTPRSTID
+			                        FROM 	EC_SECT
+			                        WHERE 	SECTID IN (
+			                                        SELECT 	SECTID
+			                                          FROM 	EC_SECT_PRDLST
+			                                         WHERE 	PRDID = #{_c.prdCd[0].value}
+			                                           AND 	DBSTS ='A'
+			                                    )
+			                    ) ESPRD
+			            WHERE 	ES.SECTID = ESPRD.SECTPRSTID
+			              AND 	ES.DBSTS     = 'A'
+			        ) ESPRD
+			 WHERE	ES.SECTID(+) = ESPRD.SSECTPRSTID
+			   AND  ES.DBSTS(+)     = 'A'
+ 		       AND  DECODE(NVL(ES.SECTPRSTID,0),0,ESPRD.SSECTID,ES.SECTID ) IN  
+		   <foreach collection="_c.ecShopNo[0].value" item="item" index="index" open="(" separator="," close=")">
+		   	#{item}
+		   </foreach>				 		       
+
+	</select>			
+			
+			
+			
+	<!--
+	   	내용 : 소분류 매장 쿠폰에 걸려있는 매장 존재여부 조회
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 11
+	   
+	   	#{_c.prdCd[0].value} = 653123
+	   	#{_c.ecShopNo[0].value} = 8917, 21640
+	-->
+	<select id="findCouponSectCodeSInCnt" parameterType="criteria" resultType="int">
+			SELECT 	COUNT(*) CNT
+			  FROM 	EC_SECT ES,
+			        (
+			            SELECT 	SECTPRSTID
+			              FROM 	EC_SECT
+			            WHERE 	SECTID IN (
+			                               SELECT 	SECTID 
+			                                 FROM 	EC_SECT_PRDLST
+			                                WHERE 	PRDID = #{_c.prdCd[0].value}
+			                                  AND 	DBSTS ='A'
+			                        )
+			         ) ESPRD
+			 WHERE 	ES.SECTID = ESPRD.SECTPRSTID
+			   AND 	ES.DBSTS     = 'A'
+			   AND  ES.SECTID IN 
+		   <foreach collection="_c.ecShopNo[0].value" item="item" index="index" open="(" separator="," close=")">
+		   	#{item}
+		   </foreach>				    	
+	</select>				
+			
+			
+	<!--
+	   	내용 : 문자쿠폰 전송로그 순번 SEQ 채번
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 16
+	-->
+	<select id="findGsOrdLogGiftSeq" resultType="long">
+	<![CDATA[
+		SELECT GS_ORD_LOG_GIFT_SEQ.NEXTVAL 
+		  FROM DUAL
+	]]>				    	
+	</select>				
+			
+			
+	<!-- 
+		내용	: 문자쿠폰 전송 Insert
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+	-->
+	<insert id="insertGsOrdLogGift" parameterType="iceberg.capi.order.model.ordersheet.GsOrdLogGift">
+	
+			INSERT INTO GS_ORD_LOG_GIFT
+                            ( 
+                               SEQNO
+                             <if test="orditmId != 0">,ORDITMID</if>
+                             <if test="ordprstId != 0">,ORDPRSTID</if>
+                             <if test="prdCd != 0">,PRDID</if>
+                             <if test="supCd != 0">,SUPP_CODE</if>
+                             <if test="supPrdCd != null">,SUPP_GOODS_CODE</if>
+                             <if test="charCpnTypCd != null">,SMS_TYPE</if>
+                             <if test="charCpnKindCd != null">,SMS_KIND</if>
+                             <if test="ordPrsnCelphnNo != null">,S_PH_NUM</if>
+                             <if test="rcvrCelphnNo != null">,R_PH_NUM</if>
+                             ,QTY
+                             ,USERID
+                             <if test="retCd != null">,RESULTCD</if>
+                             <if test="retMsg != null">,RESULTMSG</if>
+                             <if test="charCpnTitle != null">,TITLE</if>
+                             <if test="charCpnCntnt != null">,CONTENTS</if>
+                             ,CREDATE
+                             <if test="rcvrNm != null">,R_NAME</if>
+                             <if test="ordNo != 0">,ORD_NO</if>
+                             <if test="ordItemNo != 0">,ORD_ITEM_NO</if>
+                             <if test="supOrdNo != null">,SUPP_ORDNUM</if>
+                             <if test="custNo != 0">,CUST_NO</if>
+                            ) 
+                      VALUES 
+                           (
+                              #{charCpnSeq}
+                             <if test="orditmId != 0">,#{orditmId}</if>
+                             <if test="ordprstId != 0">,#{ordprstId}</if>
+                             <if test="prdCd != 0">,#{prdCd}</if>
+                             <if test="supCd != 0">,#{supCd}</if>
+                             <if test="supPrdCd != null">,#{supPrdCd}</if>
+                             <if test="charCpnTypCd != null">,#{charCpnTypCd}</if>
+                             <if test="charCpnKindCd != null">,#{charCpnKindCd}</if>
+                             <if test="ordPrsnCelphnNo != null">,#{ordPrsnCelphnNo}</if>
+                             <if test="rcvrCelphnNo != null">,#{rcvrCelphnNo}</if>
+                             ,#{ordQty}
+                             ,#{loginId}
+                             <if test="retCd != null">,#{retCd}</if>
+                             <if test="retMsg != null">,#{retMsg}</if>
+                             <if test="charCpnTitle != null">,#{charCpnTitle}</if>
+                             <if test="charCpnCntnt != null">,#{charCpnCntnt}</if>
+                             ,#{charCpnRegDtm}
+                             <if test="rcvrNm != null">,#{rcvrNm}</if>
+                             <if test="ordNo != 0">,#{ordNo}</if>
+                             <if test="ordItemNo != 0">,#{ordItemNo}</if>
+                             <if test="supOrdNo != null">,#{supOrdNo}</if>
+                             <if test="custNo != 0">,#{custNo}</if>
+                            )
+	</insert>				
+			
+	
+	<!-- 
+		내용	: 주문생성후 문자쿠폰 전송 Update
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+
+		#{_c.ordNo[0].value} = 257042365
+		#{_c.seqNo[0].value} = 1000000005
+	-->
+	<update id="updateSmtcOrdNoWithSeqNo" parameterType="criteria">
+			UPDATE  GS_ORD_LOG_GIFT
+			   SET  ORD_NO = #{_c.ordNo[0].value}
+			       ,UPDDATE = SYSDATE
+		     WHERE SEQNO = #{_c.seqNo[0].value}
+	</update>	
+	
+	
+	<!--
+	   	내용 : 다운로드 쿠폰번호추출
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 16
+	-->
+	<select id="findGsEmailCouponNum" resultType="String">
+	<![CDATA[
+			 SELECT /*+ INDEX_DESC (GEC GS_EMAIL_COUPON_IX1) */
+			         COUPON_NUM AS COUPON_NUM
+			   FROM  GS_EMAIL_COUPON GEC
+			  WHERE  CREDATE BETWEEN TO_CHAR(SYSDATE-1, 'YYYYMMDD')
+			                     AND TO_CHAR(SYSDATE, 'YYYYMMDD')
+			    AND  COUPON_TYPE = '01'
+			    AND  ROWNUM = 1
+	]]>				    	
+	</select>		
+		
+		
+	<!--
+	   	내용 : [문자쿠폰] 업체에 전송할 sms데이터를 조회한다.
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 16
+	   	
+	   	#{_c.ordNo[0].value} = 257236410
+	   	#{_c.ordItemNo[0].value} = 1
+	-->
+	<resultMap id="smsOrderInfoMap" type="iceberg.capi.order.model.ordersheet.GsOrdLogGift">
+		<result property="charCpnSeq" column="CHAR_CPN_SEQ"/>
+		<result property="supPrdCd" column="SUP_PRD_CD"/>
+		<result property="ordPrsnCelphnNo" column="ORD_PRSN_CELPHN_NO"/>
+		<result property="rcvrCelphnNo" column="RCVR_CELPHN_NO"/>
+		<result property="charCpnTitle" column="CHAR_CPN_TITLE"/>
+		<result property="charCpnCntnt" column="CHAR_CPN_CNTNT"/>
+		<result property="loginId" column="LOGIN_ID"/>
+		<result property="charCpnKindCd" column="CHAR_CPN_SND_TYP_CD"/>
+		<result property="ordQty" column="EC_SHOP_NO"/>
+		<result property="rcvrNm" column="RCVR_NM"/>
+		<result property="supOrdNo" column="SUP_ORD_NO"/>
+		<result property="supTnsUseOrdNo" column="SUP_TNS_USE_ORD_NO"/>
+		<result property="testFlg" column="TEST_FLG"/>
+		<result property="uniqKey" column="UNIQ_KEY"/>
+		<result property="supUrl" column="SUP_URL"/>
+		<result property="ordNo" column="ORD_NO"/>
+		<result property="ordItemNo" column="ORD_ITEM_NO"/>
+		<result property="charCpnSndSupCd" column="CHAR_CPN_SND_SUP_CD"/>
+		<result property="custNo" column="CUST_NO"/>
+	</resultMap>	
+	<select id="findSmsOrderInfo" parameterType="criteria" resultMap="smsOrderInfoMap">
+	<![CDATA[
+			 SELECT    GOLG.SEQNO                     AS CHAR_CPN_SEQ
+			         , NVL(GOLG.SUPP_GOODS_CODE, '')  AS SUP_PRD_CD   /* 업체상품코드 */
+			         , GOLG.S_PH_NUM                  AS ORD_PRSN_CELPHN_NO /* 발신번호 */
+			         , GOLG.R_PH_NUM                  AS RCVR_CELPHN_NO /* 수신번호 */
+			         , NVL(GOLG.TITLE, '')            AS CHAR_CPN_TITLE    /* 제목 */
+			         , NVL(GOLG.CONTENTS, '')         AS CHAR_CPN_CNTNT    /* 내용 */
+			         , GOLG.USERID                    AS LOGIN_ID    /* ec_user.loginname */
+			         , SUBSTR(GOLG.SMS_KIND, 1, 1)    AS CHAR_CPN_SND_TYP_CD  /* 문자종류 ('MMS', 'SMS') */
+			         , GOLG.QTY                       AS ORD_QTY  /* 문자유형 ('A:제목+본문', 'B:본문만입력', 'C:메시지없음') */
+			         , NVL(GOLG.R_NAME, '')           AS RCVR_NM    /* 받는분 */
+			         , GOLG.SUPP_ORDNUM             AS SUP_ORD_NO 	/* 업체주문번호*/
+			         , GOLG.ORD_NO||lpad(GOLG.ORD_ITEM_NO, 3, 0) AS SUP_TNS_USE_ORD_NO     /* 업체전송용 주문번호 */
+			         , NVL(ER.RESERVED2, 'n')        AS TEST_FLG    /* 테스트여부(y/n) */
+			         , ER.RESERVED1                  AS UNIQ_KEY   /* 고유키 */
+			         , ER.VAL                        AS SUP_URL   /* 업체URL */
+			         , GOLG.ORD_NO                              /* 주문번호 */
+			         , GOLG.ORD_ITEM_NO                         /* 주문item번호 */
+			         , ER.CODE                       AS CHAR_CPN_SND_SUP_CD /* 문자쿠폰 발송 업체 코드 */
+			         , GOLG.CUST_NO         
+			  FROM   GS_ORD_LOG_GIFT GOLG
+			        ,EC_REFSETVAL    ER
+			 WHERE    GOLG.ORD_NO = #{_c.ordNo[0].value}
+			   AND    GOLG.ORD_ITEM_NO = #{_c.ordItemNo[0].value}
+			   AND    ER.CODE = GOLG.SUPP_CODE
+			   AND    ER.REFSETID = 5419
+			   AND    ER.DBSTS = 'A'
+	]]>				    	
+	</select>		
+				
+		
+	<!-- 
+		내용	: [문자쿠폰] 업체와 통신결과를 저장한다.
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+
+		#{_c.rstCd[0].value} = 'Y'
+		#{_c.rstMsg[0].value} = 'succ'
+		#{_c.seqNo[0].value} = 1000000045
+	-->
+	<update id="updateLogGiftResult" parameterType="criteria">
+			UPDATE GS_ORD_LOG_GIFT
+			   SET RESULTCD = SUBSTR(#{_c.rstCd[0].value}, 1, 10)
+			     , RESULTMSG = SUBSTR(#{_c.rstMsg[0].value}, 1, 100)
+			     , UPDDATE = SYSDATE
+			 WHERE SEQNO = #{_c.seqNo[0].value}
+	</update>		
+	
+</mapper>

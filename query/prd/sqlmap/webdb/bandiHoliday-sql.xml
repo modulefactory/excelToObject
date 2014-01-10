@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prd.PrdBandiHolidaySqlMapRepository">
+	
+	<resultMap type="iceberg.capi.product.model.prd.add.BandiHoliday" id="bandiHolidayResult">
+		<result column="DAY"			property="day"/>
+		<result column="HOLIDAY_FLAG" 	property="holidayFlg"/>		<!-- 공휴일 여부...쓰이지 않는거 같은데.. -->
+	</resultMap>
+	
+	<select id="getBandiHoliday" resultMap="bandiHolidayResult">
+	<!-- 
+		내용		: 도서상품일 경우 반디앤 루니스 공휴일 여부 확인
+		작성자	: 박성하
+		작성일	: 2014.01.05
+		
+	-->
+		<![CDATA[
+		SELECT DAY				/* 요일 */
+		      ,HOLIDAY_FLAG     /* 공휴일 여부 */
+          FROM GS_COMM_CALENDAR
+         WHERE HDATE = TRUNC(SYSDATE)	
+		]]>
+	</select>
+
+</mapper>

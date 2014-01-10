@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+	
+<mapper namespace="iceberg.capi.cust.smtcdb.repository.accm.AccmSqlMapRepository">	
+	
+	
+	<!-- 다운받을 적립금 -->
+	<resultMap type="iceberg.capi.cust.model.accm.AccmDown" id="accmDownMap" >
+ 		<result property="ordDt"         	column="ORD_DT"/>
+ 		<result property="prdCd"  			column="PRD_CD"/>
+ 		<result property="prdNm"    		column="PRD_NM"/>
+ 		<result property="schdAmt"    		column="SCHD_AMT"/>
+ 		<result property="assmId"    		column="ASSM_ID"/>
+ 		<result property="ordNo"    		column="ORD_NO"/>
+ 		<result property="assmUseCpnSt"    	column="ASSM_USE_CPN_ST"/>
+ 		<result property="relsFshDt"    	column="RELS_FSH_DT"/>
+ 		<result property="payAmt"    		column="PAY_AMT"/>
+ 		<result property="accmUseAmt"    	column="ACCM_USE_AMT"/>
+ 		<result property="downAccmTyp"    	column="DOWN_ACCM_TYP"/>
+ 		<result property="chanlCd"    		column="CHANL_CD"/>
+ 		<result property="assetNo"    		column="ASSET_NO"/>
+ 		<result property="assetTypCd"    	column="ASSET_TYP_CD"/>
+ 		<result property="assetAmt"    		column="ASSET_AMT"/>
+ 	</resultMap> 	
+	
+	<!-- 적립금 -->
+	<resultMap type="iceberg.capi.cust.model.accm.Accm" id="accmMap" >
+ 		<result property="assetNo"    		column="ASSET_NO"/>	
+	 	<result property="assetTypCd"    	column="ASSET_TYP_CD"/>
+	 	<result property="assetAmt"    		column="ASSET_AMT"/>
+	</resultMap> 
+	
+	<!-- 적립금 리스트  -->
+	<resultMap type="iceberg.capi.cust.model.accm.AccmDtl" id="accmDtlMap" >
+	 	<result property="txnDt"    		column="TXN_DT"/>
+	 	<result property="useTyp"    		column="USE_TYP"/>
+	 	<result property="useTypDesc"    	column="USE_TYP_DESC"/>
+	 	<result property="useOrAccAmt"    	column="USE_OR_ACC_AMT"/>	
+	 	<result property="accmTxnId"    	column="ACCM_TXN_ID"/>
+	 	<result property="accmOrdNo"    	column="ACCM_ORD_NO"/>
+	 	<result property="cpnDescd"    		column="CPN_DESCD"/>
+	 	<result property="currBalnc"    	column="CURR_BALNC"/>
+	 	<result property="cpnNo"    		column="CPN_NO"/>
+	 	<result property="payAmt"    		column="PAY_AMT"/>
+	 	<result property="accmRsn"    		column="ACCM_RSN"/>
+	 	<result property="payAmtMinusAccm"  column="PAY_AMT_MINUS_ACCM"/>
+	 	<result property="mpOrdSt"    		column="MP_ORD_ST"/>
+	 	<result property="rndGivAccmCd"    	column="RND_GIV_ACCM_CD"/>
+	 	<result property="expirDt"    		column="EXPIR_DT"/>
+	</resultMap> 
+	
+	<!-- 
+	내용 : 적립금
+	작성자 : yhchoi
+	작성일 : 2013. 12. 13 
+
+    #{_c.custNo[0].value} =  40766027
+	-->
+    <select id="findAccmAmt" parameterType="criteria" resultMap="accmMap">	
+       SELECT ASSET_NO     AS ASSET_NO 
+             ,ASSET_TYP_CD AS ASSET_TYP_CD
+             ,ASSET_AMT    AS ASSET_AMT 
+        FROM  CST_ASSET_M  
+        WHERE CUST_NO = #{_c.custNo[0].value}   
+    </select>
+
+	<!-- 
+	내용 : 적립금 총 개수 
+	작성자 : yhchoi
+	작성일 : 2013. 12. 13 
+
+    #{_c.custNo[0].value} =  40766027
+    #{_c.fromDt[0].value} =  20131013
+    #{_c.toDt[0].value} =  20131213
+	-->
+    <select id="findCntAccmDtlList" parameterType="criteria" resultType="int">
+		SELECT COUNT(1) 
+		 FROM  CST_ASSET_M       CAM   
+		      ,CST_ASSET_TXN_D   CATD  
+		 WHERE CAM.ASSET_NO = 'B'|| #{_c.custNo[0].value} 
+		   AND CAM.ASSET_NO = CATD.ASSET_NO 
+		   AND CATD.TXN_DTM BETWEEN TO_DATE(#{_c.fromDt[0].value},'yyyymmdd') 
+		                        AND TO_DATE(#{_c.toDt[0].value} ,'yyyymmdd') + 0.99999 
+		   AND NVL(CATD.EXPOS_PRHB_YN,'N') <![CDATA[<>]]>  'Y' 
+		   AND NVL(CATD.CNF_YN,'N') = 'Y' 
+    </select>
+
+	<!-- 
+	내용 : 적립금 내역 리스트 조회 
+	작성자 : yhchoi
+	작성일 : 2013. 12. 13 
+
+    #{_c.custNo[0].value} =  40766021
+    #{_c.fromDt[0].value} =  20131012
+    #{_c.toDt[0].value} =  20131212
+    #{_c.endPageNo[0].value} =  24
+    #{_c.strPageNo[0].value} =  1
+    #{_c.custNo[0].value} =  40766027
+	-->
+    <select id="findAccmDtlList" parameterType="criteria" resultMap="accmDtlMap">
+		SELECT TO_CHAR(X.TXNDT, 'YYYYMMDD' )                       AS TXN_DT                                                          
+		      ,DECODE(  SUBSTRB(X.ROW_ID, 1, 2),'LG',DECODE(X.TXN_TYPE_CD, 'R04', 'ZZ', X.TXN_TYPE_CD), X.TXN_TYPE_CD) AS USE_TYP 
+		      ,X.NAME                                              AS USE_TYP_DESC
+		      ,x.QTY                                               AS USE_OR_ACC_AMT  
+		      ,X.ROW_ID                                            AS ACCM_TXN_ID
+		      ,OOM.ORD_NO                                          AS ACCM_ORD_NO 
+		      ,DECODE(CCM.CPN_TYP_CD,'4', CCM.GSHS_DC_RTAMT||'%' ,'5', CCM.GSHS_DC_RTAMT||'원', '')         AS CPN_DESCD
+		      ,X.X_SORC_NUM                                        AS CURR_BALNC
+		      ,CCM.CPN_NO                                          AS CPN_NO
+		      ,SUM(NVL(OID.LAST_UPRC,0) * OID.ORD_QTY)             AS PAY_AMT
+		      ,X.X_DESC_TEXT                                       AS ACCM_RSN
+		      ,SUM((NVL(OID.LAST_UPRC,0) - NVL(OID.CHAR_CPN_RCVR_TELNO,0)) * OID.ORD_QTY)  AS  PAY_AMT_MINUS_ACCM
+		      ,MIN(/*CCD1.X_ATTRIB_40*/0)                          AS MP_ORD_ST
+		      ,X.X_REAS_CODE                                       AS RND_GIV_ACCM_CD   
+		      ,TO_CHAR( X.X_EXPIRE_DT , 'YYYYMMDD' )               AS EXPIR_DT
+		FROM  ( SELECT X1.ROW_ID 
+		              ,X1.X_SORC_NUM   
+		              ,CCC.CD_VAL AS NAME         
+		              ,X1.TXNDT
+		              ,X1.TXN_TYPE_CD
+		              ,X1.QTY         
+		              ,X1.X_ORDER_ID 
+		              ,X1.NO
+		              ,X1.X_DESC_TEXT
+		              ,X1.X_REAS_CODE  
+		              ,X1.X_LINE_ITEM_ID
+		              ,X1.X_EXPIRE_DT  
+		        FROM  ( SELECT X2.*
+		                      ,ROWNUM AS NO 
+		                FROM  ( SELECT CATD.ASSET_TXN_NO   AS ROW_ID
+		                              ,CATD.CURR_BALNC     AS X_SORC_NUM
+		                              ,CATD.TXN_DTM        AS TXNDT
+		                              ,CATD.TXN_TYP_CD     AS TXN_TYPE_CD 
+		                              ,CATD.TXN_AMT        AS QTY
+		                              ,CATD.ORD_NO         AS X_ORDER_ID
+		                              ,CATD.NOTE_CNTNT     AS X_DESC_TEXT 
+		                              ,CATD.TXN_RSN_CD     AS X_REAS_CODE   
+		                              ,CATD.ORD_ITEM_ID    AS X_LINE_ITEM_ID 
+		                              ,CATD.VALID_END_DT   AS X_EXPIRE_DT 
+		                         FROM  CST_ASSET_M      CAM 
+		                              ,CST_ASSET_TXN_D  CATD   
+		                         WHERE CAM.ASSET_NO = 'B'|| #{_c.custNo[0].value} 
+		                           AND CAM.ASSET_NO = CATD.ASSET_NO  
+		                           AND CATD.TXN_DTM BETWEEN TO_DATE( #{_c.fromDt[0].value} ,'YYYYMMDD') AND TO_DATE( #{_c.toDt[0].value} ,'YYYYMMDD') + 0.99999 
+		                           AND NVL(CATD.EXPOS_PRHB_YN,'N') <![CDATA[<>]]> 'Y'  
+		                           AND NVL(CATD.CNF_YN,'N')        = 'Y' 
+		                         ORDER BY CATD.TXN_DTM DESC  ) X2
+		                WHERE ROWNUM <![CDATA[<=]]> #{_c.endPageNo[0].value}  ) X1
+		             ,CMM_CMM_C CCC 
+		        WHERE CCC.CMM_GRP_CD   = 'AST003' 
+		          AND X1.TXN_TYPE_CD  = CCC.CMM_CD(+)  
+		          AND NO <![CDATA[>=]]> #{_c.strPageNo[0].value} ) X   
+		       ,ORD_ORD_M    OOM 
+		       ,ORD_ITEM_D   OID  
+		       ,CPN_CUST_D   CCD 
+		       ,CPN_CPN_M    CCM 
+		       ,CPN_CHANL_D  CCD1  
+		WHERE X.X_ORDER_ID      = OOM.ORD_NO(+)  
+		  AND X.X_LINE_ITEM_ID  = OID.ORD_ITEM_ID(+)  
+		  AND OID.ORD_ITEM_ID   = CCD.ORD_ITEM_ID(+)  
+		  AND CCD.CUST_NO(+)    = #{_c.custNo[0].value} 
+		  AND CCD.CPN_NO        = CCM.CPN_NO(+)   
+		  AND CCM.CPN_NO        = CCD1.CPN_NO(+) 
+		  AND SYSDATE BETWEEN CCM.VALID_STR_DTM(+) AND CCM.VALID_END_DTM(+) 
+        GROUP BY X.TXNDT, X.ROW_ID, X.TXN_TYPE_CD, X.NAME, X.QTY, OOM.ORD_NO, CCM.CPN_TYP_CD,    
+                CCM.GSHS_DC_RTAMT, X.X_SORC_NUM,CCM.CPN_NO, X.X_DESC_TEXT, X.X_REAS_CODE, X.X_EXPIRE_DT  
+		ORDER BY 1 DESC 
+    </select>
+
+
+
+	<!-- 
+	내용 : 다운로드 받을 적립금 내역 
+	작성자 : yhchoi
+	작성일 : 2013. 12. 12 
+
+    #{_c.custNo[0].value} =  40766027
+	-->
+    <select id="findDownTgtAccmList" parameterType="criteria" resultMap="accmDownMap">
+	SELECT OOM.ORD_DTM                 AS ORD_DT    
+          ,TO_CHAR(PSD.PRD_CD)         AS PRD_CD
+          ,PSD.ATTR_PRD_REP_NM         AS PRD_NM
+          ,DECODE(NVL(OID.RTP_QTY, 0), 0, CCADTD.DOWN_SCHD_ACCM_AMT, 0) AS SCHD_AMT
+          ,CCADTD.ORD_ITEM_ID          AS ASSM_ID
+          ,TO_CHAR(CCADTD.ORD_NO)      AS ORD_NO
+          ,OID.ST_CD                   AS ASSM_USE_CPN_ST
+          ,TO_CHAR(OID.RELS_FSH_DT, 'YYYYMMDD') AS RELS_FSH_DT
+          ,NVL(OID.LAST_UPRC,0) * OID.ORD_QTY   AS PAY_AMT
+          ,(NVL(OID.LAST_UPRC,0) - NVL(OID.FST_ACCM_USE_AMT,0)) * OID.ORD_QTY AS ACCM_USE_AMT
+          ,'Sale'                      AS DOWN_ACCM_TYP
+          ,OOM.CHANL_CD                AS CHANL_CD                              
+      FROM CST_CUST_ACCM_DOWN_TGT_D   CCADTD  
+          ,ORD_ORD_M                  OOM    
+          ,ORD_ITEM_D                 OID   
+          ,PRD_PRD_M                  PPM    
+          ,PRD_STOCK_D                PSD    
+     WHERE CCADTD.CUST_NO      = #{_c.custNo[0].value}
+       AND CCADTD.ORD_ITEM_ID  = OID.ORD_ITEM_ID   
+       AND OOM.ORD_NO          = OID.ORD_NO   
+       AND OID.PRD_CD          = PPM.PRD_CD     
+       AND CCADTD.DOWN_YN      = 'N'      
+       AND OID.LINE_TYP_CD  IN ('00', '11')     
+       AND NVL(OID.ORD_QTY, 0) - NVL(OID.RTP_QTY, 0) > 0                                              
+       AND NVL(OID.CHANL_CD, '')    = 'P'          
+       AND OID.PRD_CD               = PSD.PRD_CD
+       AND OID.ATTR_PRD_REP_CD      = PSD.ATTR_PRD_REP_CD
+       AND CCADTD.ACCM_OCCUR_GBN_CD = 'ORD' 
+       AND DECODE(SIGN(TRUNC(SYSDATE - (OID.RELS_FSH_DT)) - 100), -1, 1, 0) = 1
+     UNION ALL  
+    SELECT TXN_DTM  AS ORD_DT
+          ,''       AS PRD_CD
+          ,''       AS PRD_NM
+          ,DOWN_SCHD_ACCM_AMT    AS SCHD_AMT
+          ,''                    AS ASSM_ID
+          ,TO_CHAR(ACCM_DOWN_NO) AS ORD_NO
+          ,'22'                  AS ASSM_USE_CPN_ST
+          ,'99999999'            AS RELS_FSH_DT
+          ,0                     AS PAY_AMT
+          ,0                     AS ACCM_USE_AMT
+          ,TXN_RSN_CD            AS DOWN_ACCM_TYP
+          ,CHANL_CD              AS CHANL_CD
+      FROM CST_CUST_ACCM_DOWN_TGT_D 
+     WHERE CUST_NO = #{_c.custNo[0].value} 
+       AND DOWN_YN <![CDATA[<>]]> 'Y' 
+       AND DEL_YN <![CDATA[<>]]> 'Y' 
+       AND APRV_YN = 'Y' 
+       AND TXN_RSN_CD <![CDATA[<>]]> 'B16' 
+       AND SIGN(TRUNC(SYSDATE - (TXN_DTM)) - 100) = -1 
+     UNION ALL                
+    SELECT CCADTD.TXN_DTM               AS ORD_DT
+          ,''                           AS PRD_CD
+          ,''                           AS PRD_NM
+          ,CCADTD.DOWN_SCHD_ACCM_AMT    AS SCHD_AMT
+          ,''                           AS ASSM_ID
+          ,TO_CHAR(CCADTD.ACCM_DOWN_NO) AS ORD_NO
+          ,'22'                         AS ASSM_USE_CPN_ST
+          ,'99999999'                   AS RELS_FSH_DT
+          ,0                            AS PAY_AMT
+          ,0                            AS ACCM_USE_AMT
+          ,CCADTD.TXN_RSN_CD            AS DOWN_ACCM_TYP
+          ,CCADTD.CHANL_CD              AS CHANL_CD
+      FROM CST_CUST_ACCM_DOWN_TGT_D  CCADTD  
+          ,ORD_ITEM_D                OID  
+     WHERE CCADTD.CUST_NO      = #{_c.custNo[0].value}  
+       AND CCADTD.ORD_ITEM_ID  = OID.ORD_ITEM_ID 
+       AND CCADTD.DOWN_YN      <![CDATA[<>]]> 'Y' 
+       AND CCADTD.DEL_YN       <![CDATA[<>]]> 'Y' 
+       AND CCADTD.APRV_YN      = 'Y' 
+       AND CCADTD.TXN_RSN_CD   = 'B16' 
+       AND SIGN(TRUNC(SYSDATE - (CCADTD.TXN_DTM)) - 100) = -1 
+       AND NVL(OID.ORD_QTY, 0) - NVL(OID.RTP_QTY, 0) <![CDATA[>]]> 0                              
+    </select>
+
+</mapper>

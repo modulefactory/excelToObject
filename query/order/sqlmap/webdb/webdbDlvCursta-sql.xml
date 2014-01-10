@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.deliverycurrentstate.WebdbDlvCurstaSqlMapRepository">
+
+	<!--
+		내용	: 택배사정보를 조회하는 SQL
+		작성자	: 백동현
+		작성일	: 2013.11.26
+		#{dlvsCoCd} = 'KD'
+	-->
+    <resultMap type="iceberg.capi.order.model.deliverycurrentstate.DlvsInfo" id="dlvsInfo">
+        <result property="dlvsUrl"                 		column="DLVS_URL"/>
+        <result property="dlvsParam"              		column="DLVS_PARAM"/>
+    </resultMap>
+
+    <select id="findDlvsCoInfo" parameterType="String" resultMap="dlvsInfo">
+        SELECT /*webdbDlvCursta-sql.xml, 2013.11.27 by 백동현 */
+               ER.VAL             AS DLVS_URL 
+             , NVL(ER.DSCR,'N')   AS DLVS_PARAM
+          FROM EC_REFSETVAL ER
+         WHERE ER.REFSETID = '1310'
+           AND ER.CODE = #{dlvsCoCd}
+           AND ER.DBSTS ='A'
+    </select>
+    
+    <!--
+		내용	: 택배사연결페이지 있는지 조회하는 SQL
+		작성자	: 백동현
+		작성일	: 2013.11.26
+		#{dlvsCoCd} = 'KD'
+	-->
+    <select id = "findChkDlvsCo" parameterType="String" resultType = "Integer">
+        SELECT /*webdbDlvCursta-sql.xml, 2013.11.27 by 백동현 */
+               COUNT(*)
+          FROM EC_REFSETVAL ER
+         WHERE ER.REFSETID = '1310'
+           AND ER.CODE = #{dlvsCoCd}
+           AND ER.DBSTS = 'A'
+    </select>
+    
+    <!--
+		내용	: 택배사명 조회하는 SQL
+		작성자	: 백동현
+		작성일	: 2013.11.26
+		#{dlvsCoCd} = 'KD'
+	-->
+    <select id = "findDlvsCoNm" parameterType="String" resultType="String">
+        SELECT /*webdbDlvCursta-sql.xml, 2013.11.27 by 백동현 */ 
+               ER.VAL
+          FROM EC_REFSETVAL ER
+         WHERE ER.REFSETID = '1302'
+           AND ER.CODE = #{dlvsCoCd}
+           AND ER.DBSTS ='A'
+    
+    </select>
+    
+    <!--
+		내용	: 운송정보로그 입력하는 SQL
+		작성자	: 백동현
+		작성일	: 2013.12.12
+		#{invNo} = '804800079672'
+		#{dlvsCoCd} = 'FA'
+		#{logCntnt} = ''
+	-->
+    
+    <insert id = "insertLgecLogInvoiceagent" parameterType="iceberg.capi.order.model.deliverycurrentstate.InvLogInfo">
+        INSERT /*webdbDlvCursta-sql.xml, 2013.12.12 by 백동현 */
+          INTO LGEC_LOG_INVOICEAGENT(SEQNO, INVOICENUM, INVOICEAGENT, BIGO, CREDATE)
+        VALUES(LGEC_LOG_INVOICEAGENT_SEQ.NEXTVAL, #{invNo}, #{dlvsCoCd}, #{logCntnt}, SYSDATE)
+    </insert>    
+    
+</mapper>

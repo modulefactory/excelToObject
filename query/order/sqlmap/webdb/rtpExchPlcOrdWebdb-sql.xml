@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	<mapper namespace="iceberg.capi.order.webdb.repository.returnexchange.RtpExchPlcOrdWebDBSqlMapRepository">
+	               
+	<!--
+	   	내용 : 주문배송ID 채번
+	   	작성자 : 박노정
+	   	작성일 : 2013. 12. 26
+	-->
+	
+	<select id="findNextOrdShpId" resultType="String">
+		SELECT TO_CHAR(EC_ORDSHP_SEQ.NEXTVAL) AS EC_ORDSHP_SEQ
+		  FROM DUAL
+	</select>
+	
+	<!--
+	   	내용 : 제휴코드 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 12. 26
+	   	
+	   	#{cardtype} = 'BC20'
+	-->
+
+	<select id="findAfflCode" parameterType="String" resultType="String">
+		SELECT CODE
+		  FROM EC_REFSETVAL
+		 WHERE REFSETID = 5333
+		   AND VAL      = #{cardtype}
+	</select>
+	
+	<!--
+	   	내용 : 주문 item 정보 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 12. 30
+	   	
+	   	#{_c.prdCd[0].value} = 2689800
+	   	#{_c.dlvCd[0].value} = 1949065
+	-->
+	
+	<resultMap type="iceberg.capi.order.model.returnexchange.RtpOrdItemInfo" id="rtpOrdItemInfoMap">
+		<result property="multiCode"          column="MULTI_CODE" />
+		<result property="baseAccmLimitYn"    column="BASE_ACCM_LIMIT_YN" />
+		<result property="supCd"              column="SUP_CD" />
+		<result property="salePrc"            column="SALE_PRC" />
+		<result property="prchPrc"            column="PRCH_PRC" />
+		<result property="prdCd"              column="PRD_CD" />
+		<result property="prdRetpAddrCd"      column="PRD_RETP_ADDR_CD" />
+		<result property="apntDlvsImplmYn"    column="APNT_DLVS_IMPLM_YN" />
+		<result property="apntDlvsPickTypCd"  column="APNT_DLVS_PICK_TYP_CD" />
+		<result property="dirdlvEntrstPickYn" column="DIRDLV_ENTRST_PICK_YN" />
+	</resultMap>
+	<select id="findEcOrderItem" parameterType="criteria" resultMap="rtpOrdItemInfoMap">
+		<if test="_c.prdCd != null and _c.prdCd[0].value != ''">
+			SELECT PPH.PRD_CD                       AS MULTI_CODE
+			     , NVL(PPM.BASE_ACCM_LIMIT_YN, 'N') AS BASE_ACCM_LIMIT_YN
+			     , PPM.SUP_CD
+			     , NVL(PPH.SALE_PRC, 0) AS SALE_PRC
+			     , NVL(PPH.PRCH_PRC, 0) AS PRCH_PRC
+			     , PPM.PRD_CD
+			     , NVL(PPM.PRD_RETP_ADDR_CD, 'N')      AS PRD_RETP_ADDR_CD
+			     , NVL(PPM.APNT_DLVS_IMPLM_YN, 'N')    AS APNT_DLVS_IMPLM_YN
+			     , NVL(SSM.APNT_DLVS_PICK_TYP_CD, 'N') AS APNT_DLVS_PICK_TYP_CD
+			     , NVL(SSM.DIRDLV_ENTRST_PICK_YN, 'N') AS DIRDLV_ENTRST_PICK_YN
+			  FROM PRD_PRD_M PPM
+			     , PRD_PRC_H PPH
+			     , SUP_SUP_M SSM
+			 WHERE PPM.PRD_CD         IN ( #{_c.prdCd[0].value} )
+			   AND PPM.PRD_CD          = PPH.PRD_CD
+			   AND PPH.PRD_ATTR_GBN_CD = 'P'
+			   AND SYSDATE BETWEEN PPH.VALID_STR_DTM AND PPH.VALID_END_DTM
+			   AND PPM.SUP_CD = SSM.SUP_CD
+		</if>
+		<if test="_c.prdCd != null and _c.prdCd[0].value != '' and _c.dlvCd != null and _c.dlvCd[0].value != ''">
+			UNION ALL
+		</if>
+		<if test="_c.dlvCd != null and _c.dlvCd[0].value != ''">
+			SELECT A.DLVC_CD        AS MULTI_CODE
+			     , NVL(A.STD_AMT_YN, 'N') AS BASE_ACCM_LIMIT_YN
+			     , A.SUP_CD
+			     , NVL(A.DLVC_AMT, 0)                                       AS SALE_PRC
+			     , NVL(A.DLVC_AMT, 0)                                       AS PRCH_PRC
+			     , A.DLVC_CD                                                AS PRD_CD
+			     , ' '                                                      AS PRD_RETP_ADDR_CD
+			     , DECODE(NVL(A.APNT_DLVS_PICK_TYP_CD, 'N'), 'N', 'N', 'Y') AS APNT_DLVS_IMPLM_YN
+			     , NVL(A.APNT_DLVS_PICK_TYP_CD, 'N')                        AS APNT_DLVS_PICK_TYP_CD
+			     , ''                                                       AS DIRDLV_ENTRST_PICK_YN
+			  FROM SUP_DLVC_D A
+			 WHERE A.DLVC_CD IN ( #{_c.dlvCd[0].value} )
+		</if>
+	</select>
+	
+	<!--
+	   	내용 : 업체의 기본출고지 또는 반송지코드 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 12. 30
+	   	
+	   	#{_c.supCd[0].value} = 1022563
+	   	#{_c.orderType[0].value} = 'R'
+	-->
+	<select id="findBasicAddrCode" parameterType="criteria" resultType="String">
+		SELECT SUP_ADDR_CD
+		  FROM SUP_ADDR_D
+		 WHERE SUP_CD = #{_c.supCd[0].value}
+		 <choose>
+		 	<when test='_c.orderType != null and _c.orderType[0].value != "" and _c.orderType[0].value == "R"'>
+				AND BASE_RETP_YN = 'Y'
+		 	</when>
+		 	<otherwise>
+		 		AND BASE_RELSP_YN = 'Y'
+		 	</otherwise>
+		 </choose>
+	</select>
+	
+	<!--
+	   	내용 : 핸드폰 결제 주문번호 업데이트
+	   	작성자 : 박노정
+	   	작성일 : 2014. 01. 06
+	   	
+	   	#{ordNo} = 524392536
+	   	#{frncsTxnId} = '1741976401176715'
+	-->
+	<update id="updateMobileOrder" parameterType="iceberg.capi.order.model.returnexchange.MobileOrder">
+		UPDATE GS_ORD_MOBIL_LOG
+		   SET ORD_NO = #{ordNo}
+		 WHERE FRNCS_TXN_ID = #{frncsTxnId}
+	</update>
+	
+	<!--
+	   	내용 : 주문 생성 로그 한건 생성
+	   	작성자 : 박노정
+	   	작성일 : 2014. 01. 06
+	-->
+	<update id="saveGsOrdLog" parameterType="iceberg.capi.order.model.returnexchange.GsOrdLog">
+		 INSERT
+		   INTO GS_ORD_LOG
+			  (
+			    EC_ORD_NO
+			  , CREDATE
+			  , ORD_NO
+			  , ESB_STATUS
+			  , CHNL_CD
+			  , ORD_TYPE_CD
+			  , CUST_NO
+			  , CUST_NM
+			  , SHIP_AMT
+			  , AFTER_SHIP_CD
+			  , AFFL_ACCT_YN
+			  , MEDIA_TYPE
+			  , CLIENT_IP
+			  , SVR_WAS_NM
+			  , RESIDENT_ENC
+			  , PMT_NO
+			  , NO_MEM_ORD_YN
+			  , REFUND_ACCT
+			  , REFUND_BANKCODE
+			  , REFUND_NAME
+			  , REFUND_TYPE
+			  , GSNPOINT_ST_CD
+			  , ETC_LOG_VAL
+		  )
+		  VALUES
+		  (
+			    #{ecOrdNo}
+			  , #{credate}
+			  , #{ordNo}
+			  , #{esbStatus}
+			  , #{chnlCd}
+			  , #{ordTypeCd}
+			  , #{custNo}
+			  , #{custNm}
+			  , #{shipAmt}
+			  , #{afterShipCd}
+			  , #{afflAcctYn}
+			  , #{mediaType}
+			  , #{clientIp}
+			  , #{svrWasNm}
+			  , #{residentEnc}
+			  , #{pmtNo}
+			  , #{noMemOrdYn}
+			  , #{refundAcct}
+			  , #{refundBankcode}
+			  , #{refundName}
+			  , #{refundType}
+			  , #{gsnpointStCd}
+			  , #{etcLogVal}
+			  )
+	</update>
+	
+</mapper>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.promotion.smtcdb.repository.cpn.CpnSqlMapRepository">
+
+	<resultMap type="iceberg.capi.promotion.model.cpn.CpnBase" id="resultCpnDown"  >
+		<result property ="cpnNo"           column = "CPN_NO"/>
+		<result property ="fmlyLimitYn"     column = "FMLY_LIMIT_YN"/>
+		<result property ="cpnDstrbQty"     column = "CPN_DSTRB_QTY"/>
+		<result property ="downCnt"         column = "DOWN_CNT"/> 
+	</resultMap>	
+	
+	<!--  
+	분야 : 쿠폰다운로드 
+	API  : 쿠폰다운로드 
+	설명 : 쿠폰다운 조건조회
+	 
+	#{cpnNo} = 110619018 
+	-->	
+	<select id="findCpnDownCond" parameterType="criteria" resultMap="resultCpnDown">
+    SELECT CPN_NO                AS CPN_NO
+          ,FMLY_LIMIT_YN         AS FMLY_LIMIT_YN
+          ,NVL(CPN_DSTRB_QTY, 0) AS CPN_DSTRB_QTY 
+          ,NVL(DOWN_CNT, 0)      AS DOWN_CNT
+     FROM  CPN_CPN_M    
+     WHERE CPN_NO = #{_c.cpnNo[0].value}  
+       AND SYSDATE BETWEEN VALID_STR_DTM AND VALID_END_DTM 
+       AND DOWN_PSBL_YN = 'Y'     
+       AND CPN_APRV_ST_CD = '03'  	
+	</select>
+	
+</mapper>

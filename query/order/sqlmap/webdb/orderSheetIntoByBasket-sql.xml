@@ -1,0 +1,720 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.ordersheet.OrderSheetIntoByBasketSqlMapRepository">
+
+	<!--
+   	내용 : 주문체크된 장바구니 리스트 가져오기-ok
+   	작성자 : 마윤민
+   	작성일 : 2013.11.19
+
+   	#{_c.basktNo[0].value} = 36795504
+   	#{_c.owned[0].value} = "Y"
+	-->
+	<resultMap id="ecShcrtItmListForOrdShtMap" type="iceberg.capi.order.model.ordersheet.GsOrdItemDExt">
+		<result property="basktItemId" column="BASKT_ITEM_ID"/>
+		<result property="bundlDlvCd" column="BUNDL_DLV_CD"/>
+		<result property="ecAttrSeq" column="OPT_SEQ"/>
+		<result property="multiSimplGbnCd" column="MULTI_SIMPL_GBN_CD"/>
+		<result property="exposPrdNm" column="EXPOS_PRD_NM"/>
+		<result property="ordQty" column="ORD_QTY"/>
+		<result property="salePrc" column="SALE_PRC"/>
+		<result property="prdCd" column="PRD_CD"/>
+		<result property="ecAttrPrdCd" column="EC_ATTR_PRD_CD"/>
+		<result property="attrPrdCd" column="ATTR_PRD_CD"/>
+		<result property="prdDcStrin" column="PRD_DC_STRIN"/>
+		<result property="dlvcAmt" column="DLVC_AMT"/>
+		<result property="dlvcCd" column="DLVC_CD"/>
+		<result property="dlvcLimitAmt" column="DLVC_STD_AMT"/>
+		<result property="prdTypCd" column="PRD_TYP_CD"/>
+		<result property="zrwonSaleFlg" column="ZRWON_SALE_FLG"/>
+		<result property="orgFrmlesPrdTypCd" column="ORG_FRMLES_PRD_TYP_CD"/>
+		<result property="sgpayDcFlg" column="SGPAY_DC_FLG"/>
+		<result property="genrlCpnNo" column="GENRL_CPN_NO"/>
+		<result property="preCalcCpnApplyFlg" column="PRE_CALC_CPN_APPLY_FLG"/>
+		<result property="dblCpnNo" column="DBL_CPN_NO"/>
+		<result property="preCalcDblCpnApplyFlg" column="PRE_CALC_DBL_CPN_APPLY_FLG"/>
+		<result property="supPrdCdRt" column="SUP_PRD_DC_RT"/>
+		<result property="conctBasktNo" column="CONCT_BASKT_NO"/>
+		<result property="preCalcPayGbnCd" column="PRE_CALC_PAY_GBN_CD"/>
+		<result property="gftPmoFlg" column="GFT_PMO_FLG"/>
+		<result property="prdPmoSeq" column="PRD_PMO_SEQ"/>
+		<result property="pmoNo" column="PMO_NO"/>
+		<result property="prdGbnCd" column="PRD_GBN_CD"/>
+		<result property="payPrc" column="PAY_PRC"/>
+		<result property="optPrdTypCd" column="OPT_PRD_TYP_CD"/>
+		<result property="rfnTypCd" column="RFN_TYP_CD"/>
+		<result property="arfnTimeCd" column="ARFN_TIME_CD"/>
+		<result property="cpnMaxDcAmt" column="CPN_MAX_DC_AMT"/>
+		<result property="pleinSetPrdAttrPrdCd1" column="PLEIN_SET_PRD_ATTR_PRD_CD_1"/>
+		<result property="pleinSetPrdAttrPrdCd2" column="PLEIN_SET_PRD_ATTR_PRD_CD_2"/>
+		<result property="pleinIntrnatTrptFee" column="PLEIN_INTRNAT_TRPT_FEE"/>
+		<result property="chrDlvFlg" column="CHR_DLV_YN"/>
+		<result property="attrPrdRepCd" column="ATTR_REP_PRD_CD"/>
+		<result property="trvlmPayNo" column="TRVLM_PAY_NO"/>
+		<result property="supPrdPrc" column="SUP_PRD_PRC"/>
+		<result property="supPrdDcRt" column="SUP_PRD_DC_RT"/>
+		<result property="gsnpntNoGivFlg" column="GSNPNT_NO_GIV_YN"/>
+		<result property="supAccAmt" column="SUP_ACC_AMT"/>
+		<result property="supOrdLimitQty" column="SUP_LIMIT_ORD_QTY"/>
+		<result property="basktGbnVal" column="BASKT_GBN_VAL"/>
+	</resultMap>
+
+	<select id = "findEcShcrtItmListForOrdSht" parameterType="criteria" resultMap="ecShcrtItmListForOrdShtMap">
+	<![CDATA[
+    SELECT  TA.SHCRTITMID AS BASKT_ITEM_ID,
+	        TA.BUNDL_DLV_CD,
+	        NVL(TA.OPTION_SEQ, 0) AS OPT_SEQ,
+	        CASE WHEN TA.PMO_TYP_CD = 'SM' THEN 'S' ELSE '' END AS MULTI_SIMPL_GBN_CD,
+	        TA.EXPOS_PRD_NM,
+	        TA.QTY AS ORD_QTY,   /* 장바구니수량 */
+	        PG_PMO_PRD_PMO.FN_ATTR_PRD_MD_DC_PRC(TA.PRDITMID, 'P', SYSDATE) AS SALE_PRC,
+	        TA.PRD_CD,
+	        TA.PRDITMID AS EC_ATTR_PRD_CD,      /* 상품코드 */
+	        TA.ORD_ATTR_PRD_CD AS ATTR_PRD_CD,  /* 속성상품코드 */
+	        TA.PRD_DC_STRIN,
+	        DLVC_AMT,
+            CHR_DLVC_CD AS DLVC_CD,
+            DLVC_LIMIT_AMT AS DLVC_STD_AMT,
+	        TA.PRD_TYP_CD,
+            TA.ZRWON_SALE_FLG,
+            TA.ORG_FRMLES_PRD_TYP_CD,
+            TA.SGPAY_DC_FLG,
+            TA.GENRL_CPN_NO,
+	        TA.PRE_CALC_CPN_APPLY_FLG,
+            TA.DBL_CPN_NO,
+            TA.PRE_CALC_DBL_CPN_APPLY_FLG,
+            TA.SUP_PRD_DC_RT,
+            TA.CONCT_BASKT_NO,
+            TA.PRE_CALC_PAY_GBN_CD,
+            TA.PRDPMOSEQ AS PRD_PMO_SEQ,
+            TA.PMONO AS PMO_NO,
+            CASE WHEN (CASE WHEN TA.PMO_TYP_CD = 'SM' THEN 'S' ELSE '' END) = 'SM' THEN (
+			                                     SELECT PSGD.MAND_YN || ',' || PSGD.INDIVI_DLV_PMSN_YN || ',' || PSGD.WTHDRW_YN
+			                                       FROM PMO_SIMPL_GFT_D PSGD
+			                                      WHERE PSGD.PMO_NO = TA.PMO_NO
+			                                        AND PSGD.PRD_PMO_SEQ = TA.PRD_PMO_SEQ
+			                                        AND PSGD.GFT_PRD_CD = TA.PRD_CD
+			                                        AND PSGD.ADD_CMPOS_GBN_CD IN ('G', 'D')
+			                                        AND ROWNUM < 2
+			                                       )
+			              ELSE NULL
+			         END AS GFT_PMO_FLG,
+			 TA.ORG_PRD_GBN_CD AS PRD_GBN_CD,
+			 TA.PAY_PRC,
+			 TA.OPT_PRD_TYP_CD,
+			 TA.RFN_TYP_CD,
+			 TA.ARFN_TIME_CD,
+			 TA.CPN_MAX_DC_AMT,
+			 TA.PLEIN_SET_PRD_ATTR_PRD_CD_1,
+			 TA.PLEIN_SET_PRD_ATTR_PRD_CD_2,
+			 TA.PLEIN_INTRNAT_TRPT_FEE,
+			 TA.CHR_DLV_YN,
+			 TA.ATTR_REP_PRD_CD,
+			 TA.TRVLM_PAY_NO,
+			 TA.SUP_PRD_PRC,
+			 TA.GSNPNT_NO_GIV_YN,
+			 TA.SUP_ACC_AMT,
+			 TA.SUP_LIMIT_ORD_QTY,
+             TA.BASKT_GBN_VAL
+	  FROM (SELECT ES.*,
+	               (CASE WHEN PPM.OBOX_CD = '1' THEN PPM.OBOX_CD
+	                     WHEN NEW_BUNDL_DLV_CD = 'A01' THEN NEW_BUNDL_DLV_CD||PPM.SUP_CD||PRD_RELSP_ADDR_CD
+	                     WHEN NEW_BUNDL_DLV_CD = 'A02' THEN NEW_BUNDL_DLV_CD||PAPM.PRD_CD||TO_CHAR(OPTION_SEQ)
+	                     WHEN NEW_BUNDL_DLV_CD = 'A03' THEN NEW_BUNDL_DLV_CD||NEW_SHCRTITMID END) AS BUNDL_DLV_GRP, /* 묶음배송 단위 */
+	               ROW_NUMBER() OVER(PARTITION BY (CASE WHEN PPM.OBOX_CD = '1' THEN PPM.OBOX_CD
+	                                                    WHEN NEW_BUNDL_DLV_CD = 'A01' THEN NEW_BUNDL_DLV_CD||PPM.SUP_CD||PRD_RELSP_ADDR_CD
+	                                                    WHEN NEW_BUNDL_DLV_CD = 'A02' THEN NEW_BUNDL_DLV_CD||PAPM.PRD_CD||TO_CHAR(OPTION_SEQ)
+	                                                    WHEN NEW_BUNDL_DLV_CD = 'A03' THEN NEW_BUNDL_DLV_CD||NEW_SHCRTITMID END)
+	                                 ORDER BY NEW_CREDATE DESC, (CASE WHEN ES.STYLE_APPEND_FLAG = 'A' THEN 2
+	                                                                  WHEN PMO_TYP_CD = 'SM' THEN 1 ELSE 0 END)) AS BUNDL_DLV_GRP_SEQ, /* 묶음배송내 랭킹 */
+	               (CASE WHEN ES.STYLE_APPEND_FLAG = 'A' THEN ES.ORG_PRD_NM
+	                     WHEN ES.PMO_TYP_CD = 'SM' THEN (SELECT PNCH.EXPOS_PRD_NM
+	                                                       FROM PRD_ATTR_PRD_M PAPM2, PRD_NM_CHG_H PNCH
+	                                                      WHERE ES.PRDITMID = PAPM2.EC_ATTR_PRD_CD AND PAPM2.PRD_CD = PNCH.PRD_CD
+	                                                        AND SYSDATE BETWEEN PNCH.VALID_STR_DTM AND PNCH.VALID_END_DTM
+	                                                        AND PNCH.CHANL_CD = 'P')
+	                     ELSE PNCH.EXPOS_PRD_NM END) AS EXPOS_PRD_NM, /* 상품명 */
+	               (CASE WHEN ES.STYLE_APPEND_FLAG = 'A' OR ES.PMO_TYP_CD = 'SM' THEN ES.ORG_PRD_CD ELSE PPM.PRD_CD END) AS PRD_CD, /* 상품코드 */
+	               (CASE WHEN NVL(ES.PMO_TYP_CD, 'NL') = 'NL' THEN PG_PMO_PRD_PMO.FN_PRD_DC_PMO(PAPM.PRD_CD, 'P', SYSDATE, 'N')
+	                     ELSE '0,0,0' END) AS PRD_DC_STRIN,
+	               (CASE WHEN OBOX_CD = '1' AND PPM.CHR_DLVC_CD IS NULL THEN 2979208 ELSE PPM.CHR_DLVC_CD END) AS CHR_DLVC_CD, /* 배송비코드 [예외:화장품합포장없는경우(2979208)]*/
+	               (CASE WHEN PPM.PRD_RELSP_ADDR_CD IS NULL THEN (SELECT NVL(SAD.SUP_ADDR_CD, '00')
+	                                                                FROM SUP_ADDR_D SAD
+	                                                               WHERE PPM.SUP_CD = SAD.SUP_CD
+	                                                                 AND SAD.USE_YN = 'Y' AND SAD.BASE_RELSP_YN = 'Y' AND ROWNUM = 1 )
+	                     ELSE PPM.PRD_RELSP_ADDR_CD END) AS PRD_RELSP_ADDR_CD, /* 상품출고지주소코드 */
+	               (CASE WHEN NVL(PPM.CHR_DLVC_CD, 0) > 0 THEN (SELECT NVL(SUP.DLVC_AMT, 0)
+	                                                              FROM SUP_DLVC_D SUP
+	                                                             WHERE SUP.DLVC_CD = PPM.CHR_DLVC_CD AND SUP.USE_YN = 'Y' )
+	                     WHEN PPM.PRD_GBN_CD = '70' AND NVL(ES.TOUR_VAR_COST,0) > 0 THEN ES.TOUR_VAR_COST
+	                     ELSE 0 END) AS DLVC_AMT, /* 배송비 */
+	               (CASE WHEN NVL(PPM.CHR_DLVC_CD, 0) > 0 THEN (SELECT NVL(SUP.DLVC_LIMIT_AMT, 0)
+	                                                              FROM SUP_DLVC_D SUP
+	                                                             WHERE SUP.DLVC_CD = PPM.CHR_DLVC_CD
+	                                                               AND SUP.USE_YN = 'Y' )
+	                     WHEN PPM.PRD_GBN_CD = '70' AND NVL(ES.TOUR_VAR_COST,0) > 0 THEN ( ES.UNITPRC_VALUE + ES.TOUR_VAR_COST + 100 )
+	                     ELSE 0 END) AS DLVC_LIMIT_AMT,                  /* 배송비제한금액 */
+	               SUBSTR(ES.NEW_BUNDL_DLV_CD, 0,3) AS BUNDL_DLV_CD,
+	               ES.INTEREST_DISCOUNT_FLAG AS SGPAY_DC_FLG,
+	               ES.COUPON_NUM AS GENRL_CPN_NO,
+	               ES.COUPON_APPLY_FLAG AS PRE_CALC_CPN_APPLY_FLG,
+                   ES.DOUBLE_COUPON_NUM AS DBL_CPN_NO,
+                   ES.DOUBLE_COUPON_APPLY_FLAG AS PRE_CALC_DBL_CPN_APPLY_FLG,
+	               ES.SALE_RATE AS SUP_PRD_DC_RT,
+	               ES.VIEW_GRP_PMO_SEQ AS CONCT_BASKT_NO,
+	               ES.PRE_ACCOUNT_TYPE AS PRE_CALC_PAY_GBN_CD,
+	               ES.PRD_PMO_SEQ AS PRDPMOSEQ,
+                   ES.PMO_NO AS PMONO,
+                   ES.UNITPRC_VALUE AS PAY_PRC,
+                   ES.STYLE_APPEND_FLAG AS OPT_PRD_TYP_CD,
+                   ES.ORG_CPN_MAX_DC_AMT AS CPN_MAX_DC_AMT,
+                   ES.PRDITMID1 AS PLEIN_SET_PRD_ATTR_PRD_CD_1,
+			       ES.PRDITMID2 AS PLEIN_SET_PRD_ATTR_PRD_CD_2,
+			       ES.SUPP_INTER_SHIP_AMT AS PLEIN_INTRNAT_TRPT_FEE,
+			       CASE WHEN ES.ORG_PRD_GBN_CD = '70' AND NVL(ES.TOUR_VAR_COST, 0) > 0 THEN 'Y'
+			                ELSE ES.ORG_CHR_DLV_YN END AS CHR_DLV_YN,
+			       PAPM.ATTR_PRD_REP_CD,
+			       ES.PMTID AS TRVLM_PAY_NO,
+			       CASE WHEN ES.SUPP_PRDID IS NOT NULL OR ES.ORG_PRD_GBN_CD = '70'
+			                THEN ES.UNITPRC_VALUE
+			                ELSE 0 END SUP_PRD_PRC,
+			       NVL(ES.ORG_GSNPNT_NO_GIV_YN, 'N') AS GSNPNT_NO_GIV_YN,
+			       ES.SUPP_JUKLIB_AMT AS SUP_ACC_AMT,
+			       ES.SUPP_LIMIT_QTY AS SUP_LIMIT_ORD_QTY,
+                   (SELECT ATTR_PRD_REP_CD FROM PRD_ATTR_PRD_M WHERE EC_ATTR_PRD_CD = ES.PRDITMID) AS ATTR_REP_PRD_CD,
+                   CASE WHEN ES.STYLE_APPEND_FLAG = 'A' THEN
+			                FN_CRT_ORGPRD_INFO( #{_c.basktNo[0].value} ,'A', ES.OPTION_SEQ, 'S')
+			                 ELSE
+			                    CASE WHEN ES.BUNDL_PRD_CD > 0 AND NVL(OPTION_SEQ,0) > 0 THEN
+			                                'BUNDL'  ELSE CASE WHEN ES.SUPP_PRDID IS NOT NULL AND
+			                                NVL(SSM.MIM_TYP_CD, ' ') <> '03' AND NVL(SSM.MIM_TYP_CD, ' ') <> '06' THEN     /* [몰인몰유형코드]*/
+			                                'JEHYU_BFR_SHIP'
+			                            ELSE
+			                                CASE WHEN ( DECODE(LSC.SUPP_CODE,NULL,'N', DECODE(LSC.QTY_MODIFY_FLAG,'Y','M',
+			                                        DECODE( ES.ORG_REP_PRD_YN, NULL, 'N', 'Y') )) = 'Y'
+			                                        AND ES.ORG_REP_PRD_YN = 'Y' )         /* [대표상품여부]*/
+			                                        OR ES.ORG_SUP_CD IN ('1004273','1003112','1010370') THEN 'MIM_BFR_SHIP'        /* [협력사코드]*/ 
+			                                     WHEN NVL(SSM.MIM_TYP_CD, ' ') <> '06' AND ES.VDOR_FLAG = 'V' THEN 'VDOR'
+			                                     WHEN NVL(SSM.MIM_TYP_CD, ' ') <> '06' AND ES.ORG_OBOX_CD IS NOT NULL                          /* [합포장코드]*/
+			                                        AND SUBSTR(ES.ORG_DLV_PICK_MTHOD_CD, 1, 1) = '3'    /* [배송수거방법코드]*/
+			                                        THEN 'SUB_PACK'
+			                                    WHEN NVL(SSM.MIM_TYP_CD, ' ') = '06' THEN                      /* [몰인몰유형코드]*/
+			                                        CASE WHEN ES.ORG_PRD_GBN_CD = '10' THEN 'ABROAD'     /* [상품구분코드]*/
+			                                             WHEN ES.ORG_PRD_GBN_CD = '20' THEN 'SHIP_AGENCY'
+			                                         END
+			                                     WHEN NVL(PG_PMO_PRD_PMO.FN_PRD_SGPAY_DC(PAPM.PRD_CD, 'P', SYSDATE), 0) > 0 THEN
+			                                        CASE WHEN NVL(ES.ORG_CHR_DLV_YN, 'N') = 'Y' THEN     /* [유료배송여부]*/
+			                                                'BFR_SHIP'
+			                                          ELSE 'GEN'    END
+			                                 ELSE
+			                                    CASE WHEN NVL(SSM.MIM_TYP_CD, ' ') <> '06' AND ES.ORG_OBOX_CD IS NOT NULL         /* [합포장코드]    */
+			                                                AND SUBSTR(ES.ORG_DLV_PICK_MTHOD_CD, 1, 1) = '3' THEN 'SUB_PACK' /* [배송수거방법코드]   */
+			                                         WHEN NVL(SSM.MIM_TYP_CD, ' ') <> '06' AND NVL(ES.ORG_CARD_USE_LIMIT_YN, 'N') = 'Y' THEN 'CARD_LIMIT' /* [카드사용제한여부] */
+			                                         WHEN (DECODE(ES.ORG_FRMLES_PRD_TYP_CD,'E','Y','I','Y','M','Y','T','Y','Y','Y','N') = 'Y' /*[무형상품유형코드]    */
+			                                                    OR NVL(ES.ORG_CHR_DLV_YN, 'N') = 'N') /* [유료배송여부]    */
+			                                                    AND NVL(SSM.MIM_TYP_CD, ' ') <> '06' THEN 'GEN' /* [몰인몰유형코드]   */
+			                                     ELSE
+			                                        CASE WHEN NVL(SSM.MIM_TYP_CD, ' ') = '06' THEN /* [몰인몰유형코드]  */
+			                                                CASE WHEN ES.ORG_PRD_GBN_CD = '10' THEN 'ABROAD' /* [상품구분코드]    */
+			                                                    WHEN ES.ORG_PRD_GBN_CD = '20' THEN 'SHIP_AGENCY' /* [상품구분코드]   */
+			                                                END
+			                                             WHEN NVL(ES.ORG_CHR_DLV_YN, 'N') = 'Y' THEN /*[유료배송여부]   */
+			                                                'BFR_SHIP'
+			                                         END
+			                                    END
+			                                END
+			                            END
+			                        END
+			                     END AS BASKT_GBN_VAL
+	          FROM (SELECT (CASE WHEN STYLE_APPEND_FLAG = 'A' THEN FIRST_VALUE(SHCRTITMID) OVER(PARTITION BY OPTION_SEQ ORDER BY DECODE(STYLE_APPEND_FLAG,'A',2,1))
+	                             WHEN PMO_TYP_CD = 'SM'       THEN FIRST_VALUE(SHCRTITMID) OVER(PARTITION BY VIEW_GRP_PMO_SEQ ORDER BY DECODE(PMO_TYP_CD,'SM',2,1)) ELSE SHCRTITMID END) AS NEW_SHCRTITMID,
+	                       (CASE WHEN STYLE_APPEND_FLAG = 'A' THEN FIRST_VALUE(PRDITMID) OVER(PARTITION BY OPTION_SEQ ORDER BY DECODE(STYLE_APPEND_FLAG,'A',2,1))
+	                             WHEN PMO_TYP_CD = 'SM'       THEN FIRST_VALUE(PRDITMID) OVER(PARTITION BY VIEW_GRP_PMO_SEQ ORDER BY DECODE(PMO_TYP_CD,'SM',2,1)) ELSE PRDITMID END) AS NEW_PRDITMID,
+	                       (CASE WHEN STYLE_APPEND_FLAG = 'A' THEN FIRST_VALUE(CREDATE) OVER(PARTITION BY OPTION_SEQ ORDER BY DECODE(CREDATE,'A',2,1))
+	                             WHEN PMO_TYP_CD = 'SM'       THEN FIRST_VALUE(CREDATE) OVER(PARTITION BY VIEW_GRP_PMO_SEQ ORDER BY DECODE(PMO_TYP_CD,'SM',2,1)) ELSE CREDATE END) AS NEW_CREDATE,
+	                       T1.*
+	                  FROM (SELECT ES.*,
+                                   (CASE WHEN PPM2.DLV_PICK_MTHOD_CD IS NOT NULL AND SUBSTR(PPM2.DLV_PICK_MTHOD_CD,0,1) = 3 THEN NVL(PPM2.BUNDL_DLV_CD,'A01')
+	                                     ELSE 'A02' END) AS NEW_BUNDL_DLV_CD,
+                                   PAPM2.ATTR_PRD_CD AS ORD_ATTR_PRD_CD, PPM2.RFN_TYP_CD, NVL(PPM2.CHR_DLV_YN, 'N') AS ORG_CHR_DLV_YN,
+                                   PPM2.ARFN_TIME_CD, PPM2.PRD_GBN_CD AS ORG_PRD_GBN_CD, PPM2.PRD_CD AS ORG_PRD_CD, PPM2.PRD_NM AS ORG_PRD_NM,
+                                   PPM2.PRD_TYP_CD, PPM2.ZRWON_SALE_YN AS ZRWON_SALE_FLG, NVL(PPM2.CPN_MAX_DC_AMT, 0) AS ORG_CPN_MAX_DC_AMT,
+                                   PPM2.FRMLES_PRD_TYP_CD AS ORG_FRMLES_PRD_TYP_CD, PPM2.GSNPNT_NO_GIV_YN AS ORG_GSNPNT_NO_GIV_YN,
+                                   PPM2.REP_PRD_YN AS ORG_REP_PRD_YN, PPM2.SUP_CD AS ORG_SUP_CD, PPM2.DLV_PICK_MTHOD_CD AS ORG_DLV_PICK_MTHOD_CD,
+                                   PPM2.OBOX_CD AS ORG_OBOX_CD, PPM2.CARD_USE_LIMIT_YN AS ORG_CARD_USE_LIMIT_YN
+	                          FROM EC_SHCRTITM ES
+                                  ,PRD_ATTR_PRD_M PAPM2
+                                  ,PRD_PRD_M PPM2
+	                         WHERE ES.PRDITMID = PAPM2.EC_ATTR_PRD_CD 
+                               AND PAPM2.PRD_CD = PPM2.PRD_CD
+                               AND ES.SHCRTPRSTID = #{_c.basktNo[0].value}
+	                           AND ES.DBSTS = 'A'
+	                           AND ES.OWNED = 'Y'
+	                           AND NVL(ES.CHANL_CD, 'P') <> 'S'           /*필수(오아후 제외) */
+	                           AND NVL(ES.PMO_TYP_CD, 'NL') NOT IN ('MT') /*멀티프로모션,사은품(제외) */
+	                           AND ES.EXPDATE >= SYSDATE ) T1 ) ES,       /*장바구니 */
+	               PRD_ATTR_PRD_M PAPM,      /* 속성상품기본 */
+	               PRD_PRD_M PPM ,            /* 상품기본 */
+	               PRD_NM_CHG_H PNCH,         /*상품명 히스토리*/
+                   SUP_SUP_M SSM,
+                   LGEC_SUPP_CART LSC
+	         WHERE ES.NEW_PRDITMID = PAPM.EC_ATTR_PRD_CD       /* EC속성상품코드 */
+	           AND NVL(PAPM.SALE_STR_DTM, SYSDATE-1) < SYSDATE /* 판매시작일 */
+	           AND PAPM.PRD_CD = PPM.PRD_CD                    /* 상품코드 */
+	           AND PPM.USE_YN = 'Y'                            /* 사용여부 */
+	           AND NVL(PPM.BUNDL_PRD_GBN_CD,'00') <> '20'      /*세트상품제외*/
+	           AND NVL(PPM.PRD_GBN_CD, '00') NOT IN ('10','20')       /* 상품구분코드(해외상품 제외 로직) */
+	           AND NVL(PPM.GFT_TYP_CD, '00') NOT IN ('03','04','07','08')
+	           AND PAPM.PRD_CD = PNCH.PRD_CD
+               AND PPM.SUP_CD = SSM.SUP_CD(+)
+               AND TO_CHAR(PPM.SUP_CD) = LSC.SUPP_CODE(+) /*업체코드*/
+	           AND EXISTS (SELECT ' ' FROM SUP_SUP_M SSM WHERE PPM.SUP_CD = SSM.SUP_CD AND NVL(SSM.MIM_TYP_CD,' ') NOT IN ('03','06'))
+	           AND PNCH.CHANL_CD = 'P'
+	           AND SYSDATE BETWEEN PNCH.VALID_STR_DTM AND PNCH.VALID_END_DTM
+	           AND ((NVL(PPM.CARD_USE_LIMIT_YN, 'N') = 'Y' 
+	           AND PPM.FRMLES_PRD_TYP_CD = 'R') 
+	           OR NVL(PPM.CARD_USE_LIMIT_YN, 'N') = 'N')) TA
+	 ORDER BY MAX(TA.NEW_CREDATE) OVER(PARTITION BY BUNDL_DLV_GRP) DESC, TA.BUNDL_DLV_GRP, TA.BUNDL_DLV_GRP_SEQ
+    ]]>
+	</select>
+		
+	<!-- 
+	내용	: GS_ORD_M Sequence-ok
+	작성자	: 마윤민
+	작성일	: 2013.11.28 신규작성
+	-->
+	<select id="getGsOrdMSequence" parameterType="int"  resultType="long">
+	<![CDATA[
+	SELECT GS_ORD_LOG_SEQ.NEXTVAL 
+	   FROM DUAL
+	 ]]>  
+	</select>
+	 
+	<!-- 
+	내용	: GS_ORD_M 테이블 insert -ok
+	작성자	: 마윤민
+	작성일	: 2013.11.19 신규작성
+	-->
+	<insert id="insertGsOrdM" parameterType="iceberg.capi.order.model.ordersheet.GsOrdM">
+    INSERT INTO GS_ORD_M 
+					    (EC_ORD_NO
+					    ,REG_DTM
+					    ,REGR_ID
+					    <if test="ordModDtm != null">,MOD_DTM</if>
+					    <if test="ordModrId != null">,MODR_ID</if>
+					    ,ORD_DTM
+					    ,ORD_NO
+					    ,ORG_ORD_NO
+					    ,CHANL_CD
+					    ,CHANL_DTL_CD
+					    ,EC_ORD_ST_CD
+					    ,BASKT_NO
+					    ,CUST_NO
+					    ,EC_CUST_NO
+					    ,CUST_CLS_CD
+					    <if test="ecNomemOrdFlg != null">,EC_NOMEM_ORD_YN</if>
+					    ,ORD_TYP_CD
+					    ,ORDSHT_TYP_CD
+					    <if test="ordshtPrdTypCd != null">,ORDSHT_PRD_TYP_CD</if>
+					    <if test="preCalcPayTypCd != null">,PRE_CALC_PAY_TYP_CD</if>
+					    <if test="repPayMeanCd != null">,REP_PAY_MEAN_CD</if>
+					    <if test="ecDpoCnfSmsSndFlg != null">	,EC_DPO_CNF_SMS_SND_YN</if>
+					    <if test="dlvcImposeFlg != null">,DLVC_IMPOSE_YN</if>
+					    ,DLVC_IMPOSE_AMT
+					    ,DLVC_STD_AMT
+					    ,FMLY_ORD_DC_RT
+					    ,FMLY_ORD_TYP_CD
+					    ,FST_ORD_AMT_TOT
+					    ,FST_USE_ACC_AMT
+					    <if test="gsnpntMemshpAdmStCd != null">,GSNPNT_MEMSHP_ADM_ST_CD</if>
+					    <if test="cashRcptReqFlg != null">,CASH_RCPT_REQ_YN</if>
+					    <if test="cashRcptGbnCd != null">,CASH_RCPT_GBN_CD</if>
+					    <if test="cashRcptIdenNoEcp != null">,CASH_RCPT_IDEN_NO_ECP</if>
+					    ,PLEIN_INSUF_USD_AMT
+					    ,ORD_PATH_NM
+					    ,USER_IP
+					    ,SVR_NM
+					    )
+				    VALUES
+				   		(   
+					    #{ecOrdNo}
+					    ,SYSDATE
+					    ,#{ordRegrId}
+					    <if test="ordModDtm != null">,#{ordModDtm}</if>
+					    <if test="ordModrId != null">,#{ordModrId}</if>
+					    ,#{ordDtm}
+					    ,#{ordNo}
+					    ,#{orgOrdNo}
+					    ,#{chanlCd}
+					    ,#{chanlDtlCd}
+					    ,#{ecOrdStCd}
+					    ,#{basktNo}
+					    ,#{custNo}
+					    ,#{ecCustNo}
+					    ,#{custClsCd}
+					    <if test="ecNomemOrdFlg != null">,#{ecNomemOrdFlg}</if>
+					    ,#{ordTypCd}
+					    ,#{ordshtTypCd}
+					    <if test="ordshtPrdTypCd != null">,#{ordshtPrdTypCd}</if>
+					    <if test="preCalcPayTypCd != null">,#{preCalcPayTypCd}</if>
+					    <if test="repPayMeanCd != null"> ,#{repPayMeanCd}</if>
+					    <if test="ecDpoCnfSmsSndFlg != null">	,#{ecDpoCnfSmsSndFlg}</if>
+					    <if test="dlvcImposeFlg != null">,#{dlvcImposeFlg}</if>
+					    ,#{dlvcImposeAmt}
+					    ,#{dlvcStdAmt}
+					    ,#{empOrdDcRt}
+					    ,#{empOrdTypCd}
+					    ,#{fstOrdAmtTot}
+					    ,#{fstUseAccAmt}
+					    <if test="gsnpntMemshpAdmStCd != null">,#{gsnpntMemshpAdmStCd}</if>
+					    <if test="cashRcptReqFlg != null">,#{cashRcptReqFlg}</if>
+					    <if test="cashRcptGbnCd != null">,#{cashRcptGbnCd}</if>
+					    <if test="cashRcptIdenNoEcp != null">,#{cashRcptIdenNoEcp}</if>
+					    ,0
+					    ,#{ordReqPathNm}
+					    ,#{custRegrIp}
+					    ,#{wasInstncNm}
+						)
+	</insert>		
+	
+	<!-- 
+	내용	: GS_ORD_M 테이블 주문서상품유형코드 수정-ok
+	작성자	: 마윤민
+	작성일	: 2013.11.19 신규작성
+	
+	#{ordshtPrdTypCd} = 'P10';  
+	#{preCalcPayTypCd} = 'C';
+	#{ecOrdNo} = 38303505;
+	-->
+	<update id="updateOrdshtPrdTypCd" parameterType="iceberg.capi.order.model.ordersheet.GsOrdM">
+	UPDATE GS_ORD_M
+	     SET EC_ORD_NO = EC_ORD_NO
+	          ,MOD_DTM = SYSDATE
+	          ,MODR_ID = REGR_ID
+	   <if test="ordshtPrdTypCd != null">
+	          ,ORDSHT_PRD_TYP_CD = #{ordshtPrdTypCd}
+	   </if>
+	   <if test="preCalcPayTypCd != null">    
+	          ,PRE_CALC_PAY_TYP_CD = #{preCalcPayTypCd}
+	   </if>   
+	 WHERE EC_ORD_NO = #{ecOrdNo}  
+	</update>	
+	
+	<!-- 
+	내용	: GS_ORD_ITEM_D Sequence-ok
+	작성자	: 마윤민
+	작성일	: 2013.11.29 신규작성
+	-->
+	<select id="getGsOrdItemDSequence" parameterType="int"  resultType="long">
+	<![CDATA[
+		SELECT SQ_ORD_GOID_EOIN_01.NEXTVAL
+		  FROM DUAL
+	 ]]>  
+	</select>
+				
+	<!-- 
+	내용	: GS_ORD_ITEM_PRC_D Sequence-ok
+	작성자	: 마윤민
+	작성일	: 2013.11.29 신규작성
+	-->
+	<select id="getGsOrdPrcDSequence" parameterType="int"  resultType="long">
+	<![CDATA[
+	SELECT SQ_ORD_GOIPD_IN_01.NEXTVAL
+	  FROM DUAL
+	 ]]>  
+	</select>			
+				
+	<!-- 
+	내용	: GS_ORD_ITEM_GFT_MAP_D Sequence-ok
+	작성자	: 마윤민
+	작성일	: 2013.11.29 신규작성
+	-->
+	<select id="getGsOrdItemGftMapDSequence" parameterType="int"  resultType="long">
+	<![CDATA[
+	SELECT SQ_ORD_GOIGMD_IN_01.NEXTVAL
+	  FROM DUAL
+	 ]]>  
+	</select>			
+	
+	<!-- 
+	내용	: GS_ORD_ITEM_D 테이블 insert -ok
+	작성자	:마윤민
+	작성일	: 2013.11.29 신규작성
+	-->
+ 	<insert id="insertGsOrdItemD" parameterType="iceberg.capi.order.model.ordersheet.GsOrdItemD">
+	INSERT INTO GS_ORD_ITEM_D
+							(  
+							EC_ORD_ITEM_NO
+							,REG_DTM
+							,REGR_ID
+							,EC_ORD_ITEM_SEQ
+							,EC_ORD_NO
+							,ORG_ORD_EC_ITEM_NO
+							,ORD_QTY
+							,EC_ORD_ST_CD
+							<if test="multiCd != null">,MULTI_CD</if>
+							<if test="ecAttrSeq != null">,EC_ATTR_SEQ</if>
+							<if test="prdGbnCd != null">,PRD_GBN_CD</if>
+							<if test="prdCd != null">,PRD_CD</if>
+							<if test="exposPrdNm != null">,EXPOS_PRD_NM</if>
+							<if test="salePrc != null">,STD_UPRC</if>
+							<if test="payPrc != null">,LAST_UPRC</if>
+							<if test="optPrdTypCd != null">,OPT_PRD_TYP_CD</if>
+							<if test="insmFlg != null">,PRD_NO_INT_INSM_YN</if>
+							,PRD_NO_INT_INSM_MM
+							<if test="bundlDlvGrpCd != null">,BUNDL_DLV_GRP_CD</if>
+							<if test="bundlDlvCd != null">,BUNDL_DLV_CD</if>
+							,PRCH_PRC
+							<if test="rlOrdPrsnNm != null">,RL_ORD_PRSN_NM</if>
+							<if test="rfnTypCd != null">,RFN_TYP_CD</if>
+							<if test="arfnTimeCd != null">,ARFN_TIME_CD</if>
+							,PRD_CPN_MAX_DC_AMT
+							<if test="chrDlvFlg != null">,CHR_DLV_YN</if>
+							,DLVC_STD_AMT
+							,RTP_DLVC_IMPOSE_AMT
+							<if test="attrPrdCd != null">,ATTR_PRD_CD</if>
+							<if test="attrPrdRepCd != null">,ATTR_REP_PRD_CD</if>
+							<if test="gftTypCd != null">,PRD_GFT_TYP_CD</if>
+							<if test="multiSimplGbnCd != null">,MULTI_SIMPL_GBN_CD</if>
+							,PMO_NO
+							,PRD_PMO_SEQ
+							,TRVLM_PAY_NO
+							<if test="basktItemId != null">,BASKT_ITEM_NO</if>
+							<if test="basktGbnVal != null">,BASKT_GBN_VAL</if>
+							,SUP_PRD_PRC
+							<if test="supOrdNo != null">,EC_SUP_ORD_CD</if>
+							,SUP_PRD_DC_RT
+							<if test="travlRsrvNo != null">,TRAVL_RSRV_NO</if>
+							<if test="gsnpntNoGivFlg != null">,GSNPNT_NO_GIV_YN</if>
+							<if test="genrlCpnNo != null">,PRD_CPN_NO</if>
+							<if test="optPrdFlg != null">,OPT_PRD_YN</if>
+							<if test="ecAttrPrdCd != null">,EC_ATTR_PRD_CD</if>
+							,SUP_ACC_AMT
+							,DLVC_CD
+							,SUP_LIMIT_ORD_QTY
+							 )
+						VALUES     
+							(  
+							#{ecOrdItemNo}
+							,#{regDtm}
+							,#{regrId}
+							,#{ecOrdItemSeq}
+							,#{ecOrdNo}
+							,#{orgEcOrdItemNo}
+							,#{ordQty}
+							,#{ecOrdStCd}
+							<if test="multiCd != null">,#{multiCd}</if>
+							<if test="ecAttrSeq != null">,#{ecAttrSeq}</if>
+							<if test="prdGbnCd != null">,#{prdGbnCd}</if>
+							<if test="prdCd != null">,#{prdCd}</if>
+							<if test="exposPrdNm != null">,#{exposPrdNm}</if>
+							<if test="salePrc != null">,#{salePrc}</if>
+							<if test="payPrc != null">,#{payPrc}</if>
+							<if test="optPrdTypCd != null">,#{optPrdTypCd}</if>
+							<if test="insmFlg != null">,#{InsmFlg}</if>
+							,#{prdNoIntInsmMm}
+							<if test="bundlDlvGrpCd != null">,#{bundlDlvGrpCd}</if>
+							<if test="bundlDlvCd != null">,#{bundlDlvCd}</if>
+							,#{prchPrc}
+							<if test="rlOrdPrsnNm != null">,#{rlOrdPrsnNm}</if>
+							<if test="rfnTypCd != null">,#{rfnTypCd}</if>
+							<if test="arfnTimeCd != null">,#{arfnTimeCd}</if>
+							,#{cpnMaxDcAmt}
+							<if test="chrDlvFlg != null">,#{chrDlvFlg}</if>
+							,#{dlvcLimitAmt}
+							,#{dlvcAmt}
+							<if test="attrPrdCd != null">,#{attrPrdCd}</if>
+							<if test="attrPrdRepCd != null">,#{attrPrdRepCd}</if>
+							<if test="gftTypCd != null">,#{gftTypCd}</if>
+							<if test="multiSimplGbnCd != null">,#{multiSimplGbnCd}</if>
+							,#{pmoNo}
+							,#{prdPmoSeq}
+							,#{trvlmPayNo}
+							<if test="basktItemId != null">,#{basktItemId}</if>
+							<if test="basktGbnVal != null">,#{basktGbnVal}</if>
+							,#{supPrdPrc}
+							<if test="supOrdNo != null">,#{supOrdNo}</if>
+							,#{supPrdDcRt}
+							<if test="travlRsrvNo != null">,#{travlRsrvNo}</if>
+							<if test="gsnpntNoGivFlg != null">,#{gsnpntNoGivFlg}</if>
+							<if test="genrlCpnNo != null">,#{genrlCpnNo}</if>
+							<if test="optPrdFlg != null">,#{optPrdFlg}</if>
+							<if test="ecAttrPrdCd != null">,#{ecAttrPrdCd}</if>
+							,#{supAccAmt}
+							,#{dlvcCd}
+							,#{supOrdLimitQty}
+							)
+	</insert> 
+	
+	<!-- 
+	내용	: GS_ORD_ITEM_PRC_D 테이블 insert -ok
+	작성자	:마윤민
+	작성일	: 2013.11.29 신규작성
+	-->
+ 	<insert id="insertGsOrdItemPrcD" parameterType="iceberg.capi.order.model.ordersheet.GsOrdItemPrcD">
+	INSERT INTO GS_ORD_ITEM_PRC_D 
+							(
+							IDEN_NO
+							,REG_DTM
+							,REGR_ID
+							,EC_ORD_ITEM_NO
+							<if test="ordItemStCd != null">,EC_ORD_ST_CD</if>
+							<if test="adjstTypCd != null">,ADJST_TYP_CD</if>
+							<if test="adjstDtlCd != null">,ADJST_DTL_CD</if>
+							,ADJST_DTL_APPLY_SEQ
+							<if test="adjstDtlRsnCd != null">,ADJST_DTL_RSN_CD</if>
+							<if test="adjstDtlRepVal != null">,ADJST_DTL_REP_VAL</if>
+							<if test="pmoNo != null">,PMO_NO</if>
+							<if test="offerSeq != null">,OFFER_SEQ</if>
+							,PRD_PMO_SEQ
+							,GSHS_GIV_AMT
+							,GSHS_GIV_RT
+							,SUP_GIV_AMT
+							,SUP_GIV_RT
+							,NO_INT_INSM_MM
+							<if test="cpnNo != null">,CPN_NO</if>
+							<if test="preCalcFlg != null">,PRE_CALC_YN</if>
+							)
+						VALUES
+			      			(
+			      			#{idenNo}
+							,#{regDtm}
+							,#{regrId}
+							,#{ecOrdItemNo}
+							<if test="ordItemStCd != null">,#{ordItemStCd}</if>
+							<if test="adjstTypCd != null">,#{adjstTypCd}</if>
+							<if test="adjstDtlCd != null">,#{adjstDtlCd}</if>
+							,#{adjstDtlApplySeq}
+							<if test="adjstDtlRsnCd != null">,#{adjstDtlRsnCd}</if>
+							<if test="adjstDtlRepVal != null">,#{adjstDtlRepVal}</if>
+							<if test="pmoNo != null">,#{pmoNo}</if>
+							<if test="offerSeq != null">,#{offerSeq}</if>
+							,#{prdPmoSeq}
+							,#{gshsGivAmt}
+							,#{gshsGivRt}
+							,#{supGivAmt}
+							,#{supGivRt}
+							,#{noIntInsmMm}
+							<if test="cpnNo != null">,#{cpnNo}</if>
+							<if test="preCalcFlg != null">,#{preCalcFlg}</if>
+			      			)
+ 	</insert>
+ 	
+ 	<!-- 
+	내용	: GS_ORD_ITEM_GFT_MAP_D 테이블 insert -ok
+	작성자	:마윤민
+	작성일	: 2013.11.29 신규작성
+	-->
+ 	<insert id="insertGsOrdItemGftMapD" parameterType="iceberg.capi.order.model.ordersheet.GsOrdItemGftMapD">
+	INSERT INTO GS_ORD_ITEM_GFT_MAP_D 
+							(
+							IDEN_NO
+							,REG_DTM
+							,REGR_ID
+							,EC_ORD_ITEM_NO
+							,ORGPRD_EC_ORD_ITEM_NO
+							<if test="ecOrdStCd != null">,EC_ORD_ST_CD</if>
+							,PMO_NO
+							,OFFER_SEQ
+							,PRD_PMO_SEQ
+							<if test="wthdrwFlg != null">,WTHDRW_YN</if>
+							,COND_SEQ
+							,BUNDL_PRD_COST_DSTRB_RT
+							,WHL_GFT_MIN_STD_AMT
+							,WHL_GFT_MIN_STD_QTY
+							)
+						VALUES
+							(
+							#{idenNo}
+							,#{regDtm}
+							,#{regrId}
+							,#{ecOrdItemNo}
+							,#{orgPrdEcOrdItemNo}
+							<if test="ecOrdStCd != null">,#{ecOrdStCd}</if>
+							,#{pmoNo}
+							,#{offerSeq}
+							,#{prdPmoSeq}
+							<if test="wthdrwFlg != null">,#{wthdrwFlg}</if>
+							,#{condSeq}
+							,#{bundlPrdCostDstrbRt}
+							,#{whlGftMinStdAmt}
+							,#{whlGftMinStdQty}
+							)
+	</insert>	
+	
+	
+	<!-- 
+	내용	: 장바구니에서 선택된 여부 확인 OWNED
+	작성자	: 윤병찬
+	작성일	: 2013.12.16 신규작성
+	
+	#{shcrtitmId} = 290354468
+	
+	-->
+	<select id="findShcrtitmOwned" parameterType="long"  resultType="String">
+	<![CDATA[
+			  SELECT OWNED
+			    FROM EC_SHCRTITM
+			   WHERE SHCRTITMID = #{shcrtitmId}
+			     AND NVL(CHANL_CD, 'P') <> 'S'
+	 ]]>  
+	</select>	
+	
+	<!--
+	  	내용 : 주문서 테이블의 장바구니 아이템번호로 장바구니를 삭제한다.
+	   	작성자 : 윤병찬
+	   	작성일 : 2013.12.16
+	   	#{ecOrdNo} = 72
+	-->
+	<update id="deleteBasketItemWithNewOrdSht" parameterType="long">
+		<![CDATA[
+    		  UPDATE  EC_SHCRTITM               
+                 SET  DBSTS = 'D - ' || SHCRTITMID  
+                     ,UPDDATE = SYSDATE            
+               WHERE  DBSTS = 'A'                
+                 AND  SHCRTITMID IN (SELECT DISTINCT GOID.BASKT_ITEM_NO     
+                                       FROM GS_ORD_ITEM_D GOID
+                                      WHERE GOID.EC_ORD_NO = #{ecOrdNo}
+                                     )
+		]]>
+	</update>	
+	
+		<!--
+   	내용 : 회원의 장바구니 정보를 전부 삭제
+   	작성자 : 윤병찬
+   	작성일 : 2013.12.16 신규작성
+
+   	#{shcrtid} = 2002368147
+	-->
+	<update id="updateBasketNoMem" parameterType="long">
+	<![CDATA[
+			UPDATE EC_SHCRTITM
+			   SET  DBSTS = 'D - ' || SHCRTITMID
+			       ,UPDUSER = CREUSER    
+			       , UPDDATE = SYSDATE                
+			  WHERE SHCRTPRSTID = #{shcrtid}     
+			    AND DBSTS = 'A'
+			    AND NVL(CHANL_CD, 'P') <> 'S'
+	]]>
+	</update>	
+	
+
+	<!--
+   	내용 : 회원의 장바구니 정보를 전부 삭제
+   	작성자 : 윤병찬
+   	작성일 : 2013.12.16 신규작성
+
+   	#{_c.shcrtid[0].value} = 2002368148
+   	#{_c.cookieShcrtid[0].value} = 2002368147
+	-->
+	<update id="updateBasketNoMemCookie" parameterType="criteria">
+	<![CDATA[
+			 UPDATE EC_SHCRTITM
+			    SET SHCRTPRSTID = #{_c.shcrtid[0].value}                
+			  WHERE SHCRTPRSTID = #{_c.cookieShcrtid[0].value}     
+			    AND NVL(CHANL_CD, 'P') <> 'S'
+	]]>
+	</update>		
+	
+	
+</mapper>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.orderdelivery.EmailGftcertStInfoSqlMapRepository">
+
+    <!--
+		내용	: 고객이 보유/등록한 이메일 상품권을 가져온다.
+		작성자	: 이동민
+		작성일	: 2013.11.12
+
+		#{_c.custNo[0].value} = 108214960
+		#{_c.ordNo[0].value} = 569475820
+    -->
+
+    <resultMap type="iceberg.capi.order.model.orderdelivery.EmailGftcertInfo" id="emailGftcertInfo">
+        <result property="emailGftcertSeq"			column="EMAIL_GFTCERT_SEQ"/>
+        <result property="emailGftcertStCd"			column="EMAIL_GFTCERT_ST_CD"/>
+        <result property="emailGftcertStNm"			column="EMAIL_GFTCERT_ST_NM"/>
+    </resultMap>
+
+    <select id="findEmailGftcertInfo" parameterType="criteria" resultMap="emailGftcertInfo">
+        SELECT /* ordDtlCursta-sql.xml, 2013.11.12 by 이동민 */
+               DECODE(DECODE(BATCHDATE,NULL,'X',ACCEPT_FLAG)
+                     ,'I', '수신확인중'
+                     ,'X', '발송준비'
+                     ,'Y', '수신완료'
+                     ,'N', '수신거부'
+                     ,'D', '주문취소'
+                     ,'U', '수신미확인'
+                     ,'상태미확인')                      AS EMAIL_GFTCERT_ST_NM
+<!--               ,SEQ                                       AS EMAIL_GFTCERT_SEQ -->
+<!--               ,DECODE(BATCHDATE,NULL,'X',ACCEPT_FLAG)    AS EMAIL_GFTCERT_ST_CD -->
+          FROM LGEC_GIFT_MAIL
+         WHERE ECUSERID + 0          = #{_c.custNo[0].value}
+           AND ORD_NO                = #{_c.ordNo[0].value}
+           AND NVL(RESEND_FLAG, 'N') = 'N'
+<!--          ORDER BY 1 DESC -->
+    </select>
+
+</mapper>

@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.cust.webdb.repository.wish.WishPrdSqlMapRepository">
+ 
+ 	<resultMap type="iceberg.capi.cust.model.wish.WishPrd" id="wishPrdMap">
+		<result property= "wishFoldrCd" column="WISH_FOLDR_CD"/>
+		<result property= "wishFoldrNm" column="WISH_FOLDR_NM"/>
+		<result property= "ecAttrPrdCd" column="EC_ATTR_PRD_CD"/>
+		<result property= "prdCd" column="PRD_CD"/> 
+		<result property= "colorAttr" column="COLOR_ATTR"/>
+		<result property= "sizeAttr" column="SIZE_ATTR"/> 
+		<result property= "shtprdPrdCd" column="SHTPRD_PRD_CD"/>
+		<result property= "wishPrdTypCd" column="WISH_PRD_TYP_CD"/> 
+		<result property= "regDtm" column="REG_DTM"/>   
+		<result property= "attrPrdCd" column= "ATTR_PRD_CD" />
+		<result property= "attrPrdRepCd" column= "ATTR_PRD_REP_CD" />
+		<result property= "exposPmoNm" column= "EXPOS_PMO_NM" />
+		<result property= "exposPrdNm" column= "EXPOS_PRD_NM" />
+		<result property= "exposPrSntncNm" column= "EXPOS_PR_SNTNC_NM" />
+		<result property= "brandNm" column= "BRAND_NM" />
+		<result property= "salePrc" column= "SALE_PRC" />
+		<result property= "lowPrc" column= "LOW_PRC" />
+		<result property= "noIntMm" column= "NO_INT_MM" />
+		<result property= "accTyp" column= "ACC_TYP" />
+		<result property= "supCd" column= "SUP_CD" />
+		<result property= "mnfcCoNm" column= "MNFC_CO_NM" />
+		<result property= "wonCd" column= "WON_CD" />
+		<result property= "ordPrdTypCd" column= "ORD_PRD_TYP_CD" />
+		<result property= "tempoutFlg" column= "TEMPOUT_FLG" />
+		<result property= "gsnpntNoGivFlg" column= "GSNPNT_NO_GIV_FLG" />
+		<result property= "adultCertFlg" column= "ADULT_CERT_FLG" />
+		<result property= "zrwonSaleFlg" column= "ZRWON_SALE_FLG" />
+		<result property= "dittoFlg" column= "DITTO_FLG" />
+		<result property= "thedaySalePrc" column= "THEDAY_SALE_PRC" />
+		<result property= "prdLrgClsCd" column= "PRD_LRG_CLS_CD" />
+		<result property= "prdMidClsCd" column= "PRD_MID_CLS_CD" />
+		<result property= "prdSmlClsCd" column= "PRD_SML_CLS_CD" />
+		<result property= "prdDtlClsCd" column= "PRD_DTL_CLS_CD" />
+		<result property= "prcReductDtm" column= "PRC_REDUCT_DTM" />
+		<result property= "prcDcDtm" column= "PRC_DC_DTM" />
+		<result property= "prdRegDtm" column= "PRD_REG_DTM" />
+		<result property= "frmlesPrdTypCd" column= "FRMLES_PRD_TYP_CD" />
+		<result property= "bundlPrdGbnCd" column= "BUNDL_PRD_GBN_CD" />
+		<result property= "operMdId" column= "OPER_MD_ID" />
+		<result property= "prdGbnCd" column= "PRD_GBN_CD" />
+		<result property= "forgnPrdNormPrc" column= "FORGN_PRD_NORM_PRC" />
+		<result property= "img" column= "IMG" />
+ 	</resultMap>
+ 	
+ 	<!-- 
+		API  : 찜상품 리스트 
+		설명 : 찜상품리스트를 조회한다. 여행상품포함.(예외)
+		
+		#{_p.pageItemSize} = 24
+		#{_c.ecCustNo[0].value}  = 2001322805
+		#{_c.wishFoldrCd[0].value}  = 5142543
+		#{_c.wishGbn[0].value}  = 1
+		#{_c.cmmBaseChanl[0].value}  = P
+		#{_c.cmmCurrChanl[0].value}  = B
+		#{_p.pageNumber} = 1 
+	-->
+	<select id="findWishPrdList" parameterType="criteria" resultMap="wishPrdMap"> 
+    SELECT X2.*
+     FROM  (SELECT CEIL(ROWNUM / #{_p.pageItemSize} )          AS PAGEIDX
+                  ,X1.* 
+                    FROM (
+                         SELECT X.*
+                          FROM (
+                               SELECT 
+                                      LWC.CLOAKID                               AS WISH_FOLDR_CD
+                                     ,LWC.CLOAKNAME                             AS WISH_FOLDR_NM
+                                     ,LWI.ITEMID                                AS EC_ATTR_PRD_CD
+                                     ,LWI.PRDID                                 AS PRD_CD 
+                                     ,LWI.COLOR_DESC                            AS COLOR_ATTR 
+                                     ,LWI.SIZE_DESC                             AS SIZE_ATTR    
+                                     ,LWI.LACK_PRD_SMS                          AS SHTPRD_PRD_CD 
+                                     ,LWI.PR_TYPE                               AS WISH_PRD_TYP_CD  
+                                     ,TO_CHAR(LWI.CREDATE,'YYYYMMDDHH24MISS')   AS REG_DTM   
+                                     ,PAPM.ATTR_PRD_CD                          AS ATTR_PRD_CD
+                                     ,PAPM.ATTR_PRD_REP_CD                      AS ATTR_PRD_REP_CD 
+                                     ,PNCH.EXPOS_PMO_NM                         AS EXPOS_PMO_NM                 
+                                     ,PNCH.EXPOS_PRD_NM                         AS EXPOS_PRD_NM                 
+                                     ,PNCH.EXPOS_PR_SNTNC_NM                    AS EXPOS_PR_SNTNC_NM   
+                                     ,(SELECT BRAND_NM 
+                                        FROM  PRD_BRAND_M 
+                                        WHERE BRAND_CD = PPM.BRAND_CD) AS BRAND_NM           
+                                     ,PPH.SALE_PRC                              AS SALE_PRC                    
+                                     ,(CASE WHEN NVL(PPM.FLGD_PRC_EXPOS_YN, 'Y') = 'Y' 
+                                            THEN PSED.FLGD_PRC 
+                                            ELSE 0 
+                                       END)                                     AS LOW_PRC 
+                                     ,DECODE(RTRIM(NVL(PBD.NO_INT_YN, 'N'))
+                                            ,'Y', NVL(PBD.NO_INT_MM_CNT,0)
+                                            ,0)                                 AS NO_INT_MM                         
+                                     ,PG_PMO_PRD_PMO.FN_PRD_ACCM(PPM.PRD_CD,'P', SYSDATE, PPH.SALE_PRC, 'N')  AS ACC_TYPE  
+                                     ,PPM.SUP_CD                                       AS SUP_CD          
+                                     ,PPM.MNFC_CO_NM                                   AS MNFC_CO_NM      
+                                     ,'KRW'                                            AS WON_CD                     
+                                     ,DECODE(SIGN(NVL(PPM.SALE_END_DTM, TO_DATE('9999','YYYY')) - SYSDATE)
+                                            ,-1, '05'
+                                            ,PPM.ORD_PRD_TYP_CD) AS ORD_PRD_TYP_CD    
+                                     ,NVL(PPM.TEMPOUT_YN, 'N')                         AS TEMPOUT_FLG         
+                                     ,PPM.GSNPNT_NO_GIV_YN                             AS GSNPNT_NO_GIV_FLG   
+                                     ,NVL(PPM.ADULT_CERT_YN,'N')                       AS ADULT_CERT_FLG 
+                                     ,NVL(PPM.ZRWON_SALE_YN, 'N')                      AS ZRWON_SALE_FLG 
+                                     ,PPM.DITTO_YN                                     AS DITTO_FLG           
+                                     ,NVL(PG_PMO_PRD_PMO.FN_PRD_MD_DC_PRC(PPM.PRD_CD, 'P', SYSDATE),0) AS THEDAY_SALE_PRC  
+                                     ,SUBSTR(PPM.PRD_CLS_CD, 0, 3)                     AS PRD_LRG_CLS_CD       
+                                     ,SUBSTR(PPM.PRD_CLS_CD, 4, 2)                     AS PRD_MID_CLS_CD       
+                                     ,SUBSTR(PPM.PRD_CLS_CD, 6, 2)                     AS PRD_SML_CLS_CD       
+                                     ,SUBSTR(PPM.PRD_CLS_CD, 8, 2)                     AS PRD_DTL_CLS_CD                         
+                                     ,TO_CHAR(PSED.PRC_REDUCT_DTM,'YYYYMMDDHH24MISS')  AS PRC_REDUCT_DTM            
+                                     ,TO_CHAR(PSED.PRC_DC_DTM,'YYYYMMDDHH24MISS')      AS PRC_DC_DTM                  
+                                     ,TO_CHAR(PPM.REG_DTM,'YYYYMMDDHH24MISS')          AS PRD_REG_DTM        
+                                     ,PPM.FRMLES_PRD_TYP_CD                            AS FRMLES_PRD_TYP_CD   
+                                     ,NVL(PPM.BUNDL_PRD_GBN_CD,'')                     AS BUNDL_PRD_GBN_CD        
+                                     ,PPM.OPER_MD_ID                                   AS OPER_MD_ID         
+                                     ,PPM.PRD_GBN_CD                                   AS PRD_GBN_CD            
+                                     ,PPM.FORGN_PRD_NORM_PRC                           AS FORGN_PRD_NORM_PRC  
+                                     ,''                                               AS IMG 
+                                FROM  PMO_BATCH_D        PBD
+                                     ,PRD_PRD_M          PPM
+                                     ,LGEC_WISH_ITMLIST  LWI
+                                     ,LGEC_WISH_CLOAK    LWC
+                                     ,PRD_SHOP_EXPOS_D   PSED
+                                     ,PRD_PRC_H          PPH
+                                     ,PRD_CHANL_D        PCD
+                                     ,PRD_NM_CHG_H       PNCH
+                                     ,PRD_ATTR_PRD_M     PAPM
+                                WHERE PPM.PRD_CD          = LWI.PRDID
+                                  AND LWI.CLOAKID         = LWC.CLOAKID 
+                                  AND PAPM.EC_ATTR_PRD_CD = LWI.ITEMID
+                                  AND PPM.PRD_CD          = PSED.PRD_CD
+                                  AND PPM.PRD_CD          = PPH.PRD_CD
+                                  AND PPM.PRD_CD          = PCD.PRD_CD
+                                  AND PPM.PRD_CD          = PBD.PRD_CD(+)
+                                  AND PPM.PRD_CD          = PNCH.PRD_CD(+)
+                                  AND SYSDATE BETWEEN PPH.VALID_STR_DTM 
+                                                  AND PPH.VALID_END_DTM
+                                  AND SYSDATE BETWEEN PNCH.VALID_STR_DTM(+) 
+                                                  AND PNCH.VALID_END_DTM(+)
+                                  AND PPM.USE_YN          = 'Y'
+                                  AND LWI.PR_TYPE         = 'G'
+                                  AND LWC.WISHGUBUN       = #{_c.wishGbn[0].value}
+                                  AND PPH.PRD_ATTR_GBN_CD = #{_c.cmmBaseChanl[0].value}	
+                                  AND PCD.CHANL_CD        = #{_c.cmmCurrChanl[0].value}	
+                                  AND PCD.SALE_PSBL_YN    = 'Y'
+                                  AND LWC.ECUSERID        = #{_c.ecCustNo[0].value}
+                                  AND LWC.CLOAKID         = #{_c.wishFoldrCd[0].value}
+                                  AND PNCH.CHANL_CD(+)    = #{_c.cmmBaseChanl[0].value}	
+                               UNION ALL
+                               SELECT LWC.CLOAKID       AS WISH_FOLDR_CD     
+                                     ,LWC.CLOAKNAME     AS WISH_FOLDR_NM    
+                                     ,LWI.PRDID         AS EC_ATTR_PRD_CD   
+                                     ,LWI.PRDID         AS PRD_CD            
+                                     ,''                AS COLOR_ATTR 
+                                     ,''                AS SIZE_ATTR    
+                                     ,LWI.LACK_PRD_SMS  AS SHTPRD_PRD_CD    
+                                     ,LWI.PR_TYPE       AS WISH_PRD_TYP_CD 
+                                     ,TO_CHAR(LWI.CREDATE,'YYYYMMDDHH24MISS')       AS REG_DTM
+                                     ,0                 AS ATTR_PRD_CD
+                                     ,''                 AS ATTR_PRD_REP_CD            
+                                     ,''                AS EXPOS_PMO_NM     
+                                     ,GAP.NAME          AS EXPOS_PRD_NM     
+                                     ,''                AS EXPOS_PR_SNTNC_NM 
+                                     ,''                AS BRAND_NM
+                                     ,GAP.PRICE         AS SALE_PRC
+                                     ,0                 AS LOW_PRC
+                                     ,0                 AS NO_INT_MM
+                                     ,''                AS ACC_TYPE
+                                     ,GAP.SUPP_CODE     AS SUP_CD        
+                                     ,GAP.AIRLINE       AS MNFC_CO_NM              
+                                     ,GAP.HTL_CURRENCY  AS WON_CD   
+                                     ,DECODE(GAP.DBSTS, 
+                                            'A', '02', 
+                                            '05')       AS ORD_PRD_TYP_CD                
+                                     ,''                AS TEMPOUT_FLG        
+                                     ,'Y'               AS GSNPNT_NO_GIV_FLG    
+                                     ,''                AS ADULT_CERT_FLG  
+                                     ,'N'               AS ZRWON_SALE_FLG            
+                                     ,''                AS DITTO_FLG
+                                     ,0                 AS THEDAY_SALE_PRC 
+                                     ,''                AS PRD_LRG_CLS_CD
+                                     ,''                AS PRD_MID_CLS_CD
+                                     ,''                AS PRD_SML_CLS_CD
+                                     ,''                AS PRD_DTL_CLS_CD
+                                     ,TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS')           AS PRC_REDUCT_DTM
+                                     ,TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS')           AS PRC_DC_DTM
+                                     ,TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS')           AS PRD_REG_DTM
+                                     ,''                AS FRMLES_PRD_TYP_CD
+                                     ,''                AS BUNDL_PRD_GBN_CD         
+                                     ,''                AS OPER_MD_ID           
+                                     ,''                AS PRD_GBN_CD           
+                                     ,0                 AS FORGN_PRD_NORM_PRC    
+                                     ,GAP.IMG           AS IMG             
+                                FROM  GS_AP_PRD         GAP
+                                     ,LGEC_WISH_ITMLIST LWI
+                                     ,LGEC_WISH_CLOAK   LWC
+                                WHERE GAP.TR_PRDID = LWI.PRDID
+                                  AND LWI.CLOAKID  = LWC.CLOAKID
+                                  AND GAP.DBSTS     = 'A'
+                                  AND LWI.PR_TYPE   = 'T'
+                                  AND LWC.WISHGUBUN = #{_c.wishGbn[0].value}
+                                  AND LWC.ECUSERID  = #{_c.ecCustNo[0].value}
+                                  AND LWC.CLOAKID   = #{_c.wishFoldrCd[0].value} ) X 
+                         ORDER BY X.REG_DTM DESC ) X1 
+              ) X2
+    WHERE PAGEIDX = #{_p.pageNumber}
+	</select> 
+ 	
+ 	<!-- 
+		API  : 찜상품 리스트 개수를 조회한다.
+		설명 : 찜상품리스트 개수 조회. 여행상품포함.
+		 
+		#{_c.ecCustNo[0].value}  = 2001322805
+		#{_c.wishFoldrCd[0].value}  = 5142543
+		#{_c.wishGbn[0].value}  = 1
+		#{_c.cmmBaseChanl[0].value}  = P
+		#{_c.cmmCurrChanl[0].value}  = B 
+	-->
+	<select id="countWishPrdList" parameterType="criteria" resultType="long">
+    SELECT COUNT(1)                                   
+     FROM  (                                          
+            SELECT LWI.ITEMID AS EC_ATTR_PRD_CD       
+             FROM  PRD_PRD_M          PPM             
+                  ,LGEC_WISH_ITMLIST  LWI             
+                  ,LGEC_WISH_CLOAK    LWC             
+                  ,PRD_SHOP_EXPOS_D   PSED            
+                  ,PRD_PRC_H          PPH             
+                  ,PRD_CHANL_D        PCD             
+             WHERE PPM.PRD_CD    = LWI.PRDID          
+               AND LWI.CLOAKID   = LWC.CLOAKID        
+               AND PPM.PRD_CD    = PSED.PRD_CD        
+               AND PPM.PRD_CD    = PPH.PRD_CD         
+               AND PPM.PRD_CD    = PCD.PRD_CD         
+               AND SYSDATE BETWEEN PPH.VALID_STR_DTM  
+                               AND PPH.VALID_END_DTM  
+               AND PPM.USE_YN          = 'Y'          
+               AND LWI.PR_TYPE         = 'G'          
+               AND LWC.WISHGUBUN       = '1'          
+               AND PPH.PRD_ATTR_GBN_CD = #{_c.cmmBaseChanl[0].value}
+               AND PCD.CHANL_CD        = #{_c.cmmCurrChanl[0].value}
+               AND PCD.SALE_PSBL_YN    = 'Y'          
+               AND LWC.ECUSERID        = #{_c.ecCustNo[0].value}    
+               AND LWC.CLOAKID         = #{_c.wishFoldrCd[0].value} 
+            UNION ALL                                 
+            SELECT LWI.ITEMID   AS EC_ATTR_PRD_CD     
+             FROM  GS_AP_PRD         GAP              
+                  ,LGEC_WISH_ITMLIST LWI              
+                  ,LGEC_WISH_CLOAK   LWC              
+             WHERE GAP.TR_PRDID = LWI.PRDID           
+               AND LWI.CLOAKID  = LWC.CLOAKID         
+               AND GAP.DBSTS     = 'A'                
+               AND LWI.PR_TYPE   = 'T'                
+               AND LWC.WISHGUBUN = '1'                
+               AND LWC.ECUSERID  = #{_c.ecCustNo[0].value}           
+               AND LWC.CLOAKID   = #{_c.wishFoldrCd[0].value}  )X     
+	</select>
+	
+ 	<!-- 
+		API  : 찜하기
+		설명 : 찜상품정보를 조회한다.
+		 
+		#{_c.wishFoldrCd[0].value}  = 5142543 
+		#{_c.ecAttrPrdCd[0].value}  = 11166751001
+	-->
+	<select id="findWishPrdOne" parameterType="criteria" resultMap="wishPrdMap">
+        SELECT LWI.CLOAKID                               AS WISH_FOLDR_CD 
+              ,LWI.ITEMID                                AS EC_ATTR_PRD_CD
+              ,LWI.PRDID                                 AS PRD_CD 
+              ,LWI.COLOR_DESC                            AS COLOR_ATTR 
+              ,LWI.SIZE_DESC                             AS SIZE_ATTR    
+              ,LWI.LACK_PRD_SMS                          AS SHTPRD_PRD_CD 
+              ,LWI.PR_TYPE                               AS WISH_PRD_TYP_CD   
+              ,TO_CHAR(LWI.CREDATE,'YYYYMMDDHH24MISS')   AS REG_DTM  
+         FROM  LGEC_WISH_ITMLIST LWI
+         WHERE LWI.CLOAKID  = #{_c.wishFoldrCd[0].value}  
+           AND LWI.ITEMID   = #{_c.ecAttrPrdCd[0].value}  
+	</select>
+	
+	<delete id="deleteWishPrd" parameterType="iceberg.capi.cust.model.wish.WishPrd" >
+		DELETE /* 찜상품 삭제 2013.12.16 by kakim */
+		  FROM LGEC_WISH_ITMLIST
+		 WHERE ITEMID IN
+          	   <foreach collection="ecAttrPrdCdList" item="item" index="index" open="(" separator="," close=")">
+				#{item}
+			   </foreach>   
+		   AND CLOAKID = (SELECT LWC.CLOAKID
+		                   FROM  LGEC_WISH_CLOAK LWC 
+		    			   WHERE LWC.CLOAKID  = #{wishFoldrCd}
+							 AND LWC.ECUSERID = #{ecCustNo} 
+		                     AND LWC.WISHGUBUN = '1')  
+	</delete>
+	
+	<delete id="deleteWishPrdOfFoldr" parameterType="criteria" >
+		DELETE /* 찜폴더 모든상품 삭제 2013.12.16 by kakim */	   
+		  FROM LGEC_WISH_ITMLIST
+		 WHERE CLOAKID = #{_c.wishFoldrCd[0].value}
+	</delete>
+	 
+	
+	<update id="updateWishPrd" parameterType="iceberg.capi.cust.model.wish.WishPrd">
+    UPDATE /* 찜폴더 이동 2013.12.16 by kakim*/
+           LGEC_WISH_ITMLIST LWI
+       SET LWI.CLOAKID = #{tgtWishFoldrCd}
+     WHERE LWI.ITEMID  IN
+          	   <foreach collection="ecAttrPrdCdList" item="item" index="index" open="(" separator="," close=")">
+				#{item}
+			   </foreach> 
+       AND LWI.CLOAKID = (SELECT LWC.CLOAKID
+                           FROM  LGEC_WISH_CLOAK  LWC
+                           WHERE LWC.CLOAKID   = #{wishFoldrCd}
+                             AND LWC.ECUSERID  = #{ecCustNo}
+                             AND LWC.WISHGUBUN = '1')
+	</update>
+	
+	<insert id="createWishPrd" parameterType="iceberg.capi.cust.model.wish.WishPrd">
+    INSERT /* 찜하기 2013.12.16 by kakim*/
+      INTO LGEC_WISH_ITMLIST
+           (
+            CLOAKID, ITEMID, PRDID, COLOR_DESC, SIZE_DESC
+           ,CREDATE
+           )
+    VALUES
+    	   (
+    	    #{wishFoldrCd},#{ecAttrPrdCd},#{prdCd},#{colorAttr},#{sizeAttr}
+    	   ,SYSDATE
+    	   )
+	</insert>
+</mapper>	

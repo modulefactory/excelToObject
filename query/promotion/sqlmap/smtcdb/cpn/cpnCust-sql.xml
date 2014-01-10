@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.promotion.smtcdb.repository.cpn.CpnCustSqlMapRepository">
+
+	<resultMap type="iceberg.capi.promotion.model.cpn.CpnCustBase" id="resultCpnCustBase"  >
+		<result property ="cpnNo"     column = "CPN_NO"/>
+		<result property ="cpnTypCd"     column = "CPN_TYP_CD"/>
+		<result property ="cpnTgtTypCd"     column = "CPN_TGT_TYP_CD"/>
+		<result property ="dcRtamt"     column = "DC_RTAMT"/>
+		<result property ="issueStrDtm"     column = "ISSUE_STR_DTM"/>
+		<result property ="issueEndDtm"     column = "ISSUE_END_DTM"/>
+		<result property ="prdMinSalePrc"     column = "PRD_MIN_SALE_PRC"/>
+		<result property ="maxDcAmt"     column = "MAX_DC_AMT"/>
+		<result property ="chanlLimitTypCd"     column = "CHANL_LIMIT_TYP_CD"/>
+		<result property ="accTypCd"     column = "ACC_TYP_CD"/>
+		<result property ="validDtChkYn"     column = "VALID_DT_CHK_YN"/>
+		<result property ="validDdcnt"     column = "VALID_DDCNT"/>
+		<result property ="custChkYn"     column = "CUST_CHK_YN"/>
+		<result property ="cpnSntncCntnt"     column = "CPN_SNTNC_CNTNT"/>
+		<result property ="chanlCd"     column = "CHANL_CD"/>
+		<result property ="chanlDtlCd"     column = "CHANL_DTL_CD"/>
+		<result property ="cpnGbnCd"     column = "CPN_GBN_CD"/>
+		<result property ="unlmtUseYn"     column = "UNLMT_USE_YN"/>
+		<result property ="cpnEventKindCd"     column = "CPN_EVENT_KIND_CD"/>
+		<result property ="gshsDcRtamt"     column = "GSHS_DC_RTAMT"/>
+		<result property ="supDcRtamt"     column = "SUP_DC_RTAMT"/>
+		<result property ="wekdyCpnYn"     column = "WEKDY_CPN_YN"/>
+		<result property ="wekdyApplyStrTime"     column = "WEKDY_APPLY_STR_TIME"/>
+		<result property ="wekdyApplyEndTime"     column = "WEKDY_APPLY_END_TIME"/>
+		<result property ="wekdyApplyCd"     column = "WEKDY_APPLY_CD"/>
+		<result property ="regDtm"     column = "REG_DTM"/>
+		<result property ="cpnApplyRemanDdcnt"     column = "CPN_APPLY_REMAN_DDCNT"/>
+		<result property ="cpnApplyRemanTime"     column = "CPN_APPLY_REMAN_TIME"/>
+		<result property ="cpnSortTyp"     column = "CPN_SORT_TYP"/>
+		<result property ="addRtamt"     column = "ADD_RTAMT"/>
+		<result property ="immVisitExcluYn"     column = "IMM_VISIT_EXCLU_YN"/> 
+	</resultMap>	
+	
+	<!--  
+	분야 : 회원  findMyCpnList
+	API  : 보유쿠폰리스트 
+	설명 : 보유쿠폰리스트 조회
+	
+	#{_p.pageNumber} = 1
+	#{_p.pageItemSize} = 10
+	#{_c.custNo[0].value} = 40766020 
+	-->	
+	<select id="findMyCpnList" parameterType="criteria" resultMap="resultCpnCustBase">  
+    SELECT X1.*
+      FROM (SELECT CEIL(ROWNUM / #{_p.pageItemSize} )          AS PAGEIDX
+                  ,X.*
+              FROM (SELECT /*+ LEADING(C) */ 
+					       DISTINCT CCM.CPN_NO                       AS CPN_NO -- 쿠폰번호  
+					      ,CCM.CPN_TYP_CD                            AS CPN_TYP_CD --쿠폰유형코드 
+					      ,CCM.CPN_TGT_TYP_CD                        AS CPN_TGT_TYP_CD -- 쿠폰대상유형코드 
+					      ,NVL(CCM.GSHS_DC_RTAMT,0) + TO_NUMBER(NVL(CCM.SUP_DC_RTAMT,'0')) AS DC_RTAMT -- 당사 + 협력사 할인율/액  
+					      ,CCD1.ISSUE_STR_DTM                        AS ISSUE_STR_DTM          -- 발행시작일시 
+					      ,CCD1.ISSUE_END_DTM                        AS ISSUE_END_DTM          -- 발행종료일시 
+					      ,CCM.PRD_MIN_SALE_PRC                      AS PRD_MIN_SALE_PRC       -- 상품최소판매가격 
+					      ,CCM.MAX_DC_AMT                            AS MAX_DC_AMT             -- 최대할인금액 
+					      ,CCM.CHANL_LIMIT_TYP_CD                    AS CHANL_LIMIT_TYP_CD     -- 채널제한유형코드 
+					      ,CCM.ACC_TYP_CD                            AS ACC_TYP_CD             -- 적립유형코드 
+					      ,CCM.VALID_DT_CHK_YN                       AS VALID_DT_CHK_YN        -- 유효일자체크여부
+					      ,CCM.VALID_DDCNT                           AS VALID_DDCNT            -- 유효일수
+					      ,CCM.CUST_CHK_YN                           AS CUST_CHK_YN            -- 고객체크여부  
+					      ,CCM.CPN_SNTNC_CNTNT                       AS CPN_SNTNC_CNTNT        -- 쿠폰문구내용 
+					      ,DECODE(CCD2.CHANL_CD,NULL,'P','B')        AS CHANL_CD              -- 채널코드 
+					      ,CCD2.CHANL_DTL_CD                         AS CHANL_DTL_CD          -- 채널상세코드
+					      ,CCM.CPN_GBN_CD                            AS CPN_GBN_CD            -- 쿠폰구분코드 
+					      ,CCM.UNLMT_USE_YN                          AS UNLMT_USE_YN          -- 무제한 사용여부 
+					      ,NVL(CCM.CPN_EVENT_KIND_CD,'')             AS CPN_EVENT_KIND_CD     -- 쿠폰이벤트 종류 코드 
+					      ,NVL(CCM.GSHS_DC_RTAMT,0)                  AS GSHS_DC_RTAMT         -- 당사 할인율/액  
+					      ,TO_NUMBER(NVL(CCM.SUP_DC_RTAMT,'0'))      AS SUP_DC_RTAMT          -- 협력사 할인율/액  
+					      ,NVL(CCM.WEKDY_CPN_YN,'N')                 AS WEKDY_CPN_YN          -- 요일쿠폰여부        
+					      ,NVL(CCM.WEKDY_APPLY_STR_TIME,'000000')    AS WEKDY_APPLY_STR_TIME  -- 요일적용시작시간 
+					      ,NVL(CCM.WEKDY_APPLY_END_TIME,'000000')    AS WEKDY_APPLY_END_TIME  -- 요일적용종시간 
+					      ,NVL(CCM.WEKDY_APPLY_CD,'NNNNNNN')         AS WEKDY_APPLY_CD        -- 요일적용코드       
+					      ,CCD1.REG_DTM                              AS REG_DTM               -- 등록일시  
+					      ,TRUNC(CCD1.ISSUE_END_DTM  - SYSDATE)      AS CPN_APPLY_REMAN_DDCNT -- 쿠폰적용잔여일수 
+					      ,TRUNC(MOD((CCD1.ISSUE_END_DTM  - SYSDATE), 1) * 24) AS CPN_APPLY_REMAN_TIME  -- 쿠폰적용잔여시간 
+					      ,CCM.ADD_RTAMT                             AS ADD_RTAMT             -- 추가할인율/액
+					      ,CCM.IMM_VISIT_EXCLU_YN                    AS IMM_VISIT_EXCLU_YN    -- 즉시방문전용여부 
+					 FROM  CPN_CUST_D  CCD1      
+					      ,CPN_CPN_M   CCM     
+					      ,CPN_CHANL_D CCD2     
+					 WHERE CCM.CPN_NO  = CCD1.CPN_NO      
+					   AND CCM.CPN_NO  = CCD2.CPN_NO(+)    
+					   AND SYSDATE BETWEEN CCD1.ISSUE_STR_DTM
+					                   AND CCD1.ISSUE_END_DTM      
+					   AND CCD1.CUST_NO = #{_c.custNo[0].value}      
+					   AND CCM.CPN_APRV_ST_CD = '03'  -- 쿠폰결재상태 코드(CPN008) 승인 
+					   AND DECODE(CCD1.ORD_ITEM_ID
+					             ,NULL,'Y'
+					             ,RTRIM(CCM.UNLMT_USE_YN)) = 'Y'  
+					   AND (NVL(CCM.WEKDY_CPN_YN,'N') = 'N' 
+					        OR (CCM.WEKDY_CPN_YN = 'Y'  
+					            AND TO_CHAR(SYSDATE,'HH24MISS') BETWEEN CCM.WEKDY_APPLY_STR_TIME 
+					                                                 AND CCM.WEKDY_APPLY_END_TIME
+					            AND SUBSTR(CCM.WEKDY_APPLY_CD,TO_CHAR(SYSDATE,'D'),1) = 'Y'  ) )
+					<choose>
+					    <when test="_c.tabCd !=null and _c.tabCd[0].value != null and 'MOBILE'.equals(_c.tabCd[0].value) "  >
+					   <![CDATA[
+					   AND (CCD2.CHANL_CD = 'B'  
+					        OR (NVL(CCM.CHANL_LIMIT_TYP_CD,'N') <> 'Y' 
+					            AND CCD2.CHANL_CD <> 'S' )) 
+					   ]]>
+					    </when>
+					    <otherwise>
+					   <![CDATA[
+					   AND CCD2.CHANL_CD <> 'S' 
+					   ]]>  
+					    </otherwise>
+					</choose> 
+			    <if test="_c.cpnSortTyp !=null and _c.cpnSortTyp[0].value != null" >
+			       <if test=' _c.cpnSortTyp[0].value == "1"' >  
+					 ORDER BY CCM.CPN_NO 
+					         ,CCD1.REG_DTM DESC
+					   </if>
+					   <if test=' _c.cpnSortTyp[0].value == "2"' >  
+					 ORDER BY CCM.CPN_NO 
+					         ,CCD1.REG_DTM ASC
+					   </if>
+					   <if test=' _c.cpnSortTyp[0].value == "3"' >   
+					 ORDER BY CPN_APPLY_REMAN_TERM ASC
+					   </if>
+					   <if test=' _c.cpnSortTyp[0].value == "4"' >   
+					 ORDER BY CPN_APPLY_REMAN_TERM DESC
+					   </if>
+				   </if>) X
+            ) X1
+     WHERE PAGEIDX = #{_p.pageNumber}  
+	</select>
+	
+	<!--  
+	분야 : 회원  countMyCouponList
+	API  : 보유쿠폰리스트 개수
+	설명 : 보유쿠폰리스트 개수조회
+	 
+	#{_c.custNo[0].value} = 40766020 
+	-->	
+	<select id="countMyCouponList" parameterType="criteria" resultType="int">
+	SELECT COUNT(1)
+     FROM  (SELECT /*+ LEADING(C) */ 
+    			       DISTINCT 
+    			       CCM.CPN_NO                                AS CPN_NO -- 쿠폰번호  
+    			      ,CCM.CPN_TYP_CD                            AS CPN_TYP_CD --쿠폰유형코드 
+    			      ,CCM.CPN_TGT_TYP_CD                        AS CPN_TGT_TYP_CD -- 쿠폰대상유형코드 
+    			      ,NVL(CCM.GSHS_DC_RTAMT,0) + TO_NUMBER(NVL(CCM.SUP_DC_RTAMT,'0')) AS DC_RTAMT -- 당사 + 협력사 할인율/액  
+    			      ,CCD1.ISSUE_STR_DTM                        AS ISSUE_STR_DTM          -- 발행시작일시 
+    			      ,CCD1.ISSUE_END_DTM                        AS ISSUE_END_DTM          -- 발행종료일시 
+    			      ,CCM.PRD_MIN_SALE_PRC                      AS PRD_MIN_SALE_PRC       -- 상품최소판매가격 
+    			      ,CCM.MAX_DC_AMT                            AS MAX_DC_AMT             -- 최대할인금액 
+    			      ,CCM.CHANL_LIMIT_TYP_CD                    AS CHANL_LIMIT_TYP_CD     -- 채널제한유형코드 
+    			      ,CCM.ACC_TYP_CD                            AS ACC_TYP_CD             -- 적립유형코드 
+    			      ,CCM.VALID_DT_CHK_YN                       AS VALID_DT_CHK_YN        -- 유효일자체크여부
+    			      ,CCM.VALID_DDCNT                           AS VALID_DDCNT            -- 유효일수
+    			      ,CCM.CUST_CHK_YN                           AS CUST_CHK_YN            -- 고객체크여부  
+    			      ,CCM.CPN_SNTNC_CNTNT                       AS CPN_SNTNC_CNTNT        -- 쿠폰문구내용 
+    			      ,DECODE(CCD2.CHANL_CD
+    			             ,NULL,'P'
+    			             ,'B')                                AS CHANL_CD              -- 채널코드 
+    			      ,CCD2.CHANL_DTL_CD                          AS CHANL_DTL_CD          -- 채널상세코드
+    			      ,CCM.CPN_GBN_CD                             AS CPN_GBN_CD            -- 쿠폰구분코드 
+    			      ,CCM.UNLMT_USE_YN                           AS UNLMT_USE_YN          -- 무제한 사용여부 
+    			      ,NVL(CCM.CPN_EVENT_KIND_CD,'')              AS CPN_EVENT_KIND_CD     -- 쿠폰이벤트 종류 코드 
+    			      ,NVL(CCM.GSHS_DC_RTAMT,0)                   AS GSHS_DC_RTAMT         -- 당사 할인율/액  
+    			      ,TO_NUMBER(NVL(CCM.SUP_DC_RTAMT,'0'))       AS SUP_DC_RTAMT          -- 협력사 할인율/액  
+    			      ,NVL(CCM.WEKDY_CPN_YN,'N')                  AS WEKDY_CPN_YN          -- 요일쿠폰여부        
+    			      ,NVL(CCM.WEKDY_APPLY_STR_TIME,'000000')     AS WEKDY_APPLY_STR_TIME  -- 요일적용시작시간 
+    			      ,NVL(CCM.WEKDY_APPLY_END_TIME,'000000')     AS WEKDY_APPLY_END_TIME  -- 요일적용종시간 
+    			      ,NVL(CCM.WEKDY_APPLY_CD,'NNNNNNN')          AS WEKDY_APPLY_CD        -- 요일적용코드       
+    			      ,CCD1.REG_DTM                               AS REG_DTM               -- 등록일시 
+    			      ,TRUNC(CCD1.ISSUE_END_DTM) - TRUNC(SYSDATE) AS CPN_APPLY_REMAN_TERM -- 쿠폰적용잔여기간  
+    			      ,CCM.ADD_RTAMT                              AS ADD_RTAMT           -- 추가할인율/액
+    			      ,CCM.IMM_VISIT_EXCLU_YN                     AS IMM_VISIT_EXCLU_YN  -- 즉시방문전용여부 
+    			 FROM  CPN_CUST_D  CCD1      
+    			      ,CPN_CPN_M   CCM     
+    			      ,CPN_CHANL_D CCD2     
+    			 WHERE CCM.CPN_NO  = CCD1.CPN_NO      
+    			   AND CCM.CPN_NO  = CCD2.CPN_NO(+)    
+    			   AND SYSDATE BETWEEN CCD1.ISSUE_STR_DTM
+    			                   AND CCD1.ISSUE_END_DTM      
+    			   AND CCD1.CUST_NO = #{_c.custNo[0].value}      
+    			   AND CCM.CPN_APRV_ST_CD = '03'  -- 쿠폰결재상태 코드(CPN008) 승인 
+    			   AND DECODE(CCD1.ORD_ITEM_ID
+    			             ,NULL,'Y'
+    			             ,RTRIM(CCM.UNLMT_USE_YN)) = 'Y'  
+    			   AND (NVL(CCM.WEKDY_CPN_YN,'N') = 'N' 
+    					OR (CCM.WEKDY_CPN_YN = 'Y'  
+    						AND TO_CHAR(SYSDATE,'HH24MISS') BETWEEN CCM.WEKDY_APPLY_STR_TIME 
+    								                            AND CCM.WEKDY_APPLY_END_TIME
+    						AND SUBSTR(CCM.WEKDY_APPLY_CD,TO_CHAR(SYSDATE,'D'),1) = 'Y'  ) )
+    			<choose> 
+    			    <when test="_c.tabCd !=null and _c.tabCd[0].value != null and 'MOBILE'.equals(_c.tabCd[0].value) "  >
+    			   <![CDATA[
+				   AND (CCD2.CHANL_CD = 'B'  
+				        OR (NVL(CCM.CHANL_LIMIT_TYP_CD,'N') <> 'Y' 
+				            AND CCD2.CHANL_CD <> 'S' )) 
+    			   ]]>
+    			    </when>
+    			    <otherwise>
+    			   <![CDATA[
+    			   AND CCD2.CHANL_CD <> 'S' 
+    			   ]]>  
+    			    </otherwise>
+    			</choose> )X 
+	</select>
+	
+	
+	<!--  
+	분야 : 쿠폰다운로드 
+	API  : 쿠폰다운로드 
+	설명 : 쿠폰고객발행여부 (고객이 다운받은 쿠폰정보)
+	 
+	#{custNo} = 22644074
+	#{cpnNo}  = 329610
+	-->	
+	<select id="findCpnCustIssueFlg" parameterType="criteria" resultType="int">
+    SELECT COUNT(*)
+     FROM  CPN_CUST_D                            
+     WHERE CUST_NO = #{_c.custNo[0].value}        
+       AND CPN_NO  = #{_c.cpnNo[0].value}   	
+	</select>
+</mapper>

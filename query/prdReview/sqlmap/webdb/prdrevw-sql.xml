@@ -1,0 +1,1555 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.productreview.webdb.repository.PrdrevwSqlMapRepository">
+	<!-- 
+	 * <pre>
+	 * 상품평 목록 조회 쿼리문 
+	 * ===============================================================================
+	 * 변경일			작성자			변경내용
+	 * ===============================================================================
+	 * 2013.10.14		PARKSHA			최초작성
+	 * 2013.10.15		PARKSHA			일반상품평,사진상품평 조회 id 생성
+	 *									베스트 상품평 조회 id 생성
+	 * ===============================================================================
+	 * </pre>
+	 * @author	PARKSHA
+	 * @since	0.1.0-SNAPSHOT
+	 -->
+	
+	<resultMap type="iceberg.capi.productreview.model.Prdrevw" id="prdrevwList"  >
+		<result property = "prdrevwTitle" 		column = "TITLE"/>			<!-- 상품평제목	 -->
+		<result property = "custRegrIp" 		column = "IP_ADDR"/> 		<!-- 고객등록자IP	 -->
+		<result property = "adultPrdFlg" 		column = "AGE_LIMIT_YN"/> 	<!-- 성인상품여부	 -->
+		<result property = "declrFlg" 			column = "DECLR_YN"/> 		<!-- 신고여부	 -->
+		<result property = "lrgClsShopNo" 		column = "LRG_CLS"/> 		<!-- 대분류매장번호	 -->
+		<result property = "midClsShopNo" 		column = "MID_CLS"/> 		<!-- 중분류매장번호	 -->
+		<result property = "repPrdCd" 			column = "REP_PRD_CD"/> 	<!-- 대표상품코드	 -->
+		<result property = "exposPrdNm" 		column = "PRD_NM"/> 		<!-- 노출상품명	 -->
+		<!--result property = "excellentProductReputationGubun" column = "EXLNT_PRDRPT_GBN"/--> <!-- 신고여부	 -->
+		<result property = "atachFileGbn" 		column = "ATACH_FILE_GBN"/> <!-- 첨부파일구분	 -->
+		<!--result property = "shortMessageServiceYesOrNo" column = "SMS_YN"/--> 
+		<!--result property = "productCode2" column = "PRD_CD2"/-->
+		<!--result property = "productCode3" column = "PRD_CD3"/--> 
+		<!--result property = "productCode4" column = "PRD_CD4"/-->
+		<!--result property = "emergencyYesOrNo" column = "ER_YN"/-->
+		<!--result property = "startDayAndTime" column = "STR_DTM"/-->
+		<!--result property = "endDayAndTime" column = "END_DTM"/-->
+		<!--result property = "selectionYesOrNo" column = "SEL_YN"/-->
+		<!--result property = "selectionProduct" column = "SEL_PRD"/-->
+		<!--result property = "selectionDayAndTime" column = "SEL_DTM"/-->
+		<!--result property = "connectionProductCount" column = "CONCT_PRD_CNT"/-->
+		<!--result property = "answerAdoption" column = "ANSWR_ADOPT"/-->
+		<result property = "prdSatsf" 			column = "PRD_SATSF"/>	<!-- 상품만족도	 -->
+		<result property = "qryCnt" 			column = "QRY_CNT"/>	<!-- 조회수	 -->
+		<result property = "rcmdCnt" 			column = "HELP_CNT"/>	<!-- 추천수	 -->
+		<!--result property = "objectionCount" column = "OBJ_CNT"/-->
+		<!--result property = "answerCount" column = "ANSWR_CNT"/-->
+		<!--result property = "buyerAnswerCount" column = "BUYER_ANSWR_CNT"/-->
+		<!--result property = "tailArticlesCount" column = "TAIL_ARTCL_CNT"/-->
+		<!--result property = "scrapCount" column = "SCRAP_CNT"/-->
+		<result property = "ecoinCnt" 		column = "PNT"/>		<!-- e코인적립갯수	 -->
+		<result property = "sortCol" 			column = "SORT_COL"/> 	<!-- 정렬컬럼	 -->
+		<result property = "regrId" 			column = "WRITR"/>		<!-- 등록자ID	 -->
+		<result property = "modrId" 			column = "MODR"/>		<!-- 수정자ID	 -->
+		<!--result property = "gubun" column = "GBN"/-->
+		<!--result property = "age" column = "AGE"/-->
+		<!--result property = "subName" column = "SUB_NM"/-->
+		<result property = "ordNo" 				column = "ORD_NO"/>		<!-- 주문번호	 -->
+		<!--result property = "representativeProductExposureYesOrNo" column = "REP_PRD_EXPOS_YN"/-->
+		<result property = "ordItemOptNm1" 		column = "BUYER_OPT1_NM"/>		<!-- 주문아이템옵션명1	 -->
+		<result property = "ordItemOptNm2" 		column = "BUYER_OPT2_NM"/>		<!-- 주문아이템옵션명2	 -->
+		<result property = "ordItemOptNm3" 		column = "BUYER_OPT3_NM"/>		<!-- 주문아이템옵션명3	 -->
+		<result property = "prdrevwWritPath" 	column = "CUST_SAV_PATH"/>		<!-- 상품평작성경로	 -->
+		<result property = "ordItemOptExposFlg" column = "PRCH_OPT_EXPOS_YN"/>	<!-- 주문아이템옵션노출여부	 -->
+		<result property = "bestPrdrevwFlg" 	column = "BEST_PRDRPT_YN"/>		<!-- 베스트상품평여부	 -->
+		<result property = "prdrevwTypCd" 		column = "PRD_TYP_CD"/>			<!-- 상품평유형코드	 -->
+		<result property = "prdrevwBody" 		column = "CNTNT"/>				<!-- 상품평본문	 -->
+		<result property = "videoRepPath" 		column = "VIDEO_THMNIL"/>		<!-- 동영상대표경로	 -->
+		<result property = "atachFilePath" 		column = "IMG_THMNIL"/>			<!-- 첨부파일경로	 -->
+		<result property = "bestPrdrevwTotCnt" 	column = "BEST_TOT_CNT"/>		<!-- 베스트상품평총갯수	 -->
+		<result property = "forUpdate" 			column = "FOR_UPDATE"/>			<!-- 상품평상세 수정용 	 -->
+		<result property = "videoNo" 			column = "VIDEO_NO"/>			<!-- 상품평컨텐츠 수정용	 -->
+		<result property = "prdrevwGbnCd" 		column = "BLTTHG_LVL"/>			<!-- 상품평구분코드(본글, 답글구분)	 -->
+		<result property = "upperPrdrevwId" 	column = "UPPER_BLTTHG_NO"/>	<!-- 상위상품평ID	 -->
+		<result property = "ecCustNo" 			column = "EC_CUST_NO"/>			<!-- EC고객번호	 -->
+		<result property = "prdCd" 				column = "PRD_CD"/>				<!-- 상품코드	 -->
+		<result property = "ordPrsnFlg" 		column = "BUYER_YN"/>			<!-- 주문자여부	 -->
+		<result property = "evalItmNm1" 		column = "EVAL_ITM_NM1"/>		<!-- 평가항목명1	 -->
+		<result property = "evalItmVal1" 		column = "EVAL_ITM_VAL1"/>		<!-- 평가항목값1	 -->
+		<result property = "evalItmNm2" 		column = "EVAL_ITM_NM2"/>		<!-- 평가항목명2	 -->
+		<result property = "evalItmVal2" 		column = "EVAL_ITM_VAL2"/>		<!-- 평가항목값2	 -->
+		<result property = "evalItmNm3" 		column = "EVAL_ITM_NM3"/>		<!-- 평가항목명3	 -->
+		<result property = "evalItmVal3" 		column = "EVAL_ITM_VAL3"/>		<!-- 평가항목값3	 -->
+		<result property = "evalItmNm4" 		column = "EVAL_ITM_NM4"/>		<!-- 평가항목명4	 -->
+		<result property = "evalItmVal4" 		column = "EVAL_ITM_VAL4"/>		<!-- 평가항목값4	 -->
+		<result property = "hptstFlg" 			column = "NOTE"/>				<!-- 해피테스터여부	 -->
+		<result property = "hptstPmoNo" 		column = "PMO_NO"/>				<!-- 해피테스터프로모션번호	 -->
+		<result property = "regDtm" 			column = "WRITR_DTM"/>			<!-- 등록일시	 -->
+		<result property = "modDtm" 			column = "MOD_DTM"/>			<!-- 수정일시	 -->
+		<result property = "prdrevwId" 			column = "BLTTHG_NO"/>			<!-- 상품평ID	 -->
+		<result property = "prdrevwStCd" 		column = "ST"/>					<!-- 상품평상태코드	 -->
+		<result property = "prdrevwTypCd" 		column = "BLTBD_NO"/>			<!-- 상품평유형코드	 -->
+		<result property = "pageIndex" 			column = "PAGE_INDEX"/>			<!-- 페이지인덱스	 -->
+		<result property = "prdrevwTotCnt" 		column = "TOT_CNT"/>			<!-- 상품평총갯수	 -->
+		<result property = "nick" 				column = "NICK_NAME"/>			<!-- 별명	 -->
+		<result property = "exStar" 			column = "EX_STAR"	/>
+		<result property = "keyFlag" 			column = "KEY_FLAG"	/>
+		<result property = "prdrevwFlag" 		column = "PRDREVW_FLAG"	/>				
+	
+	</resultMap>
+	
+	<select id="getPrdReviewCommPageList" resultMap="prdrevwList" parameterType="criteria">
+	<!-- 
+		DBMS : WEBDB
+		분야 : 단품 getPrdReviewCommPageList
+		API  : 상품평
+		설명 : 상품평 목록중 평가 상품 목록 조회
+		
+		#{_c.prdCd[0].value} = 11624872
+		#{_p.pageItemSize} = 10 
+		#{_p.pageNumber} = 1
+		
+		 -->
+	<![CDATA[
+		  SELECT GKM.MESSAGE_LEVEL  AS  BLTTHG_LVL        -- 게시물레벨
+		        ,GKM.PARENT_MESSAGE_ID  AS  UPPER_BLTTHG_NO   -- 상위게시물번호
+		        ,GKM.ECUSERID       AS  EC_CUST_NO    -- 고객번호
+		        ,GKM.PRDID          AS  PRD_CD        -- 상품코드
+		        ,GKM.BUYER_FLAG     AS  BUYER_YN      -- 구매자여부
+		        ,GKM.EVAL_NAME1     AS  EVAL_ITM_NM1  -- 평가항목명1
+		        ,GKM.EVAL_VALUE1    AS  EVAL_ITM_VAL1 -- 평가항목값1
+		        ,GKM.EVAL_NAME2     AS  EVAL_ITM_NM2  -- 평가항목명2
+		        ,GKM.EVAL_VALUE2    AS  EVAL_ITM_VAL2 -- 평가항목값2
+		        ,GKM.EVAL_NAME3     AS  EVAL_ITM_NM3  -- 평가항목명3
+		        ,GKM.EVAL_VALUE3    AS  EVAL_ITM_VAL3 -- 평가항목값3
+		        ,GKM.EVAL_NAME4     AS  EVAL_ITM_NM4  -- 평가항목명4
+		        ,GKM.EVAL_VALUE4    AS  EVAL_ITM_VAL4 -- 평가항목값4
+		        ,GKM.REMARK         AS  NOTE          -- 비고(해피테스터일 경우 Y)
+		        ,GKM.PROMO_NUM      AS  PMO_NO        -- 프로모션번호
+		        ,TO_CHAR(GKM.CREDATE,'YYYYMMDDHH24MISS')    AS  WRITR_DTM       -- 작성일시
+		        ,GKM.UPDDATE        AS  MOD_DTM       -- 수정일시
+		        ,GKM.MESSAGE_ID       AS  BLTTHG_NO   -- 게시물번호
+		        ,GKM.DBSTS        AS  ST              -- 상태
+		        ,GKM.BBS_ID         AS  BLTBD_NO      -- 게시판번호
+		        ,X.PAGEIDX        AS  PAGE_INDEX      -- 페이지인덱스
+		        --,X.TOTCNT           AS  TOT_CNT       -- 총개수 
+		        ,FC_GET_ESTI_SHARE_CNT(#{_c.prdCd[0].value}) AS TOT_CNT      
+		        ,(SELECT (CASE WHEN LENGTH(VCCD.EC_LOGIN_ID) < 5 THEN SUBSTR(VCCD.EC_LOGIN_ID, 0, 3) || SUBSTR('*************', 0, LENGTH(VCCD.EC_LOGIN_ID)-3)
+		                       ELSE SUBSTR(VCCD.EC_LOGIN_ID, 0, 4) || SUBSTR('*************', 0, LENGTH(VCCD.EC_LOGIN_ID)-4)
+		                   END)
+		            FROM V_CMM_CUST_D VCCD
+		           WHERE EC_CUST_NO = GKM.ECUSERID ) AS  NICK_NAME  -- 별명
+		    FROM (SELECT 
+		    				X2.*		              
+		            FROM (SELECT CEIL( ROWNUM / #{_p.pageItemSize} )  AS  PAGEIDX		                        
+		                        ,X1.*
+		                    FROM (SELECT /*+ LEADING(GKS) INDEX_DESC(GKS GS_KNOW_SHARE_IX5) INDEX(GKM GS_KNOW_MESSAGE_IX3) */
+		                                 GKM.MESSAGE_ID             
+		                            FROM GS_KNOW_SHARE GKS,
+		                                 GS_KNOW_MESSAGE GKM
+		                           WHERE GKS.MESSAGE_ID = GKM.MESSAGE_ID
+		                             AND GKS.PRDID = #{_c.prdCd[0].value}
+		                             AND GKM.DBSTS = 'A'
+		                             AND GKM.MESSAGE_LEVEL = 1
+		                             AND GKM.BBS_ID = 'restrict'
+		                             AND ROWNUM <= #{_p.pageNumber} * #{_p.pageItemSize} 
+		                             ) X1
+		          			) X2
+		      			WHERE PAGEIDX = #{_p.pageNumber} ) X,
+		      GS_KNOW_MESSAGE GKM
+		  WHERE X.MESSAGE_ID = GKM.MESSAGE_ID
+		  AND   X.MESSAGE_ID = GKM.MESSAGE_ID
+		
+	]]>
+	</select>
+
+	<select id="getPrdRevwGenerAndPhotoPageList" resultMap="prdrevwList" parameterType="criteria">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품 getPrdRevwGenerAndPhotoPageList
+		API  : 상품평
+		설명 : 상품평 목록중 일반 상품평 목록과 사진 상품평 목록을 조회한다.
+		
+		#{_c.prdCd[0].value} = 2880287
+		#{_p.pageItemSize} = 10 
+		#{_p.pageNumber} = 1
+		
+		 -->
+		
+		SELECT GKM.MESSAGE_ID           AS BLTTHG_NO          -- 게시물번호
+		      ,GKM.DBSTS                AS ST                 -- 상태
+		      ,GKM.BBS_ID               AS BLGKMD_NO          -- 게시판번호
+		      ,GKM.MESSAGE_LEVEL        AS BLTTHG_LVL         -- 게시물레벨
+		      ,GKM.PARENT_MESSAGE_ID    AS UPPER_BLTTHG_NO    -- 상위게시물번호
+		      ,GKM.ECUSERID             AS EC_CUST_NO            -- 고객번호
+		      ,GKM.TITLE                AS TITLE              -- 제목
+		      ,GKM.IP_ADDRESS           AS IP_ADDR            -- IP주소
+		      ,GKM.AGE_LIMIT_FLAG       AS AGE_LIMIT_YN       -- 연령제한여부
+		      ,GKM.REPORT_FLAG          AS DECLR_YN           -- 신고여부
+		      ,GKM.LSECTID              AS LRG_CLS            -- 대분류
+		      ,GKM.MSECTID              AS MID_CLS            -- 중분류
+		      ,GKM.RPST_PRDID           AS REP_PRD_CD         -- 대표상품코드
+		      ,GKM.PRDID                AS PRD_CD             -- 상품코드
+		      ,GKM.PRDNAME              AS PRD_NM             -- 상품명
+		      ,GKM.BUYER_FLAG           AS BUYER_YN           -- 구매자여부
+		      /*,GKM.MESSAGE_FLAG         AS EXLNT_PRDRPT_GBN   -- 우수상품평구분*/
+		      ,GKM.CONTENTS_FLAG        AS ATACH_FILE_GBN      -- 첨부파일구분
+		      /*,GKM.SMS_FLAG             AS SMS_YN             -- SMS알림여부
+		      ,GKM.PRDID2               AS PRD_CD2            -- 상품코드2
+		      ,GKM.PRDID3               AS PRD_CD3            -- 상품코드3
+		      ,GKM.PRDID4               AS PRD_CD4            -- 상품코드4
+		      ,GKM.URGENT_FLAG          AS ER_YN              -- 긴급여부
+		      ,GKM.START_DATE           AS STR_DTM            -- 시작일시
+		      ,GKM.END_DATE             AS END_DTM            -- 종료일시
+		      ,GKM.CHOICE_FLAG          AS SEL_YN             -- 선택여부
+		      ,GKM.CHOICE_PRDID         AS SEL_PRD            -- 선택상품
+		      ,GKM.CHOICE_DATE          AS SEL_DTM            -- 선택일시
+		      ,GKM.PRD_COUNT            AS CONCT_PRD_CNT      -- 연관상품수
+		      ,GKM.REPLY_ADOPT          AS ANSWR_ADOPT        -- 답변채택*/
+		      ,GKM.PRD_SATISFACT        AS PRD_SATSF          -- 상품만족도
+		      ,GKM.EVAL_NAME1           AS EVAL_ITM_NM1       -- 평가항목명1
+		      ,GKM.EVAL_VALUE1          AS EVAL_ITM_VAL1      -- 평가항목값1
+		      ,GKM.EVAL_NAME2           AS EVAL_ITM_NM2       -- 평가항목명2
+		      ,GKM.EVAL_VALUE2          AS EVAL_ITM_VAL2      -- 평가항목값2
+		      ,GKM.EVAL_NAME3           AS EVAL_ITM_NM3       -- 평가항목명3
+		      ,GKM.EVAL_VALUE3          AS EVAL_ITM_VAL3      -- 평가항목값3
+		      ,GKM.EVAL_NAME4           AS EVAL_ITM_NM4       -- 평가항목명4
+		      ,GKM.EVAL_VALUE4          AS EVAL_ITM_VAL4      -- 평가항목값4
+		      ,GKM.READ_COUNT           AS QRY_CNT            -- 조회수
+		      ,GKM.PARTICIPANT_COUNT    AS HELP_CNT           -- 도움수
+		      /*,GKM.OPPOSITION_COUNT     AS OBJ_CNT            -- 반대수*/
+		      /*,GKM.REPLY_COUNT          AS ANSWR_CNT          -- 답변수*/
+		      /*,GKM.BUYER_REPLY_COUNT    AS BUYER_ANSWR_CNT    -- 구매자답변수*/
+		      ,GKM.COMMENT_COUNT        AS XIL_ARGKMDL_CNT    -- 꼬리글수
+		      /*,GKM.SCRAP_COUNT          AS SCRAP_CNT          -- 스크랩수*/
+		      ,GKM.POINT                AS PNT                -- 포인트
+		      ,GKM.REMARK               AS NOTE               -- 비고(해피테스터일 경우 Y)
+		      ,GKM.PROMO_NUM            AS PMO_NO             -- 프로모션번호
+		      ,GKM.INDEX_COLUMN         AS SORT_COL           -- 정렬컬럼
+		      ,GKM.CREUSER              AS WRITR              -- 작성자
+		      ,TO_CHAR(GKM.CREDATE,'YYYYMMDDHH24MISS')  AS    WRITR_DTM         -- 작성일시
+		      ,GKM.UPDUSER              AS MODR               -- 수정자
+		      ,GKM.UPDDATE              AS MOD_DTM            -- 수정일시
+		      /*,GKM.GUBUN                AS GBN                -- 일반/어린이 독후감 구분 (1:일반, 2:어린이 독후감)*/
+		      /*,GKM.AGE                  AS AGE                -- 어린이독후감-나이(EC_REFSET.REFSETID=2073 참조)*/
+		      /*,GKM.SUB_NAME             AS SUB_NM             -- 어린이 독후감-별명*/
+		      ,GKM.ORDNUM               AS ORD_NO             -- CATV 주문번호
+		      /*,GKM.RPST_FLAG            AS REP_PRD_EXPOS_YN   -- 대표상품평노출여부 Y:노출 N:비노출*/
+		      ,GKM.ORD_OPTION1_NM       AS BUYER_OPT1_NM      -- 구매옵션명1
+		      ,GKM.ORD_OPTION2_NM       AS BUYER_OPT2_NM      -- 구매옵션명2
+		      ,GKM.ORD_OPTION3_NM       AS BUYER_OPT3_NM      -- 구매옵션명3
+		      ,GKM.SAVE_ROOT            AS CUST_SAV_PATH      -- 고객저장경로
+		      ,GKM.ORD_OPTION_DISP_YN   AS PRCH_OPT_EXPOS_YN  -- 구매옵션노출여부(Y:노출, N:비노출)
+		      ,GKM.BEST_FLAG            AS BEST_PRDRPT_YN     -- 베스트 상품평 여부 (C: 후보, B: 선정)
+		      ,GKMD.MESSAGE_DSCR        AS CNTNT              -- 내용
+		      ,X.TOTCNT AS TOT_CNT
+		      ,X.PAGEIDX                AS PAGE_INDEX         -- 페이지번호
+		      ,NVL2(GKMD.MESSAGE_ID,'1','0')            AS FOR_UPDATE          -- 상품평상세 수정용 컬럼
+		      ,(SELECT /*+ INDEX_DESC(GKC GS_KNOW_CONTENTS_PK) */
+		               VOD_ID
+		          FROM GS_KNOW_CONTENTS GKC
+		         WHERE GKC.MESSAGE_ID(+) = GKM.MESSAGE_ID
+		           AND GKC.DBSTS         = 'A'
+		           <if test="('generalProductReview').equals(_c.tabFlagValue[0].value) " >
+		           AND GKC.CONTENTS_FLAG = '1'       -- 1:텍스트, 2:이미지, 3:동영상, 4:이미지+동영상
+		           </if>
+		           <if test="('photographVideoProductReview').equals(_c.tabFlagValue[0].value)">
+		           AND GKC.CONTENTS_FLAG IN ('2','3','4')  -- 1:텍스트, 2:이미지, 3:동영상, 4:이미지+동영상
+		           </if>
+		           AND ROWNUM            = 1
+		       )                        AS VIDEO_NO              -- 상품평컨텐츠 수정용 컬럼
+		        ,(SELECT 
+		                 (CASE WHEN LENGTH(VCCD.EC_LOGIN_ID) <![CDATA[ < ]]> 5 
+		                       THEN SUBSTR(VCCD.EC_LOGIN_ID, 0, 3) || SUBSTR('*************', 0, LENGTH(VCCD.EC_LOGIN_ID)-3)
+		                       ELSE SUBSTR(VCCD.EC_LOGIN_ID, 0, 4) || SUBSTR('*************', 0, LENGTH(VCCD.EC_LOGIN_ID)-4)
+		                   END)
+					FROM V_CMM_CUST_D VCCD
+				   WHERE VCCD.EC_CUST_NO = GKM.ECUSERID
+		         )                       AS   NICK_NAME  
+		  FROM (SELECT X2.*
+		          FROM (SELECT CEIL( ROWNUM /#{_p.pageItemSize})   AS PAGEIDX
+		                      ,X1.* 
+		                  FROM (SELECT /*+ LEADING(GKS) INDEX_DESC(GKS GS_KNOW_SHARE_IX5) INDEX(GKM2 GS_KNOW_MESSAGE_IX3) */
+		                               GKM2.MESSAGE_ID 
+		                              ,GKM2.ROWID      AS RID
+		                              ,COUNT(*) OVER() AS TOTCNT
+		                          FROM GS_KNOW_SHARE   GKS
+		                              ,GS_KNOW_MESSAGE GKM2
+		                         WHERE GKS.MESSAGE_ID = GKM2.MESSAGE_ID
+		                           AND GKS.PRDID      = #{_c.prdCd[0].value}
+		                           AND GKM2.DBSTS     = 'A'
+		                           AND GKM2.MESSAGE_LEVEL = 1
+		                           AND GKM2.BBS_ID    = 'estimate'
+		                           <if test="('generalProductReview').equals(_c.tabFlagValue[0].value) " >
+		                           AND GKM2.CONTENTS_FLAG = '1'        -- 1:텍스트, 2:이미지, 3:동영상, 4:이미지+동영상
+		                           </if>
+		                           <if test="('photographVideoProductReview').equals(_c.tabFlagValue[0].value)">
+		                           AND GKM2.CONTENTS_FLAG IN ('2','3','4')   -- 1:텍스트, 2:이미지, 3:동영상, 4:이미지+동영상
+		                           </if>
+		                           AND (GKM2.BEST_FLAG IS NULL OR GKM2.BEST_FLAG  <![CDATA[ <> ]]> 'B')   
+		                           AND NVL(GKM2.RPST_FLAG, 'Y') = (CASE WHEN GKS.PRDID = GKS.ORI_PRDID 
+		                                                                THEN NVL(GKM2.RPST_FLAG, 'Y') 
+		                                                                ELSE 'Y' 
+		                                                            END)
+                                   AND ROWNUM  <![CDATA[ <= #{_p.pageNumber} * #{_p.pageItemSize} ]]> 
+		                       ) X1
+		               ) X2 
+		         WHERE pageIdx = #{_p.pageNumber}  
+		       ) X       
+		        ,GS_KNOW_MESSAGE        GKM 
+		        ,GS_KNOW_MESSAGE_DETAIL GKMD
+		 WHERE X.RID        =  GKM.ROWID
+		   AND X.MESSAGE_ID = GKMD.MESSAGE_ID
+	</select>
+	
+	<select id="getPrdRevwBestPageList" resultMap="prdrevwList" parameterType="criteria">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품 getPrdRevwBestPageList
+		API  : 상품평
+		설명 : 상품평 목록중 베스트 상품평 목록을 조회한다.
+		
+		#{_c.prdCd[0].value} = 2880287
+		#{_p.pageItemSize} = 10 
+		#{_p.pageNumber} = 1
+		
+		-->
+
+	  SELECT GKM2.MESSAGE_ID         AS BLTTHG_NO        -- 게시물번호
+	         ,GKM2.DBSTS              AS ST               -- 상태
+	         ,GKM2.BBS_ID             AS BLTBD_NO         -- 게시판번호
+	         ,GKM2.MESSAGE_LEVEL      AS BLTTHG_LVL       -- 게시물레벨
+	         ,GKM2.PARENT_MESSAGE_ID  AS UPPER_BLTTHG_NO  -- 상위게시물번호
+	         ,GKM2.ECUSERID           AS EC_CUST_NO          -- 고객번호
+	         ,GKM2.TITLE              AS TITLE            -- 제목
+	         ,GKM2.CONTENTS_FLAG      AS ATACH_FILE_GBN   -- 첨부파일구분
+	         ,GKM2.PRDID              AS PRD_CD           -- 상품코드
+	         ,GKM2.PRDNAME            AS PRD_NM           -- 상품명
+	         ,GKM2.BUYER_FLAG         AS BUYER_YN         -- 구매자여부
+	         ,GKM2.PRD_SATISFACT      AS PRD_SATSF        -- 상품만족도
+	         ,GKM2.EVAL_NAME1         AS EVAL_ITM_NM1     -- 평가항목명1
+	         ,GKM2.EVAL_VALUE1        AS EVAL_ITM_VAL1    -- 평가항목값1
+	         ,GKM2.EVAL_NAME2         AS EVAL_ITM_NM2     -- 평가항목명2
+	         ,GKM2.EVAL_VALUE2        AS EVAL_ITM_VAL2    -- 평가항목값2
+	         ,GKM2.EVAL_NAME3         AS EVAL_ITM_NM3     -- 평가항목명3
+	         ,GKM2.EVAL_VALUE3        AS EVAL_ITM_VAL3    -- 평가항목값3
+	         ,GKM2.EVAL_NAME4         AS EVAL_ITM_NM4     -- 평가항목명4
+	         ,GKM2.EVAL_VALUE3        AS EVAL_ITM_VAL4    -- 평가항목값4
+	         ,GKM2.READ_COUNT         AS QRY_CNT          -- 조회수
+	         ,GKM2.PARTICIPANT_COUNT  AS HELP_CNT         -- 도움수	         
+	         ,GKM2.POINT              AS PNT              -- 포인트
+	         ,GKM2.REMARK             AS NOTE             -- 비고(해피테스터일 경우 Y)
+	         ,GKM2.PROMO_NUM          AS PMO_NO           -- 프로모션번호
+	         ,GKM2.INDEX_COLUMN       AS SORT_COL         -- 정렬컬럼
+	         ,GKM2.CREUSER            AS WRITR            -- 작성자
+	         ,TO_CHAR(GKM2.CREDATE,'YYYYMMDDHH24MISS')  AS    WRITR_DTM        -- 작성일시
+	         ,GKM2.UPDUSER            AS MODR             -- 수정자
+	         ,GKM2.UPDDATE            AS MOD_DTM          -- 수정일시
+	         ,GKM2.ORDNUM             AS ORD_NO           -- CATV 주문번호	        
+	         ,GKM2.ORD_OPTION1_NM     AS BUYER_OPT1_NM    -- 구매옵션명1
+	         ,GKM2.ORD_OPTION2_NM     AS BUYER_OPT2_NM    -- 구매옵션명2
+	         ,GKM2.ORD_OPTION3_NM     AS BUYER_OPT3_NM    -- 구매옵션명3
+	         ,GKM2.ORD_OPTION_DISP_YN AS PRCH_OPT_EXPOS_YN-- 구매옵션노출여부(Y:노출, N:비노출)
+	         ,X.PAGEIDX               AS PAGE_INDEX       -- 페이지번호  
+	         ,GKMD2.MESSAGE_DSCR      AS CNTNT            -- 내용
+	         ,NVL2(GKMD2.MESSAGE_ID,'1','0') AS FOR_UPDATE -- 상품평상세 수정용 컬럼
+	         ,X.TOTCNT AS TOT_CNT 
+	         ,(SELECT   /*+ INDEX_DESC(GKC GS_KNOW_CONTENTS_PK) */
+	                  VOD_ID
+	             FROM GS_KNOW_CONTENTS GKC
+	            WHERE GKC.MESSAGE_ID(+) = X.MESSAGE_ID
+	              AND GKC.DBSTS = 'A'
+	              <if test="('generalProductReview').equals(_c.tabFlagValue[0].value) " >
+	              AND GKC.CONTENTS_FLAG = '1'             -- 1:텍스트, 2:이미지, 3:동영상, 4:이미지+동영상
+	              </if>
+	              <if test="('photographVideoProductReview').equals(_c.tabFlagValue[0].value)">
+	              AND GKC.CONTENTS_FLAG IN ('2','3','4')  -- 1:텍스트, 2:이미지, 3:동영상, 4:이미지+동영상
+	              </if>
+	              AND ROWNUM = 1
+	             )                 AS VIDEO_NO         -- 상품평컨텐츠 수정용 컬럼
+	         ,(SELECT FILE_PATH
+	             FROM GS_KNOW_CONTENTS
+	            WHERE MESSAGE_ID(+) = GKM2.MESSAGE_ID
+	              AND DBSTS = 'A'
+	              AND ROWNUM = 1 
+	          )                    AS IMG_THMNIL       -- 이미지 썸네일
+	         ,(SELECT LVT.THUMB_FILE
+	             FROM GS_KNOW_CONTENTS GKC1
+	                 ,LGEC_VIDEO_THUMB LVT
+	            WHERE GKC1.VOD_ID = LVT.SEQ
+	              AND GKC1.MESSAGE_ID(+) = GKM2.MESSAGE_ID
+	              AND GKC1.DBSTS = 'A'
+	              AND LVT.DBSTS = 'A'
+	              AND ROWNUM = 1 
+	          )                    AS VIDEO_THMNIL     -- 비디오 썸네일
+	         ,(SELECT /*+ INDEX(E GS_KNOW_MESSAGE_IX2) */ 
+	                  COUNT(*)
+	             FROM GS_KNOW_MESSAGE GKM
+	            WHERE GKM.PRDID = #{_c.prdCd[0].value}
+	              AND GKM.BBS_ID = 'estimate'
+	              AND GKM.DBSTS = 'A'
+	              AND GKM.BEST_FLAG = 'B' 
+	          )                    AS BEST_TOT_CNT     -- 베스트 상품평 총 개수
+	         ,(SELECT
+	                  (CASE WHEN LENGTH(VCCD.EC_LOGIN_ID) <![CDATA[ < ]]> 5 
+	                        THEN SUBSTR(VCCD.EC_LOGIN_ID, 0, 3) || SUBSTR('*************', 0, LENGTH(VCCD.EC_LOGIN_ID)-3)
+	                        ELSE SUBSTR(VCCD.EC_LOGIN_ID, 0, 4) || SUBSTR('*************', 0, LENGTH(VCCD.EC_LOGIN_ID)-4)
+	                    END)
+                 FROM V_CMM_CUST_D VCCD
+                WHERE VCCD.EC_CUST_NO = GKM2.ECUSERID
+	          )                    AS NICK_NAME
+	     FROM (SELECT X2.*
+	             FROM (SELECT CEIL( ROWNUM / #{_p.pageItemSize} ) AS PAGEIDX
+	                         ,X3.*
+	                     FROM (
+		                       SELECT X1.*
+		                     		 ,COUNT(*) OVER ()                    AS TOTCNT		                      			 
+		                        FROM (SELECT /*+ INDEX(GKM GS_KNOW_MESSAGE_IX2) */
+                                      GKM.MESSAGE_ID
+                                 FROM GS_KNOW_MESSAGE        GKM
+                                WHERE GKM.PRDID = #{_c.prdCd[0].value}
+                                  AND GKM.BBS_ID = 'estimate'
+                                  AND GKM.DBSTS = 'A'
+                                  AND GKM.BEST_FLAG = 'B'
+                                  AND ROWNUM <![CDATA[ <= #{_p.pageNumber} * #{_p.pageItemSize} ]]>
+                                UNION ALL
+                               SELECT /*+ LEADING(GKS) INDEX(GKS GS_KNOW_SHARE_PK) INDEX(GKM GS_KNOW_MESSAGE_PK) */
+                                      GKM.MESSAGE_ID
+                                 FROM GS_KNOW_SHARE          GKS
+                                     ,GS_KNOW_MESSAGE        GKM
+                                WHERE GKS.MESSAGE_ID = GKM.MESSAGE_ID
+                                  AND GKS.PRDID      = #{_c.prdCd[0].value}
+                                  AND GKM.BBS_ID     = 'estimate'
+                                  AND GKM.DBSTS      = 'A'
+                                  AND GKM.BEST_FLAG  = 'B'
+                                  AND NVL(GKM.RPST_FLAG, 'Y') = (CASE WHEN GKS.PRDID = GKS.ORI_PRDID
+                                                                      THEN NVL(GKM.RPST_FLAG, 'Y')
+                                                                      ELSE 'Y'
+                                                                  END)
+                                  AND NOT EXISTS(SELECT ' '
+                                                   FROM GS_KNOW_MESSAGE GKM2
+                                                  WHERE GKM2.ROWID = GKM.ROWID
+                                                    AND GKM2.PRDID = #{_c.prdCd[0].value}
+                                                    AND GKM2.BBS_ID = 'estimate'
+                                                    AND GKM2.DBSTS = 'A'
+                                                    AND GKM2.BEST_FLAG = 'B')
+                                  AND ROWNUM <![CDATA[ <= #{_p.pageNumber} * #{_p.pageItemSize} ]]>
+		                         ) X1
+	                      )X3
+	                  ) X2
+	            WHERE PAGEIDX = #{_p.pageNumber}
+	          )                       X
+	         ,GS_KNOW_MESSAGE         GKM2
+	         ,GS_KNOW_MESSAGE_DETAIL  GKMD2
+	    WHERE X.MESSAGE_ID = GKM2.MESSAGE_ID
+	      AND X.MESSAGE_ID = GKMD2.MESSAGE_ID
+	</select>
+
+	
+	<!-- 상품평 헤더 (평점, 개수) 조회 -->
+	<resultMap type="java.util.Map" id="prdrevwGrdMap">
+		<result property="prdrevwGrd1"		column="PRDRPT_GRD1"	/>
+		<result property="prdrevwGrd2"		column="PRDRPT_GRD2"    />
+		<result property="prdrevwGrd3"		column="PRDRPT_GRD3"    />
+		<result property="prdrevwGrd4" 		column="PRDRPT_GRD4"    />
+		<result property="prdrevwShrGrd" 	column="PRDRPT_SHR_GRD"	/>
+		<result property="prdrevwCnt" 		column="PRDRPT_CNT"	 	/>
+	</resultMap>
+	<select id="getProductReviewGrade" parameterType="long" resultMap="prdrevwGrdMap">
+		
+			<!-- 
+			DBMS : WEBDB
+			분야 : 단품 getProductReviewGrade
+			API  : 상품평
+			설명 : 상품평 평점 조회
+			
+			#{productCode} = 2880287
+			
+			-->
+			
+		<![CDATA[	
+			SELECT (CASE WHEN ESTIMATE_COUNT_SUM = 0 
+			             THEN 0 
+			             ELSE ROUND(EVAL_VALUE1_TOTAL_SUM/ESTIMATE_COUNT_SUM) 
+			         END ) AS PRDRPT_GRD1
+			      ,(CASE WHEN ESTIMATE_COUNT_SUM = 0 
+			             THEN 0 
+			             ELSE ROUND(EVAL_VALUE2_TOTAL_SUM/ESTIMATE_COUNT_SUM) 
+			         END ) AS PRDRPT_GRD2
+			      ,(CASE WHEN ESTIMATE_COUNT_SUM = 0 
+			             THEN 0 
+			             ELSE ROUND(EVAL_VALUE3_TOTAL_SUM/ESTIMATE_COUNT_SUM) 
+			         END ) AS PRDRPT_GRD3
+			      ,(CASE WHEN ESTIMATE_COUNT_SUM = 0 
+			             THEN 0 
+			             ELSE ROUND(EVAL_VALUE4_TOTAL_SUM/ESTIMATE_COUNT_SUM) 
+			         END ) AS PRDRPT_GRD4
+			      ,FC_GET_ESTI_SHARE_AVG(#{prdCd}) AS PRDRPT_SHR_GRD
+			      ,FC_GET_ESTI_SHARE_CNT(#{prdCd}) AS PRDRPT_CNT
+			  FROM (SELECT SUM(X.ESTIMATE_COUNT)     AS ESTIMATE_COUNT_SUM
+			              ,SUM(X.EVAL_VALUE1_TOTAL)  AS EVAL_VALUE1_TOTAL_SUM
+			              ,SUM(X.EVAL_VALUE2_TOTAL)  AS EVAL_VALUE2_TOTAL_SUM
+			              ,SUM(X.EVAL_VALUE3_TOTAL)  AS EVAL_VALUE3_TOTAL_SUM
+			              ,SUM(X.EVAL_VALUE4_TOTAL)  AS EVAL_VALUE4_TOTAL_SUM
+			          FROM (SELECT GKPT.EVAL_PRD_TOTAL
+			                      ,GKPT.EVAL_VALUE1_TOTAL
+			                      ,GKPT.EVAL_VALUE2_TOTAL
+			                      ,GKPT.EVAL_VALUE3_TOTAL
+			                      ,GKPT.EVAL_VALUE4_TOTAL
+			                      ,GKPT.ESTIMATE_COUNT
+			                  FROM GS_KNOW_PRD_TOTAL GKPT
+			                 WHERE GKPT.PRDID = #{prdCd}
+			                 UNION ALL
+			                SELECT GKPT1.EVAL_PRD_TOTAL-GKPT1.NOSHARE_EVAL_PRD_TOTAL
+			                      ,GKPT1.EVAL_VALUE1_TOTAL-GKPT1.NOSHARE_EVAL_VALUE1_TOTAL
+			                      ,GKPT1.EVAL_VALUE2_TOTAL-GKPT1.NOSHARE_EVAL_VALUE2_TOTAL
+			                      ,GKPT1.EVAL_VALUE3_TOTAL-GKPT1.NOSHARE_EVAL_VALUE3_TOTAL
+			                      ,GKPT1.EVAL_VALUE4_TOTAL-GKPT1.NOSHARE_EVAL_VALUE4_TOTAL
+			                      ,GKPT1.ESTIMATE_COUNT-GKPT1.NOSHARE_ESTIMATE_COUNT
+			                  FROM GS_KNOW_SHARE_PRD GKSP
+			                      ,GS_KNOW_PRD_TOTAL GKPT1
+			                 WHERE GKPT1.PRDID = GKSP.PASSIVE_PRDID
+			                   AND GKSP.ACTIVE_PRDID = #{prdCd}
+			               ) X
+			       )
+		]]>
+	</select>
+	
+	<resultMap type="java.util.Map" id="prdrevwLimitCustMap">
+		<result property="ecCustNo"	column = "EC_CUST_NO" 	/>  <!-- EC고객번호 -->  
+		<result property="custSt" 	column = "ST" 			/>  <!-- 상품평고객상태 -->               
+		<result property="custNo" 	column = "CATV_ID"      />  <!-- 고객번호 -->            
+		<result property="nick" 	column = "NICK"         />  <!-- 별명 -->            
+		<!--result property="customerGrade" column = "CUST_GRD"           	/>
+		<result property="shoppingSpecialistYesOrNo" column = "SHOP_SPCLST_YN"   />
+		<result property="customerGubun" column = "CUST_GBN"             />
+		<result property="job" column = "JOB"                  	/>
+		<result property="imagePath" column = "IMG_PATH"             />
+		<result property="greeting" column = "GREET"                	/>
+		<result property="ageOpenToThePublicYesOrNo" column = "AGE_OPNPUB_YN"     />
+		<result property="genderOpenToThePublicYesOrNo" column = "GENDR_OPNPUB_YN" />
+		<result property="weddingOpenToThePublicYesOrNo" column = "WEDD_OPNPUB_YN"  />
+		<result property="jobOpenToThePublicYesOrNo" column = "JOB_OPNPUB_YN"    /> --> 
+		<result property="limitFlg" column = "LIMIT_YN"             />
+		<!-- <result property="limitReason" column = "LIMIT_RSN"             />
+		<result property="warningCount" column = "WARN_CNT"             />
+		<result property="accumulatedSumPoint" column = "ASUM_PNT"              /-->
+		<result property="regDtm" column = "REG_DTM"                />	<!-- 등록일시 --> 
+	</resultMap>
+	<select id="getProductReviewLimitCustomer" parameterType="int" resultMap="prdrevwLimitCustMap">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품 getProductReviewLimitCustomer
+		API  : 상품평
+		설명 : 상품평 제한 고객 여부
+		
+		#{ecCustNo} = 159368563
+		
+		-->
+		
+		SELECT ECUSERID            AS EC_CUST_NO
+		      ,DBSTS               AS ST
+		      ,CATVID              AS CATV_ID
+		      ,NICK_NAME           AS NICK
+		      /*,USER_LEVEL          AS CUST_GRD
+		      ,PRO_FLAG            AS SHOP_SPCLST_YN
+		      ,USER_FLAG           AS CUST_GBN
+		      ,JOB                 AS JOB
+		      ,IMAGE_PATH          AS IMG_PATH
+		      ,GREETING            AS GREET
+		      ,AGE_OPEN_FLAG       AS AGE_OPNPUB_YN
+		      ,SEX_OPEN_FLAG       AS GENDR_OPNPUB_YN
+		      ,MRG_OPEN_FLAG       AS WEDD_OPNPUB_YN
+		      ,JOB_OPEN_FLAG       AS JOB_OPNPUB_YN*/
+		      ,NVL(LIMIT_FLAG,'N') AS LIMIT_YN
+		      /*,LIMIT_REASON        AS LIMIT_RSN
+		      ,WARNING_COUNT       AS WARN_CNT
+		      ,TOTAL_POINT         AS ASUM_PNT*/
+		      ,CREDATE             AS REG_DTM
+		  FROM GS_KNOW_USER
+		 WHERE ECUSERID = #{ecCustNo}
+		   AND DBSTS    = 'A'
+	</select>
+	
+	<update id="updateGsKnowUserNickName" parameterType="iceberg.capi.productreview.model.PrdrevwProcApiCntnt">
+      MERGE INTO GS_KNOW_USER GKU
+            USING DUAL S
+         ON (GKU.ECUSERID = #{ecCustNo} )
+       WHEN MATCHED THEN
+     UPDATE SET NICK_NAME = #{nick}
+       WHEN NOT MATCHED THEN
+     INSERT (ECUSERID, CATVID, NICK_NAME, DBSTS, CREDATE)
+     VALUES (#{ecCustNo}, #{custNo}, #{nick}, 'A', SYSDATE)
+	</update>
+	
+	<insert id="createGsKnowMessageDetail" parameterType="iceberg.capi.productreview.model.PrdrevwProcApiCntnt">
+		INSERT INTO GS_KNOW_MESSAGE_DETAIL
+		(
+		<if test="prdrevwBody  != null and !''.equals(prdrevwBody)">MESSAGE_DSCR</if>
+		<if test="prdrevwId  != null and !''.equals(prdrevwId)">,MESSAGE_ID</if>
+		)
+		VALUES(
+		<if test="prdrevwBody  != null and !''.equals(prdrevwBody)"> #{prdrevwBody}</if>
+		<if test="prdrevwId  != null and !''.equals(prdrevwId)"> ,#{prdrevwId}</if>
+		)
+	</insert>
+	
+	<select id="getProductReviewListByProductCode" parameterType="criteria" resultMap="prdrevwList">
+		<!--  
+		DBMS : WEBDB
+		분야 : 단품 getProductReviewListByProductCode
+		API  : 상품평
+		설명 : 고객이 작성한 주문번호가 있는 상품평 리스트 조회
+		
+		#{_c.ecCustNo[0].value} = 629039100
+		#{_c.productCode[0].value} = 3055956
+		
+		-->
+		          
+		SELECT /*+ INDEX(GKM GS_KNOW_ECUSERID_IDX)*/
+		       GKM.MESSAGE_ID  AS BLTTHG_NO
+		      ,GKM.ORDNUM      AS ORD_NO
+		  FROM GS_KNOW_MESSAGE GKM
+		 WHERE GKM.ECUSERID = #{_c.ecCustNo[0].value}
+		   AND GKM.PRDID    = #{_c.productCode[0].value}
+		   AND GKM.BBS_ID   = 'estimate'
+		   AND GKM.DBSTS    = 'A'
+		   AND GKM.MESSAGE_LEVEL = 1
+		   AND GKM.ORDNUM IS NOT NULL 
+	</select>
+	
+	<update id="updateGsKnowMessage" parameterType="iceberg.capi.productreview.model.PrdrevwProcApiCntnt">
+	/* GS_KNOW_MESSAGE UPDATE 필수로 들어가는 값을 제일 아래 설정해준다. */
+	UPDATE GS_KNOW_MESSAGE 
+       SET UPDDATE = SYSDATE
+      	  <if test="prdrevwStCd != null and !('').equals(prdrevwStCd)">
+          ,DBSTS = #{prdrevwStCd}
+          </if>
+          <if test="prdrevwGbnCd != null and !('').equals(prdrevwGbnCd)">
+          ,MESSAGE_LEVEL = #{prdrevwGbnCd}
+          </if>
+          <if test="upperPrdrevwId != 0">
+          ,PARENT_MESSAGE_ID = #{upperPrdrevwId}
+          </if>
+          <if test="prdrevwTitle != null and !('').equals(prdrevwTitle)">
+          ,TITLE = #{prdrevwTitle}
+          </if>
+          <if test="nick != null and !('').equals(nick)">
+          ,NICK_NAME = #{nick}
+          </if>
+          <if test="custRegrIp != null and !('').equals(custRegrIp)">
+          ,IP_ADDRESS = #{custRegrIp}
+          </if>
+          <if test="adultPrdFlg != null and !('').equals(adultPrdFlg)">
+          ,AGE_LIMIT_FLAG = #{adultPrdFlg}
+          </if>
+          <if test="declrFlg != null and !('').equals(declrFlg)" >
+          ,REPORT_FLAG = #{declrFlg}
+          </if>
+          <if test="lrgClsShopNo != 0">
+          ,LSECTID = #{lrgClsShopNo}
+          </if>
+          <if test="midClsShopNo != 0">
+          ,MSECTID = #{midClsShopNo}
+          </if>
+          <if test="repPrdCd != 0">
+          ,RPST_PRDID = #{repPrdCd}
+          </if>
+          <if test="prdCd != 0">
+          ,PRDID = #{prdCd}
+          </if>
+          <if test="exposPrdNm != null and !('').equals(exposPrdNm) ">
+          ,PRDNAME = #{exposPrdNm}
+          </if>
+          <if test=" ordPrsnFlg != null and !('').equals(ordPrsnFlg)">
+          ,BUYER_FLAG = #{ordPrsnFlg}
+          </if>
+          <if test="atachFileGbn != null and !('').equals(atachFileGbn)">
+          ,CONTENTS_FLAG = #{atachFileGbn}
+          </if>
+          <if test="prdrevwTotGrd != 0 ">
+          ,PRD_SATISFACT = #{prdrevwTotGrd}
+          </if>
+          <if test="evalItmNm1 != null and !('').equals(evalItmNm1)">
+          ,EVAL_NAME1 = #{evalItmNm1}
+          </if>
+          <if test="evalItmVal2 != 0">
+          ,EVAL_VALUE1 = #{evalItmVal1}
+          </if>
+          <if test="evalItmNm2 != null and !('').equals(evalItmNm2)">
+          ,EVAL_NAME2 = #{evalItmNm2}
+          </if>
+          <if test="evalItmVal2 != 0">
+          ,EVAL_VALUE2 = #{evalItmVal2}
+          </if>
+          <if test="evalItmNm3 != null and !('').equals(evalItmNm3)">
+          ,EVAL_NAME3 = #{evalItmNm3}
+          </if>
+          <if test="evalItmVal3 != 0">
+          ,EVAL_VALUE3 = #{evalItmVal3}
+          </if>
+          <if test="evalItmNm4 != null and !('').equals(evalItmNm4)">
+          ,EVAL_NAME4 = #{evalItmNm4}
+          </if>
+          <if test="evalItmVal4 != 0">
+          ,EVAL_VALUE4 = #{evalItmVal4}
+          </if>
+          <if test="qryCnt != 0">
+          ,READ_COUNT = #{qryCnt}
+          </if>
+          <if test="rcmdCnt != 0">
+          ,PARTICIPANT_COUNT = #{rcmdCnt}
+          </if>
+          <if test="answrCnt != 0 ">
+          ,REPLY_COUNT = #{answrCnt}
+          </if>
+          <if test="ecoinCnt != 0">
+          ,POINT = #{ecoinCnt}
+          </if>
+          <if test="hptstFlg != null and !('').equals(hptstFlg) ">
+          ,REMARK = #{hptstFlg}
+          </if>
+          <if test="sortCol != null and !('').equals(sortCol)">
+          ,INDEX_COLUMN = #{sortCol}
+          </if>
+          <if test=" regrId != null and !('').equals(regrId)">
+          ,CREUSER = #{regrId}
+          </if>
+          <if test="regDtm != null and !('').equals(regDtm) ">
+          ,CREDATE = #{regDtm}
+          </if>
+          <if test="modrId != null and !('').equals(modrId) ">
+          ,UPDUSER = #{modrId}
+          </if>
+          <if test="ordNo != 0 ">
+          ,ORDNUM = #{ordNo}
+          </if>
+          <if test="repPrdrevwExposFlg != null and !('').equals(repPrdrevwExposFlg)">
+          ,RPST_FLAG = #{repPrdrevwExposFlg}
+          </if>
+          <if test="ordItemOptNm1 != null and !('').equals(ordItemOptNm1) ">
+          ,ORD_OPTION1_NM = #{ordItemOptNm1}
+          </if>
+          <if test="ordItemOptNm2 != null and !('').equals(ordItemOptNm2) ">
+          ,ORD_OPTION2_NM = #{ordItemOptNm2}
+          </if>
+          <if test="foryyDccpnAccAmt != 0">
+          ,YEAR_SALE_POINT = #{foryyDccpnAccAmt}
+          </if>
+          <if test="prdrevwWritPath != null and !('').equals(prdrevwWritPath)">
+          ,SAVE_ROOT = #{prdrevwWritPath}
+          </if>
+          <if test="custRlmemshpGrd != null and !('').equals(custRlmemshpGrd) ">
+          ,CUS_GRADE = #{custRlmemshpGrd}
+          </if>
+          <if test="prdrevwBodyLen != 0 ">
+          ,DSCR_BYTES = #{prdrevwBodyLen}
+          </if>
+          <if test="ordItemOptExposFlg != null and !('').equals(ordItemOptExposFlg) ">
+          ,ORD_OPTION_DISP_YN = #{ordItemOptExposFlg}
+          </if>
+          <if test="bestSelForyyDccpnAmt != 0 ">
+          ,BEST_YEAR_SALE_POINT = #{bestSelForyyDccpnAmt}
+          </if>
+          <if test="bestPrdrevwFlg != null and !('').equals(bestPrdrevwFlg)">
+          ,BEST_FLAG = #{bestPrdrevwFlg}
+          </if>
+          ,MESSAGE_ID = #{prdrevwId}
+          ,ECUSERID = #{ecCustNo}
+          <if test="('evaluationProduct').equals(prdrevwTypCd)">
+          ,BBS_ID = 'restrict'
+          </if>
+          <if test="!('evaluationProduct').equals(prdrevwTypCd)">
+          ,BBS_ID = 'estimate'
+          </if>
+    WHERE MESSAGE_ID = #{prdrevwId}  
+	</update>
+		 
+	
+	<update id="updateGsKnowMessageDetail" parameterType="iceberg.capi.productreview.model.PrdrevwProcApiCntnt">
+		/* 상품평 수정시 GS_KNOW_MESSAGE_DETAIL 테이블을 수정한다. */
+		UPDATE 	GS_KNOW_MESSAGE_DETAIL 
+		SET		MESSAGE_DSCR	= #{prdrevwBody}
+		WHERE 	MESSAGE_ID = #{prdrevwId}
+	</update>
+	
+	<update id="updateGsKnowContents" parameterType="iceberg.capi.productreview.model.PrdrevwProcApiCntnt">
+	<![CDATA[
+		/* 상품평 수정시 GS_KNOW_CONTENTS 테이블을 수정한다. */
+		UPDATE 	GS_KNOW_CONTENTS 
+		SET		DBSTS = 'D',
+				UPDDATE = SYSDATE
+		WHERE 	MESSAGE_ID = #{prdrevwId}
+		AND		DBSTS = 'A'
+	]]>	
+	</update>
+	
+	<insert id="createGsKnowContents" parameterType="iceberg.capi.productreview.model.PrdrevwProcApiCntnt">
+	<![CDATA[
+      /* 상품평 작성 혹은 수정시 GS_KNOW_CONTENTS 테이블에 데이터를 생성한다. */
+      INSERT INTO GS_KNOW_CONTENTS (
+         MESSAGE_ID
+        ,DBSTS
+        ,CONTENTS_FLAG
+        ,CONTENTS_TYPE
+        ,FILE_NAME
+        ,FILE_PATH
+        ,TITLE
+        ,VOD_ID
+        ,APPRV_FLAG
+        ,CREDATE
+        ,UPDDATE
+        ,SEQ
+      ) VALUES (
+         #{prdrevwId}
+        ,#{prdrevwStCd}
+        ,#{atachFileGbn}
+        ,#{atachFileExtns}
+        ,#{atachFileNm}
+        ,#{atachFilePath}
+        ,#{prdrevwTitle}
+        ,#{videoNo}
+        ,#{aprvFlg}
+        ,SYSDATE
+        ,SYSDATE
+        ,#{prdrevwCntntNo} )
+	]]>
+	</insert>
+
+	
+	<select id="getProductReviewWritedCount" parameterType="criteria" resultType="int">
+		<!--  
+		DBMS : WEBDB
+		분야 : 단품 getProductReviewWritedCount
+		API  : 상품평
+		설명 : productCode, ecuserid, orderNumber 기준으로 상품평 작성여부 확인
+		
+		#{_c.productCode[0].value} = 3353707
+		#{_c.ecCustNo[0].value} = 31701633
+		#{_c.orderNumber[0].value} =  540182831
+		-->	
+		    
+		SELECT COUNT(*) AS CNT
+		  FROM GS_KNOW_MESSAGE
+		 WHERE PRDID    = #{_c.productCode[0].value}
+		   AND ECUSERID = #{_c.ecCustNo[0].value}
+		   AND ORDNUM   = #{_c.orderNumber[0].value}
+		   AND DBSTS    = 'A'
+		   AND BBS_ID	IN ('estimate', 'restrict')
+		   AND ROWNUM   = 1
+	</select>
+	
+	<update id="updateProductReviewReadCount">
+		UPDATE GS_KNOW_MESSAGE
+		SET 		READ_COUNT = READ_COUNT + 1
+		WHERE	MESSAGE_ID = #{prdrevwId}
+	</update>
+	
+	<resultMap type="iceberg.capi.productreview.model.Prdrevw" id="productReviewDetailMap">
+		<result property = "prdrevwId" 			column = "BLTTHG_NO"/>			<!-- 상품평ID	 -->
+		<result property = "prdrevwTypCd" 		column = "BLTBD_NO"/>			<!-- 상품평유형코드	 -->
+		<result property = "prdrevwGbnCd" 		column = "BLTTHG_LVL"/>			<!-- 상품평구분코드(본글, 답글구분)	 -->
+		<result property = "ecCustNo" 			column = "EC_CUST_NO"/>			<!-- EC고객번호	 -->
+		<result property = "prdrevwTitle" 		column = "TITLE"/>				<!-- 상품평제목	 -->
+		<result property = "nick" 				column = "NICK_NAME"/>			<!-- 별명	 -->
+		<result property = "prdCd" 				column = "PRD_CD"/>				<!-- 상품코드	 -->
+		<result property = "atachFileGbn" 		column = "ATACH_FILE_GBN"/> 	<!-- 첨부파일구분	 -->
+		<result property = "evalItmNm1" 		column = "EVAL_ITM_NM_1"/>		<!-- 평가항목명1	 -->
+		<result property = "evalItmVal1" 		column = "EVAL_ITM_VAL_1"/>		<!-- 평가항목값1	 -->
+		<result property = "evalItmNm2" 		column = "EVAL_ITM_NM_2"/>		<!-- 평가항목명2	 -->
+		<result property = "evalItmVal2" 		column = "EVAL_ITM_VAL_2"/>		<!-- 평가항목값2	 -->
+		<result property = "evalItmNm3" 		column = "EVAL_ITM_NM_3"/>		<!-- 평가항목명3	 -->
+		<result property = "evalItmVal3" 		column = "EVAL_ITM_VAL_3"/>		<!-- 평가항목값3	 -->
+		<result property = "evalItmNm4" 		column = "EVAL_ITM_NM_4"/>		<!-- 평가항목명4	 -->
+		<result property = "evalItmVal4" 		column = "EVAL_ITM_VAL_4"/>		<!-- 평가항목값4	 -->
+		<result property = "qryCnt" 			column = "QRY_CNT"/>			<!-- 조회수	 -->
+		<result property = "prdrevwBodyLen" 	column = "CNTNT_BYTE_NO"/>		<!-- 상품평본문길이	 -->
+		<result property = "prdrevwBody" 		column = "CNTNT"/>				<!-- 상품평본문	 -->
+		<result property = "bestPrdrevwFlg" 	column = "BEST_PRDRPT_YN"/>		<!-- 베스트상품평여부	 -->
+		<result property = "videoRepPath" 		column = "VIDEO_THMNIL"/>		<!-- 동영상대표경로	 -->
+		<result property = "atachFilePath" 		column = "IMG_THMNIL"/>			<!-- 첨부파일경로	 -->
+		<result property = "hptstFlg" 			column = "NOTE"/>				<!-- 해피테스터여부	 -->
+		<result property = "prdrevwStCd" 		column = "ST"/>					<!-- 상품평상태코드	 -->
+		<result property = "ordPrsnFlg" 		column = "BUYER_YN"/>			<!-- 주문자여부	 -->
+		<!--result property = "orderNumber" column = "ORD_NUM"/-->
+		<result property = "ecoinCnt" 		column = "PNT"/>				<!-- e코인적립갯수	 -->
+	</resultMap>
+	<select id="getProductReviewDetail" parameterType="long" resultMap="productReviewDetailMap">
+		
+		<!--  
+		DBMS : WEBDB
+		분야 : 단품 getProductReviewDetail
+		API  : 상품평
+		설명 : 상품평 상세 조회
+		
+		#{prdrevwId} = 3652544
+		-->
+		<![CDATA[
+		SELECT /*+ INDEX(A GS_KNOW_MESSAGE_PK) */
+		       GKM.MESSAGE_ID            AS BLTTHG_NO
+		      ,GKM.BBS_ID                AS BLTBD_NO
+		      ,GKM.MESSAGE_LEVEL         AS BLTTHG_LVL
+		      ,GKM.ECUSERID              AS EC_CUST_NO
+		      ,GKM.TITLE                 AS TITLE
+		      ,(SELECT 
+		               (CASE WHEN LENGTH(VCCD.EC_LOGIN_ID) < 5 
+		                     THEN SUBSTR(VCCD.EC_LOGIN_ID, 0, LENGTH(VCCD.EC_LOGIN_ID)-2) || '**'
+		                ELSE SUBSTR(VCCD.EC_LOGIN_ID, 0, 4) || SUBSTR('*************', 0, LENGTH(VCCD.EC_LOGIN_ID)-4)
+		                 END)
+                 FROM V_CMM_CUST_D VCCD
+				WHERE EC_CUST_NO  = GKM.ECUSERID
+		       )                         AS NICK
+		      ,GKM.PRDID                 AS PRD_CD
+		      ,GKM.CONTENTS_FLAG         AS ATACH_FILE_GBN
+		      ,GKM.EVAL_NAME1            AS EVAL_ITM_NM_1
+		      ,GKM.EVAL_VALUE1           AS EVAL_ITM_VAL_1
+		      ,GKM.EVAL_NAME2            AS EVAL_ITM_NM_2
+		      ,GKM.EVAL_VALUE2           AS EVAL_ITM_VAL_2
+		      ,GKM.EVAL_NAME3            AS EVAL_ITM_NM_3
+		      ,GKM.EVAL_VALUE3           AS EVAL_ITM_VAL_3
+		      ,GKM.EVAL_NAME4            AS EVAL_ITM_NM_4
+		      ,GKM.EVAL_VALUE4           AS EVAL_ITM_VAL_4
+		      ,GKM.READ_COUNT            AS QRY_CNT
+		      ,NVL(GKM.BEST_FLAG,'N')    AS BEST_PRDRPT_YN
+		      ,GKM.DSCR_BYTES            AS CNTNT_BYTE_NO           
+		      ,GKMD.MESSAGE_DSCR         AS CNTNT
+		      ,(SELECT FILE_PATH
+		          FROM GS_KNOW_CONTENTS
+		         WHERE MESSAGE_ID(+) = GKM.MESSAGE_ID
+		           AND DBSTS = 'A'
+		           AND ROWNUM = 1
+		       )                       AS IMG_THMNIL
+		      ,(SELECT LVT.THUMB_FILE
+		          FROM GS_KNOW_CONTENTS GKC
+		              ,LGEC_VIDEO_THUMB LVT
+		         WHERE GKC.MESSAGE_ID(+) = GKM.MESSAGE_ID
+		           AND GKC.VOD_ID = LVT.SEQ
+		           AND GKC.DBSTS  = 'A'
+		           AND LVT.DBSTS  = 'A'
+		           AND ROWNUM     = 1
+		       )                       AS VIDEO_THMNIL
+		      ,GKM.REMARK              AS NOTE 
+		  FROM GS_KNOW_MESSAGE        GKM
+		      ,GS_KNOW_MESSAGE_DETAIL GKMD
+		 WHERE GKM.MESSAGE_ID = GKMD.MESSAGE_ID(+) 
+		   AND GKM.MESSAGE_ID = #{prdrevwId}
+		]]>
+	</select>
+	
+	<resultMap type="java.util.Map" id="prdEvalItemMap">
+		<result property = "evalItmNm1" 		column = "EVAL_ITM_NM1"/>		<!-- 평가항목명1	 -->
+		<result property = "evalItmNm2" 		column = "EVAL_ITM_NM2"/>		<!-- 평가항목명2	 -->
+		<result property = "evalItmNm3" 		column = "EVAL_ITM_NM3"/>		<!-- 평가항목명3	 -->
+		<result property = "evalItmNm4" 		column = "EVAL_ITM_NM4"/>		<!-- 평가항목명4	 -->
+	</resultMap>
+	<select id="getProductEvaluationItem" parameterType="String" resultMap="prdEvalItemMap">
+		<!--  
+		DBMS : WEBDB
+		분야 : 단품 getProductEvaluationItem
+		API  : 상품평
+		설명 : 상품평가항목 조회
+		
+		#{prdClsCd.value} = B45110101
+		-->	
+		
+		SELECT X.EVAL_NAME1  AS EVAL_ITM_NM1 --평가항목1
+		      ,X.EVAL_NAME2  AS EVAL_ITM_NM2 --평가항목2
+		      ,X.EVAL_NAME3  AS EVAL_ITM_NM3 --평가항목3
+		      ,X.EVAL_NAME4  AS EVAL_ITM_NM4 --평가항목4
+		  FROM (SELECT /*+ INDEX(A GS_KNOW_EVAL_ITEM_PK) */ 
+		               GKEI.*
+		          FROM GS_KNOW_EVAL_ITEM GKEI
+		         WHERE GKEI.LCLASS = SUBSTR(#{_c.prdClsCd[0].value}, 1, 3)
+		           AND GKEI.MCLASS = SUBSTR(#{_c.prdClsCd[0].value}, 4, 2)
+		         UNION ALL
+		        SELECT /*+ INDEX(A GS_KNOW_EVAL_ITEM_PK) */ 
+		               GKEI.*
+		          FROM GS_KNOW_EVAL_ITEM GKEI
+		         WHERE GKEI.LCLASS = SUBSTR(#{_c.prdClsCd[0].value}, 1, 3)
+		         UNION ALL
+		        SELECT /*+ INDEX(A GS_KNOW_EVAL_ITEM_PK) */ 
+		               GKEI.*
+		          FROM GS_KNOW_EVAL_ITEM GKEI
+		         WHERE GKEI.LCLASS = '000'
+		       )X
+		 WHERE ROWNUM = 1
+	</select>
+	
+	<insert id="createGsKnowMessage" parameterType="iceberg.capi.productreview.model.PrdrevwProcApiCntnt">
+		INSERT INTO GS_KNOW_MESSAGE
+		(
+			<if test="prdrevwId != 0">
+			MESSAGE_ID 
+			</if>   
+			<if test="prdrevwStCd != null and !''.equals(prdrevwStCd)">
+			,DBSTS 
+			</if>        
+			<if test="prdrevwTypCd != null and !''.equals(prdrevwTypCd)">
+			,BBS_ID 
+			</if>        
+			<if test="ecCustNo != 0">
+			,ECUSERID 
+			</if>     
+			<if test="prdrevwTitle != null and !''.equals(prdrevwTitle)">
+			,TITLE 
+			</if>        
+			<if test="nick != null and !''.equals(nick)">
+			,NICK_NAME 
+			</if>    
+			<if test="prdCd != 0">
+			,PRDID 
+			</if>        
+			<if test="exposPrdNm != null and !''.equals(exposPrdNm)">
+			,PRDNAME 
+			</if>      
+			<if test="ordPrsnFlg != null and !''.equals(ordPrsnFlg)">
+			,BUYER_FLAG 
+			</if>   
+			<if test="atachFileGbn != null and !''.equals(atachFileGbn)">
+			,CONTENTS_FLAG 
+			</if>
+			<if test="prdrevwTotGrd != 0">
+			,PRD_SATISFACT 
+			</if>
+			<if test="evalItmNm1 != null and !''.equals(evalItmNm1)">
+			,EVAL_NAME1 
+			</if>   
+			<if test="evalItmVal1 != 0">
+			,EVAL_VALUE1 
+			</if>  
+			<if test="evalItmNm2 != null and !''.equals(evalItmNm2)">
+			,EVAL_NAME2 
+			</if>
+			<if test="evalItmVal2 != 0">
+			,EVAL_VALUE2 
+			</if>   
+			<if test="evalItmNm3 != null and !''.equals(evalItmNm3)">
+			,EVAL_NAME3 
+			</if>
+			<if test="evalItmVal3 != 0">
+			,EVAL_VALUE3 
+			</if>  
+			<if test="evalItmNm4 != null and !''.equals(evalItmNm4)">
+			,EVAL_NAME4 
+			</if>
+			<if test="evalItmVal4 != 0">
+			,EVAL_VALUE4 
+			</if>   
+			<if test="hptstFlg != null and !''.equals(hptstFlg)">
+			,REMARK
+			</if>       
+			<if test="ordNo != 0">
+			,ORDNUM 
+			</if>																																				                                                                
+			<if test="ordItemOptNm1 != null and !''.equals(ordItemOptNm1)">
+			,ORD_OPTION1_NM 
+			</if>																																				                                                                
+			<if test="ordItemOptNm2 != null and !''.equals(ordItemOptNm2)">
+			,ORD_OPTION2_NM 
+			</if>																																				                                                                
+			<if test="prdrevwWritPath != null and !''.equals(prdrevwWritPath)">
+			,SAVE_ROOT
+			</if>    
+			<if test="prdrevwBodyLen != 0">
+			,DSCR_BYTES 
+			</if>   
+			<if test="bestPrdrevwFlg != null and !''.equals(bestPrdrevwFlg)">
+			,BEST_FLAG 
+			</if>    
+			<if test="chanlCd  != null and !''.equals(chanlCd)">
+			,CHANL_CD 
+			</if>
+			<if test="prdrevwGbnCd != null and !''.equals(prdrevwGbnCd)">
+			,MESSAGE_LEVEL
+			</if>
+			<if test="custRegrIp != null and !''.equals(custRegrIp)">	
+			,IP_ADDRESS
+			</if>
+			<if test="adultPrdFlg != null and !''.equals(adultPrdFlg)">	
+			,AGE_LIMIT_FLAG
+			</if>
+			<if test="sortCol != null and !''.equals(sortCol)">	
+			,INDEX_COLUMN
+			</if>
+			<if test="repPrdCd != 0">	
+			,RPST_PRDID
+			</if>
+			<if test="ordItemOptExposFlg != null and !''.equals(ordItemOptExposFlg)">	
+			,ORD_OPTION_DISP_YN
+			</if>
+			<if test="lrgClsShopNo != 0">	
+			,LSECTID
+			</if>
+			<if test="midClsShopNo != 0">	
+			,MSECTID
+			</if>
+			<if test="custNo != 0">																		
+			,CREUSER 
+			</if> 
+			,CREDATE                                                 
+		)
+		VALUES(
+			<if test="prdrevwId != 0">
+			#{prdrevwId}	
+			</if>           
+			<if test="prdrevwStCd != null and !''.equals(prdrevwStCd)">
+			,#{prdrevwStCd}
+			</if>
+			<if test="prdrevwTypCd != null and !''.equals(prdrevwTypCd)">
+			,#{prdrevwTypCd}
+			</if>
+			<if test="ecCustNo != 0">
+			,#{ecCustNo}
+			</if>
+			<if test="prdrevwTitle != null and !''.equals(prdrevwTitle)">
+			,#{prdrevwTitle}
+			</if>
+			<if test="nick != null and !''.equals(nick)">
+			,#{nick}
+			</if>     
+			<if test="prdCd != 0">
+			,#{prdCd}
+			</if>               
+			<if test="exposPrdNm != null and !''.equals(exposPrdNm)">
+			,#{exposPrdNm}
+			</if>       
+			<if test="ordPrsnFlg != null and !''.equals(ordPrsnFlg)">
+			,#{ordPrsnFlg}
+			</if>
+			<if test="atachFileGbn != null and !''.equals(atachFileGbn)">
+			,#{atachFileGbn}
+			</if>        
+			<if test="prdrevwTotGrd != 0">
+			,#{prdrevwTotGrd}
+			</if>    
+			<if test="evalItmNm1 != null and !''.equals(evalItmNm1)">
+			,#{evalItmNm1}
+			</if>
+			<if test="evalItmVal1 != 0">
+			,#{evalItmVal1} 
+			</if>
+			<if test="evalItmNm2 != null and !''.equals(evalItmNm2)">
+			,#{evalItmNm2}
+			</if>
+			<if test="evalItmVal2 != 0">
+			,#{evalItmVal2} 
+			</if>
+			<if test="evalItmNm3 != null and !''.equals(evalItmNm3)">
+			,#{evalItmNm3}
+			</if>
+			<if test="evalItmVal3 != 0">
+			,#{evalItmVal3} 
+			</if>
+			<if test="evalItmNm4 != null and !''.equals(evalItmNm4)">
+			,#{evalItmNm4}
+			</if>
+			<if test="evalItmVal4 != 0">
+			,#{evalItmVal4} 
+			</if>
+			<if test="hptstFlg != null and !''.equals(hptstFlg)">
+			,#{hptstFlg}
+			</if>
+			<if test="ordNo != 0">
+			,#{ordNo}
+			</if>    
+			<if test="ordItemOptNm1 != null and !''.equals(ordItemOptNm1)">
+			,#{ordItemOptNm1}
+			</if>    
+			<if test="ordItemOptNm2 != null and !''.equals(ordItemOptNm2)">
+			,#{ordItemOptNm2}
+			</if>
+			<if test="prdrevwWritPath != null and !''.equals(prdrevwWritPath)">
+			,#{prdrevwWritPath} 
+			</if>    
+			<if test="prdrevwBodyLen != 0">
+			,#{prdrevwBodyLen}
+			</if>
+			<if test="bestPrdrevwFlg != null and !''.equals(bestPrdrevwFlg)">
+			,#{bestPrdrevwFlg}
+			</if>
+			<if test="chanlCd  != null and !''.equals(chanlCd)">
+			,#{chanlCd}
+			</if>
+			<if test="prdrevwGbnCd != null and !''.equals(prdrevwGbnCd)">
+			,#{prdrevwGbnCd}
+			</if>
+			<if test="custRegrIp != null and !''.equals(custRegrIp)">	
+			,#{custRegrIp}
+			</if>
+			<if test="adultPrdFlg != null and !''.equals(adultPrdFlg)">
+			,#{adultPrdFlg}
+			</if>
+			<if test="sortCol != null and !''.equals(sortCol)">	
+			,#{sortCol}
+			</if>
+			<if test="repPrdCd != 0">
+			,#{repPrdCd}
+			</if>
+			<if test="ordItemOptExposFlg != null and !''.equals(ordItemOptExposFlg)">	
+			,#{ordItemOptExposFlg}
+			</if>
+			<if test="lrgClsShopNo != 0">	
+			,#{lrgClsShopNo}
+			</if>
+			<if test="midClsShopNo != 0">		
+			,#{midClsShopNo}
+			</if>
+			<if test="custNo != 0">                                                       
+			,#{custNo}            
+			</if>    
+			,sysdate                              
+		)
+	</insert>
+	
+	
+	<select id="getIsTheFirstProductReview" resultType="int" parameterType="criteria">
+		/* 해당 상품에 대해서 첫 상품평인지 확인 한다. */
+		SELECT 	COUNT(1)  
+		FROM   	GS_KNOW_MESSAGE     
+		WHERE  	1 = 1
+		<if test="('evaluationProduct').equals(_c.productReviewTypeCode[0].value)">
+		AND		BBS_ID = 'restrict'
+		</if>
+		<if test="!('evaluationProduct').equals(_c.productReviewTypeCode[0].value)">
+		AND		BBS_ID = 'estimate'
+		</if>  
+		AND    	DBSTS = 'A'     
+		AND    	PRDID =  #{_c.productCode[0].value}     
+		AND     MESSAGE_ID <![CDATA[ <> ]]> #{_c.productReviewId[0].value}
+	</select>
+	
+	<select id="getProductReviewBuyPoint" resultType="long" parameterType="criteria">
+		/* 구매 포인트를 구해온다 */
+		SELECT	BUY_POINT
+		FROM	GS_KNOW_POINT_DETAIL
+		WHERE 	BBS_ID = 'estimate'
+		AND		POINT_ID = #{_c.pointId[0].value}
+	</select>
+	
+	<select id="getProductPointCheck" resultType="int" parameterType="criteria">
+      SELECT /*+INDEX(GKM GS_KNOW_ECUSERID_IDX)*/     
+             COUNT(GKM.MESSAGE_ID) AS CNT     
+        FROM GS_KNOW_MESSAGE GKM     
+       WHERE GKM.ECUSERID = #{_c.ecCustNo[0].value}     
+      <if test="('evaluationProduct').equals(_c.productReviewTypeCode[0].value)">
+         AND GKM.BBS_ID = 'restrict'
+      </if>
+      <if test="!('evaluationProduct').equals(_c.productReviewTypeCode[0].value)">
+         AND GKM.BBS_ID = 'estimate'
+      </if>            
+         AND GKM.PRDID = #{_c.productCode[0].value}     
+         AND GKM.DBSTS = 'A'     
+         AND GKM.POINT <![CDATA[>]]> 0     
+         AND GKM.ORDNUM = #{_c.orderNumber[0].value}     
+         AND ROWNUM = 1
+	</select>
+	
+	
+	<update id="updateGsKnowMessagePoint" parameterType="iceberg.capi.productreview.model.PrdrevwPoint">
+		UPDATE GS_KNOW_MESSAGE
+		   SET POINT = #{ecoinCnt}
+			  ,YEAR_SALE_POINT = #{foryyDccpnAccAmt}
+			  ,UPDUSER = 'system'
+			  ,UPDDATE = SYSDATE
+		 WHERE MESSAGE_ID = #{prdrevwId}
+	</update>
+	
+	<insert id="createGsKnowPointLog" parameterType="iceberg.capi.productreview.model.PrdrevwPoint">
+		INSERT INTO GS_KNOW_POINT_LOG
+		(PAY_DATE, ECUSERID, BBS_ID, POINT_ID, REF_ID, POINT, REMARK, CREDATE)
+		VALUES(
+				SYSDATE
+				, #{ecCustNo}
+				, #{prdrevwTypCd}
+				, #{accTypCd}
+				, #{prdrevwId}
+				, #{ecoinCnt}
+				, #{accRsn}
+				, SYSDATE
+		)
+	</insert>
+	
+	<update id="updateGsKnowUser" parameterType="iceberg.capi.productreview.model.PrdrevwPoint">
+		UPDATE GS_KNOW_USER
+		   SET TOTAL_POINT	= NVL(TOTAL_POINT, 0) + #{ecoinCnt}
+		 WHERE ECUSERID = #{ecCustNo}
+	</update>
+	
+	<select id="getProductReviewWritingLimitPerMonth" parameterType="criteria" resultType="long">
+	  SELECT NVL(MAX(DECODE(#{_c.buyerFlag[0].value}, 'Y', GKPD.BUY_POINT, GKPD.NONBUY_POINT)), 0) AS POINT     
+        FROM GS_KNOW_POINT        GKP     
+            ,GS_KNOW_POINT_DETAIL GKPD     
+       WHERE 1 = 1
+      <if test="('evaluationProduct').equals(_c.productReviewTypeCode[0].value)">
+         AND GKP.BBS_ID = 'restrict'
+      </if>
+      <if test="!('evaluationProduct').equals(_c.productReviewTypeCode[0].value)">
+         AND GKP.BBS_ID = 'estimate'
+      </if> 
+         AND GKP.BBS_ID = GKPD.BBS_ID     
+         AND GKPD.POINT_ID = #{_c.pointId[0].value}     
+         AND GKP.ENTRY_LIMIT <![CDATA[ > ]]> 
+             (SELECT NVL(SUM_POINT,0)     
+                FROM (SELECT SUM(DECODE(SIGN(GKPL.POINT), 1, 1, -1)) SUM_POINT     
+                        FROM GS_KNOW_POINT_LOG GKPL     
+                       WHERE GKPL.PAY_DATE BETWEEN TO_DATE(TO_CHAR(SYSDATE, 'YYYYMM')|| '01') AND TRUNC(LAST_DAY(SYSDATE)+1)     
+                         AND GKPL.ECUSERID = #{_c.ecCustNo[0].value}      
+                         AND GKPL.BBS_ID = 'estimate'   
+                      <if test="('evaluationProduct').equals(_c.productReviewTypeCode[0].value)">               
+                         AND GKPL.POINT_ID IN ('1','2','3','11')                  
+                      </if>
+                      <if test="!('evaluationProduct').equals(_c.productReviewTypeCode[0].value)">
+                         AND GKPL.POINT_ID IN ('1','2','3','11','15')                  
+                      </if> )     )
+	</select>
+	
+	<select id = "findPrdRevwWriteCheckList" parameterType="criteria" resultMap="prdrevwList">
+		SELECT 
+		    MESSAGE_ID AS BLTTHG_NO
+		    , ORDNUM AS ORD_NO
+		    , PRDID AS PRD_CD
+		    , ECUSERID AS EC_CUST_NO
+		FROM  GS_KNOW_MESSAGE GKM
+		WHERE GKM.DBSTS = 'A'
+		    AND GKM.MESSAGE_LEVEL = 1
+		    AND GKM.BBS_ID IN ('estimate', 'restrict')
+		    AND GKM.ECUSERID = #{_c.ecCustNo[0].value}
+		    AND GKM.PRDID IN 
+		     <foreach collection="_c.prdCdArray[0].value" item="item1" index="index" open="(" separator="," close=")">
+				#{item1}
+			</foreach>
+		    AND ORDNUM IN
+		    <foreach collection="_c.ordNoArray[0].value" item="item2" index="index" open="(" separator="," close=")">
+		    	#{item2}
+		    </foreach>	
+	</select>
+	
+	<select id = "getPrdRevwTotCnt" parameterType="criteria" resultType="long">
+		SELECT /*+ ORDERED INDEX(GKM GS_KNOW_MESSAGE_PK)*/
+		       COUNT(*) AS SEARCH_TOTALCNT
+		FROM GS_KNOW_SHARE GKS
+		      ,GS_KNOW_MESSAGE GKM
+		WHERE GKS.MESSAGE_ID = GKM.MESSAGE_ID
+		   AND GKS.PRDID = #{_c.prdCd[0].value}
+		   AND GKM.DBSTS = 'A'
+		   AND GKM.MESSAGE_LEVEL = 1
+		   AND GKM.BBS_ID = 'estimate'
+		<if test="('bestProductReviewList').equals(_c.tabFlagValue[0].value) " >
+		   AND GKM.BEST_FLAG = 'B' 
+		</if>
+		<if test="('generalProductReview').equals(_c.tabFlagValue[0].value) " >
+		   AND GKM.CONTENTS_FLAG = '1'             -- 1:텍스트, 2:이미지, 3:동영상, 4:이미지+동영상
+		</if>
+		<if test="('photographVideoProductReview').equals(_c.tabFlagValue[0].value)">
+		   AND GKM.CONTENTS_FLAG IN ('2','3','4')  -- 1:텍스트, 2:이미지, 3:동영상, 4:이미지+동영상
+		</if>
+	</select>
+	
+	<select id="oneNotOahuMyPrdrevwTotCnt" parameterType="criteria" resultType="int">
+	 <!-- 
+		DBMS : WEBDB
+		분야 : 단품 oneNotOahuMyPrdrevwTotCnt
+		API  : 상품평
+		설명 : 오하우를 제외한 내가 쓴 상품평 전체 건수
+		
+		#{_c.cmmCurrChanl[0].value} : B        채널코드-(현재:모바일B,EC:P,OAHU:S)
+		#{_c.ecCustNo[0].value}       : 629039100
+		 -->
+		SELECT 
+				COUNT(*) AS TOT_CNT
+		FROM GS_KNOW_MESSAGE GKM
+				, PRD_CHANL_D PCD
+		WHERE GKM.PRDID = PCD.PRD_CD 
+		    AND PCD.CHANL_CD = #{_c.cmmCurrChanl[0].value}
+		    AND BBS_ID IN ('estimate', 'restrict')
+		    AND ECUSERID = #{_c.ecCustNo[0].value}
+		    AND DBSTS IN ( 'A', 'M')
+		    AND MESSAGE_LEVEL = 1	
+	</select>
+	
+	<select id="findNotOahuMyPrdrevws" resultMap="prdrevwList" parameterType="criteria">
+	<!-- 
+		DBMS : WEBDB
+		분야 : 단품 findNotOahuMyPrdrevws
+		API  : 상품평
+		설명 : 오하우를 제외한 내가 쓴 상품평 목록
+		
+		#{_c.cmmCurrChanl[0].value} = B  채널코드-(현재:모바일B,EC:P,OAHU:S)
+		#{_c.ecCustNo[0].value} = 629039100
+		#{_p.pageItemSize} = 10 
+		#{_p.pageNumber} = 1
+	-->
+		SELECT 
+		         X.PAGEIDX AS PAGE_INDEX
+		       , X.BBS_ID AS BLTBD_NO
+		       , X.MESSAGE_ID AS BLTTHG_NO
+		       , X.PARENT_MESSAGE_ID AS UPPER_BLTTHG_NO
+		       , X.TITLE AS TITLE
+		       , X.NICK_NAME AS NICK_NAME
+		       , X.AGE_LIMIT_FLAG AS AGE_LIMIT_YN
+		       , X.REPORT_FLAG AS DECLR_YN
+		       , X.PRDID AS PRD_CD
+		       , X.PRDNAME AS PRD_NM
+		       , X.BUYER_FLAG AS BUYER_YN
+		       , X.CONTENTS_FLAG AS ATTACH_FILE_GBN
+		       , X.PRD_SATISFACT AS PRD_SATSF
+		       , X.EVAL_NAME1 AS EVAL_ITM_NM1
+		       , X.EVAL_VALUE1 AS EVAL_ITM_VAL1
+		       , X.EVAL_NAME2 AS EVAL_ITM_NM2
+		       , X.EVAL_VALUE2 AS EVAL_ITM_VAL2
+		       , X.EVAL_NAME3 AS EVAL_ITM_NM3
+		       , X.EVAL_VALUE3 AS EVAL_ITM_VAL3
+		       , X.EVAL_NAME4 AS EVAL_ITM_NM4
+		       , X.EVAL_VALUE4 AS EVAL_ITM_VAL4
+		       , X.READ_COUNT AS QRY_CNT
+		       , X.PARTICIPANT_COUNT AS HELP_CNT
+		       , X.POINT    AS PNT
+		       , X.REMARK   AS NOTE
+		       , X.INDEX_COLUMN AS SORT_COL
+		       , X.CREUSER AS WRITR       
+		       , X.CREDATE
+		       , X.UPDUSER AS MDDR
+		       , X.UPDDATE AS MDD_DTM
+		       , X.DBSTS   AS ST
+		       , X.BEST_FLAG AS BEST_PRDRPT_YN
+		       , X.ORDNUM AS ORD_NO
+		       , X.PROMO_NUM AS PMO_NO
+		       , X.SAVE_ROOT AS CUST_SAV_PATH       
+			   , GKMD.MESSAGE_DSCR AS CNTNT
+		FROM (SELECT 
+		                X2.*              
+			      FROM (
+			                SELECT 
+			                    CEIL(ROWNUM / #{_p.pageItemSize} ) AS PAGEIDX
+			                    , X1.*
+			                FROM
+			                (
+			                   SELECT /*+ INDEX (GKM GS_KNOW_ECUSERID_IDX) */
+			                      GKM.BBS_ID,
+			                      GKM.MESSAGE_ID,
+			                      GKM.PARENT_MESSAGE_ID,
+			                      GKM.TITLE,
+			                      SUBSTR(NVL(GKM.NICK_NAME, ' '), 1, LENGTH(NVL(GKM.NICK_NAME, ' ')) - 1) || '*' AS NICK_NAME,
+			                      GKM.AGE_LIMIT_FLAG,
+			                      GKM.REPORT_FLAG,
+			                      GKM.PRDID,
+			                      GKM.PRDNAME,
+			                      GKM.BUYER_FLAG,
+			                      GKM.MESSAGE_FLAG,
+			                      GKM.CONTENTS_FLAG,
+			                      GKM.URGENT_FLAG,
+			                      GKM.REPLY_ADOPT,
+			                      GKM.PRD_SATISFACT,
+			                      GKM.EVAL_NAME1,
+			                      GKM.EVAL_VALUE1,
+			                      GKM.EVAL_NAME2,
+			                      GKM.EVAL_VALUE2,
+			                      GKM.EVAL_NAME3,
+			                      GKM.EVAL_VALUE3,
+			                      GKM.EVAL_NAME4,
+			                      GKM.EVAL_VALUE4,
+			                      GKM.READ_COUNT,
+			                      GKM.PARTICIPANT_COUNT,
+			                      GKM.OPPOSITION_COUNT,
+			                      GKM.REPLY_COUNT,
+			                      GKM.BUYER_REPLY_COUNT,
+			                      GKM.POINT,
+			                      GKM.YEAR_SALE_POINT,
+			                      GKM.BEST_YEAR_SALE_POINT,
+			                      GKM.REMARK,
+			                      GKM.INDEX_COLUMN,
+			                      GKM.ORD_OPTION1_NM,
+			                      GKM.ORD_OPTION2_NM,
+			                      GKM.ORD_OPTION3_NM,
+			                      GKM.ORD_OPTION_DISP_YN,
+			                      GKM.CREUSER,
+			                      TO_CHAR(GKM.CREDATE, 'YYYYMMDDHH24MISS') AS CREDATE,
+			                      GKM.UPDUSER,
+			                      TO_CHAR(GKM.UPDDATE, 'YYYYMMDDHH24MISS') AS UPDDATE,
+			                      GKM.DBSTS,
+			                      GKM.BEST_FLAG,
+			                      GKM.ORDNUM,
+			                      GKM.PROMO_NUM,
+			                      GKM.SAVE_ROOT
+			                   FROM GS_KNOW_MESSAGE GKM
+			                      , PRD_CHANL_D PCD
+			                   WHERE GKM.PRDID = PCD.PRD_CD
+			                     AND PCD.CHANL_CD = #{_c.cmmCurrChanl[0].value}
+			                     AND GKM.ECUSERID = #{_c.ecCustNo[0].value}
+			                     AND GKM.BBS_ID IN ('estimate', 'restrict')
+			                     AND GKM.DBSTS IN ( 'A', 'M')
+			                     AND GKM.MESSAGE_LEVEL = 1
+			                   ORDER BY GKM.CREDATE DESC
+			                ) X1                
+			            ) X2
+		      WHERE PAGEIDX = #{_p.pageNumber}
+		      ) X,
+		      GS_KNOW_MESSAGE_DETAIL GKMD
+		 WHERE X.MESSAGE_ID = GKMD.MESSAGE_ID(+)
+	</select>
+	
+	<select id="getPrdrvwRefOrd" resultMap="prdrevwList" parameterType="criteria">
+	<!-- 
+		DBMS : WEBDB
+		분야 : 단품 getPrdrvwRefOrd
+		API  : 상품평
+		설명 : 상품코드로 주문관련 상품평 정보 조회
+		
+		#{_c.prdCd[0].value} = 2932131, 2816302
+		#{_c.ecCustNo[0].value} = 629039100
+	-->
+		SELECT GKM.PRDID			AS PRD_CD
+      		  ,GKM.ORDNUM			AS ORD_NO
+       		  ,DECODE(NVL(MAX(GKM.MESSAGE_ID),0),0,'Y','N') AS PRDREVW_FLAG
+       		  ,'' 					AS KEY_FLAG
+       		  ,'' 					AS EX_STAR
+       		  ,MAX(GKM.MESSAGE_ID)  AS BLTTHG_NO   		
+       		  ,GKM.BBS_ID			AS BLTBD_NO      	
+  		  FROM GS_KNOW_MESSAGE GKM
+ 		 WHERE (GKM.BBS_ID = 'estimate' OR GKM.BBS_ID = 'restrict')
+   		   AND GKM.ECUSERID = #{_c.ecCustNo[0].value}
+   		   AND GKM.DBSTS = 'A'
+   		   AND GKM.PRDID IN 
+        <foreach collection="_c.prdCd[0].value" item="item" index="index" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+   		   AND GKM.CREDATE <![CDATA[ >  ]]> TO_DATE('20000101', 'YYYYMMDD')
+   		   AND GKM.MESSAGE_LEVEL = 1
+ 		 GROUP BY GKM.ORDNUM, GKM.PRDID, GKM.BBS_ID
+ 		 UNION
+		SELECT PPM.PRD_CD			AS PRD_CD
+       		  ,99 					AS ORD_NO
+       		  ,'Y' 				 	AS PRDREVW_FLAG
+       		  ,'N' KEY_FLAG
+       		  ,(SELECT NVL(MAX('Y'),'N')
+           		  FROM LGEC_VAL_USER LVU
+          		 WHERE LVU.PRDID    = PPM.PRD_CD
+            	   AND LVU.ECUSERID = #{_c.ecCustNo[0].value}
+            	   AND ROWNUM      = 1
+        		) 					AS EX_STAR
+       		  ,0 					AS BLTTHG_NO
+       		  ,DECODE((
+		            	SELECT PRD_CLS_CD
+		              	  FROM PRD_PRD_M PPM1
+		             	 WHERE EXISTS (
+		                        		SELECT 'X'
+		                          		  FROM GS_KNOW_RESTRICT GKR
+		                         		 WHERE GKR.LCLASS = SUBSTR(PPM1.PRD_CLS_CD,1,3)
+		                           		   AND PPM1.PRD_CLS_CD LIKE DECODE(GKR.MCLASS, '~', PPM1.PRD_CLS_CD, GKR.LCLASS||GKR.MCLASS||'%')
+		                           	       AND PPM1.PRD_CLS_CD LIKE DECODE(GKR.SCLASS, '~', PPM1.PRD_CLS_CD, GKR.LCLASS||GKR.MCLASS||GKR.SCLASS||'%')
+		               					)
+		               	   AND PPM1.PRD_CD = PPM.PRD_CD
+		        ),NULL,'estimate','restrict') AS BLTBD_NO      	
+  		  FROM PRD_PRD_M PPM
+ 		 WHERE PPM.PRD_APRV_ST_CD = '30'
+   		   AND PPM.USE_YN = 'Y'
+   		   AND PPM.GFT_TYP_CD <![CDATA[ <> ]]> '05'
+   		   AND NVL(PPM.REP_PRD_YN,'N') <![CDATA[ <> ]]> 'Y'
+   		   AND PPM.PRD_CD IN
+        <foreach collection="_c.prdCd[0].value" item="item" index="index" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+
+	</select>
+
+</mapper>

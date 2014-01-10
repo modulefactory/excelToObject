@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.shop.webdb.repository.ShopSqlMapRepository">
+
+	<resultMap type="iceberg.capi.shop.model.ShopBaseInfo" id="prdSimplePmo">
+		<result property="shopNo" 			column="SHOP_NO"/>	<!-- 매장번호 -->
+		<result property="exposGrp" 		column="EXPOS_GRP"/>	<!-- 노출그룹 -->
+		<result property="exposInfoGbn" 	column="EXPOS_INFO_GBN"/> <!-- 노출정보구분 -->
+		<result property="st" 				column="ST"/>		<!--  상태 -->
+		<result property="exposFlg" 		column="EXPOS_FLG"/> <!-- 노출여부 -->
+		<result property="exposInfoExpln" 	column="EXPOS_INFO_EXPLN"/> <!-- 노출정보설명 -->
+		<result property="exposSeq" 		column="EXPOS_SEQ"/>	<!-- 노출순서 -->
+	</resultMap>
+	
+	<select id="findOneShopInfo" resultMap="prdSimplePmo" parameterType="criteria" >
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품  findOneShopInfo
+		API  : 매장정보조회
+		설명 : 매장정보조회
+		
+		#{_c.exposGroup[0].value}	: A30
+		#{_c.exposInfoGbn[0].value} : 130
+		#{_c.shopNo[0].value}   : 135482
+		-->		
+		SELECT
+			   SECTID			AS SHOP_NO
+			  ,DISP_GROUP  		AS EXPOS_GRP 
+			  ,DISP_SPEC_GB 	AS EXPOS_INFO_GBN
+			  ,DBSTS  			AS ST
+			  ,DISP_YN  		AS EXPOS_FLG
+			  ,DISP_SPEC 		AS EXPOS_INFO_EXPLN
+			  ,EXB_SEQ 			AS EXPOS_SEQ
+		  FROM GS_SECT_SPEC_DISPLAY 
+		 WHERE DISP_GROUP 	= #{_c.exposGroup[0].value}
+		   AND DISP_SPEC_GB = #{_c.exposInfoGbn[0].value}
+		   AND SECTID 		= #{_c.shopNo[0].value}
+		   AND DISP_YN		= 'Y'
+		   AND DBSTS 		= 'A'
+		   AND ROWNUM 		= 1
+	</select>
+	
+	<resultMap type="iceberg.capi.shop.model.ShopLimitPrcInfo" id="lgecSectCopyMap">
+		<result property="shopNo" 		column="SHOP_NO"/>	<!-- 매장번호 -->
+		<result property="supCd" 		column="SUP_CD"/>	<!-- 협력사코드 -->
+		<result property="limitPrc" 	column="LIMIT_PRC"/>	<!-- 제한가격 -->
+		<result property="shopSntnc" 	column="SHOP_SNTNC"/>	<!-- 매장문구 -->
+		<result property="subPrpgtnFlg" column="SUB_PRPGTN_FLG"/>	<!-- 하위전파여부 -->
+		<result property="url" 			column="URL"/>	<!-- URL -->
+	</resultMap>
+	<select id="findOneShopLimitPrc" parameterType="long" resultMap="lgecSectCopyMap">
+	<!-- 
+		DBMS : WEBDB
+		분야 : 단품  findOneShopLimitPrc
+		API  : 매장제한가격조회
+		설명 : 매장제한가격조회
+		
+		#{shopNo}   : 3317
+	 --> 
+	  SELECT LSC.SECTID     AS SHOP_NO
+            ,LSC.SUPP_CODE  AS SUP_CD
+            ,NVL2 (LSC.PRICE_LIMIT_YN, NVL (LSC.PRICE_LIMIT, 0), 0 ) AS LIMIT_PRC
+            ,LSC.SECT_COPY  AS SHOP_SNTNC
+            ,LSC.SEND_CHILD AS SUB_PRPGTN_FLG
+            ,LSC.RETURN_URL AS URL
+        FROM (SELECT LEVEL  AS RNUM
+                    ,SECTID 
+                FROM EC_SECT 
+               WHERE DBSTS = 'A' AND SECT_GUBUN = 'G' 
+               START WITH SECTID =  #{shopNo} 
+             CONNECT BY PRIOR SECTPRSTID = SECTID) ES
+            ,LGEC_SECT_COPY LSC 
+       WHERE LSC.DBSTS = 'A' 
+         AND ES.SECTID = LSC.SECTID 
+         AND (SYSDATE BETWEEN LSC.ST_DATE AND LSC.EN_DATE) 
+         AND ROWNUM = 1    
+	</select>
+	
+</mapper>

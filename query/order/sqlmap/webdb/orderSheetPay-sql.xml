@@ -1,0 +1,432 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.ordersheet.OrderSheetPaySqlMapRepository">
+
+
+
+
+	<!--
+		내용	: 이샵 가상계좌 리스트 조회
+		작성자	: 윤병찬
+		작성일	: 2013.11.25 신규작성
+	-->
+	<resultMap id="bankListBaseMap" type="iceberg.capi.order.model.ordersheet.OrderBank">
+		<result property="bankCd" column="BANK_CODE"/>
+		<result property="bankNm" column="BANK_NAME"/>
+		<result property="bankExposNm" column="BANK_NAME_DISP"/>
+		<result property="exposSeq" column="DISPLAY_SEQ"/>
+		<result property="exposForm" column="DISPLAY_FORMAT"/>
+		<result property="bankCdBase" column="BANK_CODE_DEF"/>
+	</resultMap>
+	<select id="findBankListBase" resultMap="bankListBaseMap">
+		<![CDATA[
+			SELECT CODE      AS BANK_CODE      /* 은행코드         */
+			     , VAL       AS BANK_NAME      /* 은행명           */
+			     , DSCR      AS BANK_NAME_DISP /* 은행노출명       */
+			     , RESERVED1 AS DISPLAY_SEQ    /* 은행노출순서     */
+			     , RESERVED2 AS DISPLAY_FORMAT /* 계좌번호표현형식 */
+			     , SUBCLASS  AS BANK_CODE_DEF  /* 은행코드(default) */
+			  FROM EC_REFSETVAL
+			 WHERE REFSETID = 5270
+			   AND DBSTS    = 'A'
+			   AND CODE     IN ('N5', 'HP', 'N1', 'PV', 'N3', 'N4', 'N2', 'HV', 'HK', 'HS')
+			 ORDER BY RESERVED1
+		]]>
+	</select>
+
+
+
+
+	<!--
+		내용	: 미리계산 정보 조회
+		작성자	: 윤병찬
+		작성일	: 2013.11.28 신규작성
+
+		#{_c.ecOrdNo[0].value} = 30644341;
+		#{_c.ecCustNo[0].value} = 1446017213;
+
+	-->
+	<resultMap id="ordShtPreCalcInfoMap" type="iceberg.capi.order.model.ordersheet.OrdShtPreCalc">
+		<result property="tmprcvAmt" column="TMPRC_AMT"/>
+		<result property="accmAmt" column="ACCM_AMT"/>
+		<result property="gftcertUseAmt" column="GFTCERT_AMT"/>
+		<result property="gftcertNo" column="GFTCERT_NO"/>
+		<result property="gftcertUsePsblAmt" column="GFTCERT_ABLE_AMT"/>
+		<result property="foryyDcUseFlg" column="ECY_YN"/>
+
+	</resultMap>
+	<select id="findOrdShtPreCalcInfo" parameterType="criteria" resultMap="ordShtPreCalcInfoMap">
+		<![CDATA[
+			SELECT NVL(GPOPD_04.PAY_AMT, 0) AS TMPRC_AMT
+			      ,NVL(GPOPD_05.PAY_AMT, 0) AS ACCM_AMT
+			      ,NVL(GPOPD_06.PAY_AMT, 0) AS GFTCERT_AMT
+			      ,GPOPD_06.META_ATTR1 AS GFTCERT_NO
+			      ,TO_NUMBER(NVL(GPOPD_06.META_ATTR2, '0')) AS GFTCERT_ABLE_AMT
+			      ,GPOPD_1000.META_ATTR1 AS ECY_YN
+			  FROM GS_ORD_M GOM
+			      ,GS_PAY_ORD_PAYMT_D GPOPD_04
+			      ,GS_PAY_ORD_PAYMT_D GPOPD_05
+			      ,GS_PAY_ORD_PAYMT_D GPOPD_06
+			      ,GS_PAY_ORD_PAYMT_D GPOPD_1000
+			 WHERE GOM.EC_ORD_NO  = #{_c.ecOrdNo[0].value}
+			   AND GOM.EC_CUST_NO = #{_c.ecCustNo[0].value}
+			   AND GOM.EC_ORD_ST_CD = 'A'
+			   AND GOM.EC_ORD_NO = GPOPD_04.EC_ORD_NO(+)
+			   AND GPOPD_04.PAY_TYP_CD(+)   = '04'
+			   AND GPOPD_04.EC_ORD_ST_CD(+) = 'A'
+			   AND GPOPD_04.PRE_CALC_YN(+)  = 'Y'
+			   AND GOM.EC_ORD_NO = GPOPD_05.EC_ORD_NO(+)
+			   AND GPOPD_05.PAY_TYP_CD(+)   = '05'
+			   AND GPOPD_05.EC_ORD_ST_CD(+) = 'A'
+			   AND GPOPD_05.PRE_CALC_YN(+)  = 'Y'
+			   AND GOM.EC_ORD_NO = GPOPD_06.EC_ORD_NO(+)
+			   AND GPOPD_06.PAY_TYP_CD(+)   = '06'
+			   AND GPOPD_06.EC_ORD_ST_CD(+) = 'A'
+			   AND GPOPD_06.PRE_CALC_YN(+)  = 'Y'
+			   AND GOM.EC_ORD_NO = GPOPD_1000.EC_ORD_NO(+)
+			   AND GPOPD_1000.PAY_TYP_CD(+) = '1000'
+			   AND GPOPD_1000.EC_ORD_ST_CD(+) = 'A'
+			   AND GPOPD_1000.PRE_CALC_YN(+)  = 'Y'
+		]]>
+	</select>
+
+	<!--
+		내용	: 마이 신한 포인트 조회시 필요데이터 값들을 하나의 문자열로 조합한다.
+		작성자	: 신슬기
+		작성일	: 2013.12.19 신규작성
+
+		#{_c.cardNo[0].value} = 1234567812345678;
+		#{_c.cardValidYy[0].value} = 17;
+		#{_c.cardValidMm[0].value} = 12;
+
+	-->
+	<select id="findShinhanPntParam" parameterType="criteria" resultType="String">
+		<![CDATA[
+            SELECT LPAD('0',12,'0')||       /*조회금액*/
+                   '37'||RPAD((trim(#{_c.cardNo[0].value}))||'='||TRIM(#{_c.cardValidYy[0].value})||TRIM(#{_c.cardValidMm[0].value}), 37, '-')||   /*카드번호*/
+                   RPAD('7010017001',16,'-')||  /*터미널번호*/
+                   RPAD('0031290455',15,'-')||    /*가맹점번호 31290455*/
+                   RPAD('--------',8,'-')||
+                   'LG'                         /*카드타입*/
+              FROM DUAL
+		]]>
+	</select>
+	
+	
+	
+	<!--
+		내용	: 모바일 ISP 인증 테이블 조회
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+		
+		#{TID} = 1001815014   CREDATE > SYSDATE - 2/24 조건 때문에 데이타 없을 수 있음.	
+
+	-->
+	<resultMap id="ispMobileLogMap" type="iceberg.capi.order.model.ordersheet.GsOrdIsplogMC">
+		<result property="seqno" column="TID"/>
+		<result property="dbsts" column="DBSTS"/>
+		<result property="kvpCardcode" column="CARDCODE"/>
+		<result property="kvpSessionkey" column="SESSIONKEY"/>
+		<result property="kvpEncdata" column="ENCDATA"/>
+		<result property="parmCdata" column="PARMCDATA"/>
+	</resultMap>
+	<select id="findIspMobileLog" parameterType="String" resultMap="ispMobileLogMap">
+		<![CDATA[
+			SELECT  SEQNO AS TID
+			   	   ,DBSTS AS DBSTS
+			   	   ,KVP_CARDCODE AS CARDCODE
+			   	   ,KVP_SESSIONKEY AS SESSIONKEY
+			   	   ,KVP_ENCDATA AS ENCDATA
+			   	   ,PARM_CDATA AS PARMCDATA
+			  FROM GS_ORD_ISPLOG_MC					
+			 WHERE SEQNO = #{TID}						
+			   AND CREDATE > SYSDATE - 2/24		
+		]]>
+	</select>	
+	
+	
+	
+	<!--
+		내용	: LGEC_LOG_ISPNICE 테이블 순번 시퀀스 조회
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+	-->
+	<select id="findLgecLogIspniceSeq" resultType="long">
+		<![CDATA[
+			SELECT LGEC_LOG_ISPNICE_SEQ.NEXTVAL AS SEQNO	
+ 		      FROM DUAL 
+		]]>
+	</select>		
+	
+	
+	
+	<!-- 
+	내용	: LGEC_LOG_ISPNICE 테이블 insert 
+	작성자	: 윤병찬
+	작성일	: 2013.12.16 신규작성
+	-->
+	<insert id="insertLgecLogIspnice" parameterType="iceberg.capi.order.model.ordersheet.ISPInfo">
+	    INSERT INTO LGEC_LOG_ISPNICE 
+						    ( SEQNO
+						     ,KVP_PGID
+						     ,KVP_GOODNAME
+						     ,KVP_PRICE
+						     ,KVP_CURRENCY
+						     ,KVP_NOINT
+						     ,KVP_QUOTA
+						     ,KVP_CARDCODE
+						     ,CATVID
+						     ,CREDATE
+						    )
+					    VALUES
+					   		( #{seqNo}
+						     ,#{KVP_PGID}
+						     ,#{KVP_GOODNAME}
+						     ,#{KVP_PRICE}
+						     ,#{KVP_CURRENCY}
+						     ,#{KVP_NOINT}
+						     ,#{KVP_QUOTA}
+						     ,#{KVP_CARDCODE}
+						     ,#{catvid}
+						     ,SYSDATE
+						    )
+	</insert>			
+	
+	
+	<!--
+		내용	: LGEC_LOG_ISPSMARTRO 테이블 순번 시퀀스 조회
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+	-->
+	<select id="findLgecLogIspsmartroSeq" resultType="long">
+		<![CDATA[
+			SELECT LGEC_LOG_ISPSMARTRO_SEQ.NEXTVAL AS SEQNO	
+ 		      FROM DUAL 
+		]]>
+	</select>		
+	
+	
+	<!-- 
+	내용	: LGEC_LOG_ISPSMARTRO 테이블 insert 
+	작성자	: 윤병찬
+	작성일	: 2013.12.16 신규작성
+	-->
+	<insert id="insertLgecLogIspsmartro" parameterType="iceberg.capi.order.model.ordersheet.ISPInfo">
+	    INSERT INTO LGEC_LOG_ISPSMARTRO 
+						    (  SEQNO
+						      ,KVP_PGID
+						      ,KVP_GOODNAME
+						      ,KVP_PRICE
+						      ,KVP_CURRENCY
+						      ,KVP_NOINT
+						      ,KVP_QUOTA
+						      ,KVP_CARDCODE
+						      ,CATVID
+						      ,CREDATE
+						      ,GUBUN
+						      ,VAN_GUBUN
+						    )
+					    VALUES
+					   		( #{seqNo}
+						     ,#{KVP_PGID}
+						     ,#{KVP_GOODNAME}
+						     ,#{KVP_PRICE}
+						     ,#{KVP_CURRENCY}
+						     ,#{KVP_NOINT}
+						     ,#{KVP_QUOTA}
+						     ,#{KVP_CARDCODE}
+						     ,#{catvid}
+						     ,SYSDATE
+						     ,#{gubun}
+						     ,#{vanGubun}
+						    )
+	</insert>	
+	
+	<!--
+		내용	: 신용카드별 최대무이자개월수 조회 시 필요한 cardTypeBank 값을 SMTC 카드밴사관련 테이블에서 조회
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+	-->
+	<select id="findCardTypeBank" parameterType="String" resultType="String">
+		<![CDATA[
+			SELECT CRDIT_CARD_KIND_CD||ISSUE_CO_CD AS CARD_TYPE_BANK  	
+			  FROM ORD_EC_CARD_BY_VAN_D     												
+			 WHERE USE_YN='Y'
+			   AND ST_CD='A' 
+			   AND CARD_NM = #{cardName}
+		]]>
+	</select>	
+	
+	
+	<!--
+		내용	: 실시간수신구분코드
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+		#{cardNumEnc} = '5q7PkH2NrwoqeJSu00J9E9yXa76vFaGxIhmEJQtB1b4='
+	-->
+	<select id="findPointCard" parameterType="String" resultType="String">
+		<![CDATA[
+			SELECT	NVL(RTM_RCV_GBN_CD, '') AS RTM_RCV_GBN_CD
+			  FROM	PAY_ALIA_CARD_D
+			 WHERE	CARD_NO_ECP = #{cardNumEnc}
+		]]>
+	</select>		
+	
+	
+	
+	
+	
+	
+	
+	
+	<!-- 
+		내용	: GS_PAY_ORD_PAYMT_D 테이블을 FLAG UPDATE
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+		
+		#{ecOrdNo} = 280;  
+		
+	-->
+	<update id="deleteGsPayOrdPaymtD" parameterType="long">
+			UPDATE  GS_PAY_ORD_PAYMT_D
+			   SET  EC_ORD_ST_CD = 'D'
+			       ,REG_DTM = SYSDATE
+			 WHERE EC_ORD_NO = #{ecOrdNo}
+			   AND EC_ORD_ST_CD = 'A'
+	</update>		
+	
+	
+	 <!-- 
+		내용	: GS_PAY_ORD_PAYMT_D 시퀀스 채번
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+	-->
+	<select id="findGsPayOrdPaymtDSeq" resultType="long">
+		 SELECT SQ_ORD_GPOPD_EPN_01.NEXTVAL FROM DUAL
+	</select>		
+	
+	
+	<!-- 
+	내용	: LGEC_LOG_ISPNICE 테이블 insert 
+	작성자	: 윤병찬
+	작성일	: 2013.12.16 신규작성
+	-->
+	<insert id="insertGsPayOrdPaymtD" parameterType="iceberg.capi.order.model.ordersheet.GsPayOrdPaymtD">
+		INSERT INTO STORE.GS_PAY_ORD_PAYMT_D ( 
+                                       EC_PAY_NO
+                                      ,REG_DTM
+                                      ,REGR_ID
+                                      ,MOD_DTM
+                                      ,MODR_ID
+                                      ,EC_ORD_NO
+                                      ,EC_ORD_ST_CD
+                                      ,PAY_TYP_CD
+                                      ,PAY_AMT
+                                      ,INSM_MM
+                                      ,GSHS_CARD_GBN_CD
+                                      ,VANCO_CARD_GBN_CD
+                                      ,PRE_CALC_YN
+                                      ,META_ATTR1
+                                      ,META_ATTR2
+                                      ,META_ATTR3
+                                      ,META_ATTR4
+                                      ,META_ATTR5
+                                      ,META_ATTR6
+                                      ,META_ATTR7
+                                      ,META_ATTR8
+                                      ,META_ATTR9
+                                      ,META_ATTR10
+                                      ,META_ATTR11
+                                      ,META_ATTR12
+                                      ,META_ATTR13
+                                      ,META_ATTR14
+                                      ,META_ATTR15
+                                      ,META_ATTR16
+                                      ,META_ATTR17
+                                      ,META_ATTR18
+                                      ,META_ATTR19
+                                      ,META_ATTR20
+                                      ,META_ATTR21
+                                      ,META_ATTR22
+                                      ,META_ATTR23
+                                      ,META_ATTR24
+                                      ,META_ATTR25
+                                      ,META_ATTR26
+                                      ,META_ATTR27
+                                      ,META_ATTR28
+                                      ,META_ATTR29
+                                      ,META_ATTR30
+                                      ,META_ATTR31
+                                      ,META_ATTR32
+                                      ,META_ATTR33
+                                      ,META_ATTR34
+                                      ,META_ATTR35
+                                      ,META_ATTR36
+                                      ,META_ATTR37
+                                      ,META_ATTR38
+                                      ,META_ATTR39
+                                      ,META_ATTR40
+                                      ,META_ATTR41
+ 								)
+						VALUES (
+                                       #{ecPayNo}
+                                      ,#{ordPayRegDtm}
+                                      ,#{ordPayRegrId}
+                                      ,#{ordPayModDtm}
+                                      ,#{ordPayModrId}
+                                      ,#{ecOrdNo}
+                                      ,#{ordPayStCd}
+                                      ,#{payTypCd}
+                                      ,#{payAmt}
+                                      ,#{insmMm}
+                                      ,#{gshsCardGbnCd}
+                                      ,#{vancoCardGbnCd}
+                                      ,#{preCalcFlg}
+                                      ,#{metaAttr1}
+                                      ,#{metaAttr2}
+                                      ,#{metaAttr3}
+                                      ,#{metaAttr4}
+                                      ,#{metaAttr5}
+                                      ,#{metaAttr6}
+                                      ,#{metaAttr7}
+                                      ,#{metaAttr8}
+                                      ,#{metaAttr9}
+                                      ,#{metaAttr10}
+                                      ,#{metaAttr11}
+                                      ,#{metaAttr12}
+                                      ,#{metaAttr13}
+                                      ,#{metaAttr14}
+                                      ,#{metaAttr15}
+                                      ,#{metaAttr16}
+                                      ,#{metaAttr17}
+                                      ,#{metaAttr18}
+                                      ,#{metaAttr19}
+                                      ,#{metaAttr20}
+                                      ,#{metaAttr21}
+                                      ,#{metaAttr22}
+                                      ,#{metaAttr23}
+                                      ,#{metaAttr24}
+                                      ,#{metaAttr25}
+                                      ,#{metaAttr26}
+                                      ,#{metaAttr27}
+                                      ,#{metaAttr28}
+                                      ,#{metaAttr29}
+                                      ,#{metaAttr30}
+                                      ,#{metaAttr31}
+                                      ,#{metaAttr32}
+                                      ,#{metaAttr33}
+                                      ,#{metaAttr34}
+                                      ,#{metaAttr35}
+                                      ,#{metaAttr36}
+                                      ,#{metaAttr37}
+                                      ,#{metaAttr38}
+                                      ,#{metaAttr39}
+                                      ,#{metaAttr40}
+                                      ,#{metaAttr41}
+  								)
+
+	</insert>		
+	
+	
+
+</mapper>

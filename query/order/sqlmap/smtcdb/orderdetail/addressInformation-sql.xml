@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.orderdetail.AddressInformationSqlMapRepository">
+
+	<resultMap type="iceberg.capi.order.model.orderdetail.common.AddressInformation" id="addressInformation" >
+		<result property="rcvrNm" column="RCVR_NM"/> 
+		<result property="rcvPlcAddr" column="RCV_PLC_ADDR"/> 
+		<result property="dlvpTelno" column="DLVP_TELNO"/> 
+		<result property="addrCntcNo" column="ADDR_CNTC_NO"/> 
+		<result property="addrGbnCd" column="ADDR_GBN_CD"/> 
+		<result property="zipcd" column="ZIPCD"/> 
+		<result property="baseAddr" column="BASE_ADDR"/> 
+		<result property="dtlAddr" column="DTL_ADDR"/> 
+		<result property="eastnChkRsltCd" column="EASTN_CHK_RSLT_CD"/> 
+		<result property="dlvUnulMatrCntnt" column="DLV_UNUL_MATR_CNTNT"/> 
+		<result property="dlvpCelphnTelno" column="DLVP_CELPHN_TELNO"/> 
+	</resultMap>
+	
+	<select id="findAddressInfoList" parameterType="criteria" resultMap="addressInformation">
+    SELECT RCVR_NM
+          ,BASE_ADDR || ' ' || DTL_ADDR AS RCV_PLC_ADDR
+          ,DLVP_TELNO
+          ,ADDR_CNTC_NO
+          ,ADDR_GBN_CD
+          ,ZIPCD
+          ,BASE_ADDR
+          ,DTL_ADDR
+          ,EASTN_CHK_RSLT_CD
+          ,DLV_UNUL_MATR_CNTNT
+          ,DLVP_CELPHN_TELNO
+      FROM CST_CUST_ADDR_D CCAD
+     WHERE ADDR_CNTC_NO IN 
+     <foreach collection="_c.dlvpAddrNo[0].value" item="item" index="index" open="(" separator="," close=")">
+      #{item}
+     </foreach>	
+	</select>
+</mapper>

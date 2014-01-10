@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prdInqry.PrdInqrySqlMapRepository">
+	
+	<resultMap type="iceberg.capi.product.model.prdInqry.PrdInqry" id="getPrdInqry">
+		<result property = "regrId" column = "REGR_ID"/>
+		<result property = "custNo" column = "CUST_NO"/>
+		<result property = "prdCd" column = "PRD_CD"/>
+		<result property = "prdInqryGbnCd" column = "PRD_INQRY_GBN_CD"/>
+		<result property = "prdInqrySortSeqVal" column = "PRD_INQRY_SORT_SEQ_VAL"/>
+		<result property = "answrAdoptCd" column = "ANSWR_ADOPT_CD"/>
+		<result property = "supAnswrCnt" column = "SUP_ANSWR_CNT"/>
+		<result property = "totAnswrCnt" column = "TOT_ANSWR_CNT"/>
+	</resultMap>
+	
+	<select id="getPrdInqryBase" resultMap="getPrdInqry">
+	<!-- 
+        DBMS : WEBDB
+        분야 : 상품문의  getPrdInqryBase
+        API  : 상품문의
+        설명 : 상품문의 질문/답글의 정보를 가져온다.
+        
+        #{prdInqryNo} = E73800631,custNo =  26029277
+	-->
+	
+	SELECT SQBED.REGR_ID        AS REGR_ID                 /* 등록자ID */
+	      ,SQBED.CUST_NO        AS CUST_NO                 /* 고객번호 */
+	      ,SQBED.PRD_CD         AS PRD_CD                  /* 상품코드 */
+	      ,SQBED.SORT_SEQ_VAL   AS PRD_INQRY_SORT_SEQ_VAL  /* 상품문의정렬순서값 */
+	      ,SQBED.BLT_THG_LVL_NO AS PRD_INQRY_GBN_CD        /* 상품문의구분코드 */
+          ,SQBED.SUP_ANSWR_CNT  AS SUP_ANSWR_CNT           /* 협력사답변수 */
+          ,NVL(SQBED.ANSWR_CNT,0)
+           + NVL(SQBED.BUYER_ANSWR_CNT, 0)
+           + NVL(SQBED.SUP_ANSWR_CNT, 0) AS TOT_ANSWR_CNT  /* 총 답변수*/
+	      ,SQBED.ANSWR_ADOPT_CD AS ANSWR_ADOPT_CD          /* 답변채택코드 */
+	  FROM SRV_QNA_BLT_EDN_D SQBED
+	 WHERE SQBED.BLT_THG_NO = #{prdInqryNo}
+	   AND SQBED.DB_ST_CD IN ('A','U')
+	</select>
+	
+	<select id="getPrdInqryParentList" resultMap="getPrdInqry">
+		<!-- 
+        DBMS : WEBDB
+                   분야 : 상품문의  getPrdInqryParentList
+        API  : 상품문의
+                   설명 : 상품문의 질문/답글에 대해 수정, 삭제시 상위글(부모글)이 존재하는지 조회한다.
+        
+        #{prdInqryNo} = E73800631
+		-->
+		
+		SELECT SQBED.REGR_ID        AS REGR_ID                 /* 등록자ID */
+		      ,SQBED.CUST_NO        AS CUST_NO                 /* 고객번호 */
+	          ,SQBED.SUP_ANSWR_CNT  AS SUP_ANSWR_CNT           /* 협력사답변수 */
+	          ,NVL(SQBED.ANSWR_CNT,0)
+               + NVL(SQBED.BUYER_ANSWR_CNT, 0)
+               + NVL(SQBED.SUP_ANSWR_CNT, 0) AS TOT_ANSWR_CNT  /* 총 답변수*/
+		  FROM SRV_QNA_BLT_EDN_D SQBED
+		 WHERE SQBED.BLT_THG_NO = #{prdInqryNo}
+		   AND SQBED.DB_ST_CD IN ('A','U')
+	</select>
+
+
+	<resultMap type="String" id="limitFlg">
+   		<result property = "limitFlg"			column = "LIMIT_FLAG"  />		<!-- 제한 여부	-->
+	</resultMap>
+	
+	<select id="getPrdInqryWritLimitFlg" parameterType="long" resultMap="limitFlg">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 상품문의 getPrdInqryWritLimitFlg
+		API  : 상품문의 작성제한 여부 고객 확인
+		설명 : 상품문의 작성제한 여부 고객 확인
+		
+ 		#{ecCustNo} = 856680647
+		
+		-->
+	<![CDATA[
+
+		SELECT /*+ INDEX(GKU GS_KNOW_USER_PK) */
+			   NVL(GKU.LIMIT_FLAG,'N') AS LIMIT_FLAG	/*작성제한 여부*/
+		  FROM GS_KNOW_USER GKU
+		 WHERE ECUSERID = #{ecCustNo}						
+		   AND DBSTS = 'A'
+
+		]]>
+	</select>
+	
+	<resultMap type="iceberg.capi.product.model.prdInqry.PrdInqry" id="getPrdInqryMap">
+		<result property = "prdInqryNo"         column = "PRD_INQRY_NO"/>		<!--	상품문의 번호		-->
+		<result property = "regDtm"             column = "REG_DTM"/>			<!--	등록일시			-->
+		<result property = "regrId"             column = "REGR_ID"/>			<!--	등록자ID			-->
+		<result property = "loginId"             column = "LOGIN_ID"/>			<!--	로그인ID			-->
+		<result property = "ecCustNo"			column = "EC_CUST_NO"/>
+		<result property = "modDtm"             column = "MOD_DTM"/>			<!--	수정일시			-->
+		<result property = "modrId"             column = "MODR_ID"/>			<!--	수정자ID			-->
+		<result property = "custNo"             column = "CUST_NO"/>			<!--	고객번호			-->
+		<result property = "custRlmemshpGrd"    column = "CUST_RLMEMSHP_GRD"/>	<!--	고객리얼멤버쉽등급		-->
+		<result property = "nick"               column = "NICK"/>				<!--	별명				-->
+		<result property = "smsSndFlg"          column = "SMS_SND_FLG"/>		<!--	SMS발송여부		-->
+		<result property = "celphnTelNo"        column = "CELPHN_TEL_NO"/>
+		<result property = "emailAddr"          column = "EMAIL_ADDR"/>
+		<result property = "supCd"              column = "SUP_CD"/>
+		<result property = "subSupCd"           column = "SUB_SUP_CD"/>
+		<result property = "prdCd"              column = "PRD_CD"/>				<!--	상품코드			-->
+		<result property = "exposPrdNm"         column = "EXPOS_PRD_NM"/>		<!--	노출상품명			-->
+		<result property = "prdImg"             column = "PRD_IMG"/>
+		<result property = "lrgClsShopNo"       column = "LRG_CLS_SHOP_NO"/>	<!--	대분류매장번호		-->
+		<result property = "midClsShopNo"       column = "MID_CLS_SHOP_NO"/>	<!--	중분류매장번호		-->
+		<result property = "ordNo"              column = "ORD_NO"/>				<!--	주문번호			-->
+		<result property = "prdInqryTitle"      column = "PRD_INQRY_TITLE"/>	<!--	상품문의제목			-->
+		<result property = "prdInqryGbnCd"      column = "PRD_INQRY_GBN_CD"/>	<!--	상품문의 구분코드		-->
+		<result property = "upperPrdInqryNo"    column = "UPPER_PRD_INQRY_NO"/>
+		<result property = "prdInqrySortSeqVal" column = "PRD_INQRY_SORT_SEQ_VAL"/>	<!--	상품문의 정렬순서값	-->
+		<result property = "custRegrIp"         column = "CUST_REGR_IP"/>			<!--	고객등록자IP		-->
+		<result property = "prdInqryStCd"       column = "PRD_INQRY_ST_CD"/>		<!--	상품문의 상태코드 		-->
+		<result property = "atachFileGbnCd"     column = "ATACH_FILE_GBN_CD"/>		<!--	첨부파일구분코드		-->
+		<result property = "answrAdoptCd"       column = "ANSWR_ADOPT_CD"/>			<!--	답변채택코드			-->
+		<result property = "qryCnt"             column = "QRY_CNT"/>				<!--	조회수				-->
+		<result property = "answrCnt"           column = "ANSWR_CNT"/>				<!--	답변수				-->
+		<result property = "ordPrsnAnswrCnt"    column = "ORD_PRSN_ANSWR_CNT"/>		<!--	주문자답변수			-->
+		<result property = "supAnswrCnt"        column = "SUP_ANSWR_CNT"/>			<!--	협력사답변수			-->
+		<result property = "pntScore"           column = "PNT_SCORE"/>				<!--	포인트점수			-->
+		<result property = "ordPrsnFlg"         column = "ORD_PRSN_FLG"/>			<!--	주문자여부			-->
+		<result property = "secrtArtclFlg"      column = "SECRT_ARTCL_FLG"/>		<!--	비밀글여부			-->
+		<result property = "emailAnswrRcvFlg"   column = "EMAIL_ANSWR_RCV_FLG"/>
+		<result property = "declrFlg"           column = "DECLR_FLG"/>				<!--	신고여부			-->
+		<result property = "ifSeq"              column = "IF_SEQ"/>
+		<result property = "ifFlg"              column = "IF_FLG"/>
+		<result property = "ifDtm"              column = "IF_DTM"/>
+		<result property = "ifTypCd"            column = "IF_TYP_CD"/>
+		<result property = "ifMsgCntnt"         column = "IF_MSG_CNTNT"/>
+		<result property = "ifSndSysId"         column = "IF_SND_SYS_ID"/>
+		<result property = "ifRcvSysId"         column = "IF_RCV_SYS_ID"/>
+		<result property = "ownSysId"           column = "OWN_SYS_ID"/>
+		<result property = "regChanlCd"         column = "REG_CHANL_CD"/>			<!--	등록채널코드			-->
+		<result property = "prdInqryBodyCntnt"  column = "PRD_INQRY_BODY_CNTNT"/>	<!--	상품문의본문내용		-->
+		<result property = "srcCntnt"         	column = "SRC_CNTNT"/>				<!--	소스내용			-->
+	</resultMap>
+	<select id="getPrdInqryPageList" parameterType="criteria" resultMap="getPrdInqryMap">
+	<!-- 
+        DBMS : WEBDB
+                  분야 : 상품문의  getPrdInqryPageList
+        API  : 상품문의
+                   설명 : 상품문의 질문/답글의 정보를 가져온다.
+        
+        #{_p.pageItemSize} = 10
+        #{_c.prdCd[0].value} = 4519394
+        #{_p.pageNumber} = 1
+	-->
+	SELECT X.*,
+	           (SELECT VCCD.EC_LOGIN_ID FROM V_CMM_CUST_D VCCD WHERE X.CUST_NO = VCCD.CUST_NO) AS LOGIN_ID /*로그인 ID*/
+	    FROM( SELECT CEIL(ROWNUM / #{_p.pageItemSize}) AS PAGEIDX
+	                ,X1.*
+	            FROM (SELECT /*+ INDEX_DESC(SQBED IX_SRV_QNA_BLT_EDN_D_01) */
+	                         SQBED.BLT_THG_NO       AS PRD_INQRY_NO              /*QNA_ID*/
+	                        ,SQBED.DB_ST_CD         AS PRD_INQRY_ST_CD             /*데이터베이스상태코드*/
+	                        ,SQBED.CUST_GRD_CD      AS CUST_RLMEMSHP_GRD        /*고객등급코드*/
+	                        ,SQBED.BLT_THG_LVL_NO   AS PRD_INQRY_GBN_CD      /*게시물레벨번호*/
+	                        ,SQBED.SORT_SEQ_VAL     AS PRD_INQRY_SORT_SEQ_VAL  /*정렬순서*/
+	                        ,SQBED.REGR_ID          AS EC_CUST_NO                   /*EC사용자번호*/
+	                        ,SQBED.CUST_NO          AS CUST_NO                      /*고객번호*/
+	                        ,SQBED.BLT_THG_TITLE_NM AS PRD_INQRY_TITLE     /*게시물제목명*/
+	                        ,SQBED.NICK             AS NICK                            /*별명*/
+	                        ,SQBED.IP_ADDR          AS CUST_REGR_IP                 /*IP주소*/
+	                        ,SQBED.DECLR_YN         AS DECLR_FLG                   /*신고여부*/
+	                        ,SQBED.LRG_CLS_SHOP_NO  AS LRG_CLS_SHOP_NO      /*대분류매장번호*/
+	                        ,SQBED.MID_CLS_SHOP_NO  AS MID_CLS_SHOP_NO      /*중분류매장번호*/
+	                        ,SQBED.PRD_CD           AS PRD_CD                        /*상품코드*/
+	                        ,SQBED.ORD_NO           AS ORD_NO                        /*주문번호*/
+	                        ,SQBED.PRD_NM           AS EXPOS_PRD_NM                  /*상품명*/
+	                        ,SQBED.BUYER_YN         AS ORD_PRSN_FLG                /*주무자여부*/
+	                        ,SQBED.ATACH_FILE_GBN_CD AS ATACH_FILE_GBN_CD  /*첨부파일구분코드*/
+	                        ,SQBED.SMS_NTC_YN       AS SMS_SND_FLG               /*SMS공지여부*/
+	                        ,SQBED.ANSWR_ADOPT_CD   AS ANSWR_ADOPT_CD        /*답변채택코드*/
+	                        ,SQBED.QRY_CNT          AS QRY_CNT                      /*조회수*/
+	                        ,NVL(SQBED.ANSWR_CNT,0)
+	                         + NVL(SQBED.BUYER_ANSWR_CNT, 0)
+	                         + NVL(SQBED.SUP_ANSWR_CNT, 0) AS ANSWR_CNT   /*답변수(비주문자 답변수 + 주문자 답변수 + 업체답변수)*/
+	                        ,SQBED.BUYER_ANSWR_CNT  AS ORD_PRSN_ANSWR_CNT  /*주문자답변수*/
+	                        ,SQBED.SUP_ANSWR_CNT    AS SUP_ANSWR_CNT      /*협력사답변수*/
+	                        ,SQBED.PNT_SCORE        AS PNT_SCORE              /*포인트점수*/
+	                        ,SQBED.REGR_ID          AS REGR_ID                  /*등록자ID*/
+	                        ,SQBED.REG_DTM          AS REG_DTM                  /*등록일시*/
+	                        ,SQBED.MODR_ID          AS MODR_ID                  /*수정자ID*/
+	                        ,SQBED.MOD_DTM          AS MOD_DTM                  /*수정일시*/
+	                        ,SQBED.SECRT_ARTCL_YN   AS SECRT_ARTCL_FLG   /*비밀글여부*/
+	                    FROM SRV_QNA_BLT_EDN_D SQBED
+	                   WHERE 1=1
+	                     AND SQBED.PRD_CD = #{_c.prdCd[0].value}        /*상품코드*/
+	                     AND SQBED.BLT_THG_LVL_NO = 1                   /*게시물레벨번호*/
+	                     AND SQBED.DB_ST_CD IN ('A','U')                /*데이터베이스상태코드*/
+	               ) X1
+	          ) X
+	    WHERE  PAGEIDX = #{_p.pageNumber}
+	</select>
+	
+	<select id="getPrdInqryTotCount" parameterType="long" resultType="int">
+	<!-- 
+        DBMS : WEBDB
+        분야 : 상품문의  getPrdInqryTotCount
+        API  : 상품코드 기준 상품문의 전체 건수 조회
+        설명 : 상품코드 기준 상품문의 전체 건수 조회
+                
+        #{prdCd} = 4519394        
+	-->
+		SELECT /*+ INDEX_SS(SQBED) */ 
+			count(*) AS PRD_INQRY_TOT_CNT
+		FROM    SRV_QNA_BLT_EDN_D SQBED
+        WHERE   1=1
+        AND     SQBED.PRD_CD = #{prdCd}             /*상품코드*/
+        AND     SQBED.BLT_THG_LVL_NO = 1                        /*게시물레벨번호*/
+        AND     SQBED.DB_ST_CD IN ('A','U')                     /*데이터베이스상태코드*/
+	</select>
+	
+	
+	<select id="getPrdInqry" parameterType="criteria" resultMap="getPrdInqryMap">
+	<!-- 
+        DBMS : WEBDB
+        분야 : 상품문의  getPrdInqry
+        API  : 상품문의
+        설명 : 상품문의 질문/답글의 상세 정보를 가져온다.
+                
+        #{_c.prdInqryNo[0].value} = 998800
+		#{_c.custNo[0].value} = 6006158
+		#{_c.prdInqryStCd[0].value} = 'A'
+		
+	-->
+		SELECT   SQBED.BLT_THG_NO AS PRD_INQRY_NO                     /*QNA_ID*/
+		        ,SQBED.DB_ST_CD AS PRD_INQRY_ST_CD                        /*데이터베이스상태코드*/
+		        ,SQBED.CUST_GRD_CD AS CUST_RLMEMSHP_GRD                 /*고객등급코드*/
+		        ,SQBED.BLT_THG_LVL_NO AS PRD_INQRY_GBN_CD              /*게시물레벨번호*/
+		        ,SQBED.SORT_SEQ_VAL AS SORT_SEQ_VAL                  /*정렬순서*/
+		        ,SQBED.REGR_ID AS EC_CUST_NO                      /*EC사용자번호*/
+		        ,SQBED.CUST_NO AS CUST_NO                        /*고객번호*/
+		        ,SQBED.BLT_THG_TITLE_NM AS PRD_INQRY_TITLE                /*게시물제목명*/
+		        ,SBTCD.QNA_BODY_CNTNT AS PRD_INQRY_BODY_CNTNT               /*QNA본문내용*/
+		        ,SBTCD.SRC_CNTNT AS SRC_CNTNT                      /*QNA소스내용*/
+		        ,SQBED.NICK AS NICK                        /*별명*/
+		        ,SQBED.IP_ADDR AS CUST_REGR_IP                    /*IP주소*/
+		        ,SQBED.DECLR_YN AS DECLR_FLG                  /*신고여부*/
+		        ,SQBED.LRG_CLS_SHOP_NO AS LRG_CLS_SHOP_NO               /*대분류매장번호*/
+		        ,SQBED.MID_CLS_SHOP_NO AS MID_CLS_SHOP_NO               /*중분류매장번호*/
+		        ,SQBED.PRD_CD AS PRD_CD                          /*상품코드*/
+		        ,SQBED.ORD_NO AS ORD_NO                         /*주문번호*/
+		        ,SQBED.PRD_NM AS EXPOS_PRD_NM                        /*상품명*/
+		        ,SQBED.BUYER_YN AS ORD_PRSN_FLG                   /*주문자여부*/
+		        ,SQBED.ATACH_FILE_GBN_CD AS ATACH_FILE_GBN_CD       /*첨부파일구분코드*/
+		        ,SQBED.SMS_NTC_YN AS SMS_SND_FLG                   /*SMS공지여부*/
+		        ,SQBED.ANSWR_ADOPT_CD AS ANSWR_ADOPT_CD            /*답변채택코드*/
+		        ,SQBED.QRY_CNT AS QRY_CNT                    /*조회수*/
+		        ,NVL(SQBED.ANSWR_CNT,0)
+		         + NVL(SQBED.BUYER_ANSWR_CNT, 0)
+		         + NVL(SQBED.SUP_ANSWR_CNT, 0) AS ANSWR_CNT   /*답변수*/
+		        ,SQBED.BUYER_ANSWR_CNT AS ORD_PRSN_ANSWR_CNT     /*주문자답변수*/
+		        ,SQBED.SUP_ANSWR_CNT AS SUP_ANSWR_CNT        /*협력사답변수*/
+		        ,SQBED.PNT_SCORE AS PNT_SCORE                       /*포인트점수*/
+		        ,SQBED.REGR_ID AS REGR_ID                       /*등록자ID*/
+		        ,SQBED.REG_DTM AS REG_DTM                       /*등록일시*/
+		        ,SQBED.MODR_ID AS MODR_ID                       /*수정자ID*/
+		        ,SQBED.MOD_DTM AS MOD_DTM                       /*수정일시*/
+		        ,SQBED.SECRT_ARTCL_YN AS SECRT_ARTCL_FLG            /*비밀글여부*/
+		        ,SQBED.EMAIL_ANSWR_RCV_YN AS EMAIL_ANSWR_RCV_FLG         /*이메일답변수신여부*/
+		        ,SQBED.EMAIL_ADDR AS EMAIL_ADDR                      /*이메일주소*/
+		        ,SQBED.CELPHN_NO AS CELPHN_TEL_NO                       /*핸드폰번호*/
+		FROM    SRV_QNA_BLT_EDN_D SQBED
+		       ,SRV_BLT_THG_CNTNT_D SBTCD
+		WHERE   SQBED.BLT_THG_NO = SBTCD.BLT_THG_NO
+		AND     SQBED.BLT_THG_NO = #{_c.prdInqryNo[0].value}
+		AND     SQBED.CUST_NO    = #{_c.custNo[0].value}
+		AND     SQBED.DB_ST_CD   = #{_c.prdInqryStCd[0].value}
+	</select>
+	
+	<select id="getPrdInqryDtl" parameterType="criteria" resultMap="getPrdInqryMap">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 상품문의 getPrdInqryDtlInfo
+		API  : 상품 문의 상세 내용 조회
+		설명 : 상품 문의 상세 내용 조회
+		
+		#{_c.prdCd[0].value} = 1602000 /*상품코드*/
+		#{_c.prdInqrySortSeqVal[0].value} = A /*상품문의 정렬순서값*/
+		#{_c.prdInqryStCd[0].value} = 0004014429% /*상품문의 상태코드*/
+		
+		-->
+	<![CDATA[
+		
+		SELECT /*+ INDEX_DESC(SQBED IX_SRV_QNA_BLT_EDN_D_01) */
+		       SQBED.BLT_THG_NO                     AS PRD_INQRY_NO 			/*상품문의 번호*/
+		     , SQBED.DB_ST_CD                       AS PRD_INQRY_ST_CD 			/*상품문의 상태코드*/
+		     , SQBED.CUST_GRD_CD	                AS CUST_RLMEMSHP_GRD 		/*고객리얼멤버쉽등급*/
+		     , SQBED.BLT_THG_LVL_NO 	            AS PRD_INQRY_GBN_CD 		/*상품문의 구분코드*/
+		     , SQBED.SORT_SEQ_VAL                   AS PRD_INQRY_SORT_SEQ_VAL 	/*상품문의 정렬순서값*/
+		     , VCCD.EC_LOGIN_ID                        AS LOGIN_ID 					/*로그인 ID*/
+		     , SQBED.REGR_ID                        AS REGR_ID 					/*등록자ID*/
+		     , SQBED.CUST_NO                        AS CUST_NO 					/*고객번호*/
+		     , SQBED.BLT_THG_TITLE_NM               AS PRD_INQRY_TITLE 			/*상품문의제목*/
+		     , SBTCD.QNA_BODY_CNTNT                 AS PRD_INQRY_BODY_CNTNT 	/*상품문의본문내용*/
+		     , SBTCD.SRC_CNTNT                      AS SRC_CNTNT 				/*소스내용*/
+		     , SQBED.NICK               	        AS NICK 					/*별명*/
+		     , SQBED.IP_ADDR                        AS CUST_REGR_IP 			/*고객등록자IP*/
+		     , SQBED.DECLR_YN                       AS DECLR_FLG 				/*신고여부*/
+		     , SQBED.LRG_CLS_SHOP_NO                AS LRG_CLS_SHOP_NO 			/*대분류매장번호*/
+		     , SQBED.MID_CLS_SHOP_NO                AS MID_CLS_SHOP_NO 			/*중분류매장번호*/
+		     , SQBED.PRD_CD                         AS PRD_CD 					/*상품코드*/
+		     , SQBED.ORD_NO                         AS ORD_NO 					/*주문번호*/
+		     , SQBED.PRD_NM                         AS EXPOS_PRD_NM 			/*노출상품명*/
+		     , SQBED.BUYER_YN                       AS ORD_PRSN_FLG 			/*주문자여부*/
+		     , SQBED.ATACH_FILE_GBN_CD              AS ATACH_FILE_GBN_CD 		/*첨부파일구분코드*/
+		     , SQBED.SMS_NTC_YN                     AS SMS_SND_FLG 				/*SMS발송여부*/
+		     , SQBED.ANSWR_ADOPT_CD                 AS ANSWR_ADOPT_CD 			/*답변채택코드*/
+		     , SQBED.QRY_CNT                        AS QRY_CNT 					/*조회수*/
+		     , NVL(SQBED.ANSWR_CNT,0) + 
+		       NVL(SQBED.BUYER_ANSWR_CNT, 0) + 
+		       NVL(SQBED.SUP_ANSWR_CNT, 0) 			AS ANSWR_CNT 				/*답변수*/
+		     , SQBED.BUYER_ANSWR_CNT                AS ORD_PRSN_ANSWR_CNT 		/*주문자답변수*/
+		     , SQBED.SUP_ANSWR_CNT                  AS SUP_ANSWR_CNT 			/*협력사답변수*/
+		     , SQBED.PNT_SCORE                      AS PNT_SCORE 				/*포인트점수*/
+		     , SQBED.REG_DTM						AS REG_DTM 					/*등록일시*/
+		     , SQBED.MODR_ID                        AS MODR_ID 					/*수정자ID*/
+		     , SQBED.MOD_DTM                        AS MOD_DTM 					/*수정일시*/
+		     , SQBED.SECRT_ARTCL_YN                 AS SECRT_ARTCL_FLG 			/*비밀글여부*/
+		     , NVL(SQBED.CHANL_CD,'P')              AS REG_CHANL_CD 			/*등록채널코드*/
+		 FROM  SRV_QNA_BLT_EDN_D SQBED
+		     , SRV_BLT_THG_CNTNT_D SBTCD
+		     , V_CMM_CUST_D VCCD
+		WHERE  SQBED.BLT_THG_NO      =  SBTCD.BLT_THG_NO	/*상품문의번호*/
+		  AND  SQBED.CUST_NO 		 =  VCCD.CUST_NO
+		  AND  SQBED.PRD_CD          =  #{_c.prdCd[0].value} /*상품코드*/
+		  AND  SQBED.SORT_SEQ_VAL LIKE  #{_c.prdInqrySortSeqVal[0].value} /*상품문의 정렬순서값*/
+		  AND  SQBED.DB_ST_CD        =  #{_c.prdInqryStCd[0].value} /*상품문의 상태코드*/
+		]]>
+	</select>
+	
+	<update id="updatePrdInqryCnt" parameterType="iceberg.capi.product.model.prdInqry.PrdInqry">
+		<!-- 
+                          프로그램 이름 /iceberg.capi.product.model/src/main/resources/config/sqlmap/webdb/prdInqryDtl-sql.xml
+                           작성시기 2013.11.07 by vkeiwon 
+		-->
+	   UPDATE SRV_QNA_BLT_EDN_D
+		  SET QRY_CNT 	  	  = QRY_CNT + 1 
+			 ,IF_SEQ 		  = #{ifSeq} 		/*인터페이스 순번*/
+			 ,IF_YN 		  = #{ifFlg} 		/*인터페이스 여부*/
+			 ,IF_DTM 		  = #{ifDtm} 		/*인터페이스 일시*/
+			 ,IF_TYP_CD 	  = #{ifTypCd} 		/*인터페이스 유형 코드*/
+			 ,IF_SND_SYS_ID   = #{ifSndSysId} 	/*인터페이스 송신시스템 ID*/
+			 ,IF_RCV_SYS_ID   = #{ifRcvSysId} 	/*인터페이스 수신시스템 ID*/
+			 ,OWN_SYS_ID 	  = #{ownSysId} 	/*보유시스템 ID*/
+		WHERE BLT_THG_NO 	  = #{prdInqryNo} 	/*상품문의 번호*/
+		
+	</update>
+	
+</mapper>

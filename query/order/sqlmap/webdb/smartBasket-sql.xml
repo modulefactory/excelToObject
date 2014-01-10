@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.basket.SmartBasketSqlMapRepository">
+
+	<!--
+		   	내용 :
+		   	작성자 : 신슬기
+		   	작성일 : 2013.12.03
+
+		   	#{basketNo} = 1438829469
+		   	#{ecAttrPrdCd} =
+	-->
+ 	<resultMap id="lastProduct" type="iceberg.capi.order.model.basket.LastProduct">
+		<result property="prdid"                                column="prdid"                                       />
+		<result property="name"                                column="name"                                       />
+		<result property="class_1"                            column="class_1"                                   />
+		<result property="class_2"                            column="class_2"                                   />
+		<result property="class_3"                            column="class_3"                                   />
+		<result property="class_4"                            column="class_4"                                   />
+		<result property="soft_flag"                                column="soft_flag"                                       />
+		<result property="muija_month"                                column="MUIJA_MONTH"                                       />
+		<result property="fn_price"                                column="FN_PRICE"                                       />
+		<result property="interest_discount"                                column="interest_discount"                                       />
+		<result property="lowest_price"                                column="LOWEST_PRICE"                                       />
+		<result property="price_display_yn"                                column="price_display_yn"                                       />
+		<result property="khs_price"                                column="khs_price"                                       />
+		<result property="credate"                                column="credate"                                       />
+		<result property="prc_discnt_dt"                                column="prc_discnt_dt"                                       />
+		<result property="compare_prc"                                column="compare_prc"                                       />
+		<result property="prc_down_dt"                                column="prc_down_dt"                                       />
+		<result property="dittoFlg"                                column="DITTO_YN"                                       />
+		<result property="adult_chk_yn"                                column="ADULT_CHK_YN"                                       />
+	</resultMap>
+	<select id = "findLastProductList" parameterType="criteria" resultMap="lastProduct">
+		<![CDATA[
+		SELECT  /*+ leading(A) USE_HASH(A C)
+           index(A PK_PRD_PRD_M)
+           index(D PK_PMO_BATCH_D) */
+              A.PRD_CD AS prdid       /*상품코드*/
+             ,DECODE(E.EXPOS_PMO_NM, NULL, '', E.EXPOS_PMO_NM || ' ' ) || DECODE(E.EXPOS_PRD_NM,NULL,'',E.EXPOS_PRD_NM || ' ') || NVL(E.EXPOS_PR_SNTNC_NM, '') AS name /*상품명*/
+
+             ,NVL(SUBSTR(A.PRD_CLS_CD,1,3),'') AS class_1             /*상품분류코드(대분류)*/
+             ,NVL(SUBSTR(A.PRD_CLS_CD,4,2),'') AS class_2             /*상품분류코드(중분류)*/
+             ,NVL(SUBSTR(A.PRD_CLS_CD,6,2),'') AS class_3             /*상품분류코드(소분류)*/
+             ,NVL(SUBSTR(A.PRD_CLS_CD,8,3),'') AS class_4             /*상품분류코드(세분류)*/
+             ,A.FRMLES_PRD_TYP_CD AS soft_flag    /*무형상품유형코드*/
+             ,TO_NUMBER( DECODE( RTRIM( NVL(D.NO_INT_YN, 'N')), 'Y', NVL(D.NO_INT_MM_CNT, 0), 0) ) AS MUIJA_MONTH 		/*무이자개월수*/
+
+             ,DECODE(NVL(A.DC_MRK_GBN_CD, '01') ,'10', B.SALE_PRC,
+                          DECODE(D.DC_RTAMT_CD,
+                                 'R', B.SALE_PRC - FLOOR( B.SALE_PRC * D.SUP_DC_RTAMT * 0.001 ) * 10,
+                                 'A', B.SALE_PRC - D.SUP_DC_RTAMT,
+                                 B.SALE_PRC
+                          )
+                    ) AS FN_PRICE
+             ,TO_NUMBER( PG_PMO_PRD_PMO.FN_PRD_SGPAY_DC(A.PRD_CD, 'P', sysdate)) AS interest_discount	/*일시불할인액*/
+     		 ,F.FLGD_PRC AS LOWEST_PRICE                          /*기분좋은가격*/
+     		 ,A.COMPR_PRC_MRK_YN AS price_display_yn  /*비교가격표시여부*/
+   			 ,B.SALE_PRC AS khs_price         /*판매가격*/
+    		 ,A.REG_DTM AS credate
+     		 ,F.PRC_DC_DTM AS prc_discnt_dt           /*가격할인일시*/
+     		 ,F.PRC_REDUCT_BEF_LOW_PRC AS compare_prc /*가격인하전최저가격*/
+             ,F.PRC_REDUCT_DTM AS prc_down_dt         /*가격인하일시*/
+             ,A.DITTO_YN
+             ,NVL(A.ADULT_CERT_YN, 'N') AS ADULT_CHK_YN           /*성인인증여부*/
+			FROM    PRD_PRD_M A         /*상품기본 TABLE*/
+			       ,PRD_CHANL_D G       /*상품채널정보 TABLE*/
+			       ,PRD_PRC_H B         /*상품가격이력 TABLE*/
+			       ,PRD_PRD_D C         /*상품확장정보 TABLE*/
+			     ,PMO_BATCH_D D       /*상품프로모션배치정보 TABLE*/
+			     ,PRD_BRAND_M BD      /*브랜드기본 TABLE*/
+			       ,PRD_NM_CHG_H E      /*상품명변경이력 TABLE*/
+			       ,PRD_SHOP_EXPOS_D F  /*상품매장노출정보 TABLE*/
+			WHERE   A.PRD_CD = D.PRD_CD(+)
+			AND     NVL(D.CHANL_CD, 'P') = 'P'
+			AND     A.PRD_CD in
+		]]>
+
+		   <foreach collection="_c.prdCd[0].value" item="item" index="index" open="(" separator="," close=")">
+		   		#{item}
+		   </foreach>
+		<![CDATA[
+
+			AND     A.SALE_END_DTM > #{_c.date[0].value}
+			AND     A.USE_YN = 'Y'
+			AND     RTRIM(A.EXPOS_ST_CD) = 'Y'
+			AND     A.GFT_TYP_CD = '00'
+			AND     A.PRD_CD = G.PRD_CD(+)
+			AND     NVL(G.CHANL_CD, 'P') = 'B'
+			AND     NVL(G.SALE_PSBL_YN, 'Y') = 'Y'
+			AND     A.PRD_CD = B.PRD_CD(+)
+			AND     NVL(B.PRD_ATTR_GBN_CD, 'P') = 'P'
+			AND     NVL(B.VALID_END_DTM, SYSDATE) >= SYSDATE
+			AND     NVL(B.VALID_STR_DTM, SYSDATE) <= SYSDATE
+			AND     A.PRD_CD = C.PRD_CD
+			AND     BD.BRAND_CD(+) = A.BRAND_CD
+			AND     A.PRD_CD = E.PRD_CD(+)
+			AND     NVL(E.CHANL_CD, 'P') = 'P'
+			AND     NVL(E.VALID_END_DTM, SYSDATE) >= SYSDATE
+			AND     NVL(E.VALID_STR_DTM, SYSDATE) <= SYSDATE
+			AND     A.PRD_CD = F.PRD_CD(+)
+		]]>
+	</select>
+
+
+ 	<resultMap id="sectInfo" type="iceberg.capi.order.model.common.SectInfo">
+		<result property="shopId"        column="SHOP_ID" />
+		<result property="parntShopId"   column="PARNT_SHOP_ID" />
+		<result property="lvl"           column="LVL" />
+	</resultMap>
+
+   <!--
+            내용 : 카테고리 정보 조회
+            작성자 : 신슬기
+            작성일 : 2013.12.03
+
+	    #{_c.prdCd[0].value} = 10003949
+            #{_c.sectGubun[0].value} = "S"
+   -->
+
+   <select id = "findSectInfo" parameterType="criteria" resultMap="sectInfo">
+       SELECT SECTID      AS SHOP_ID
+             ,SECTPRSTID  AS PARNT_SHOP_ID
+             ,LEVEL       AS LVL
+         FROM EC_SECT
+        WHERE DBSTS = 'A'
+        START WITH SECTID = (SELECT SHOP_ID
+                               FROM (SELECT ESP.SECTID            AS SHOP_ID
+                                           ,NVL(ESP.SECT_SEQ ,99) AS SHOP_PRD_SEQ
+                                           ,(CASE WHEN GST.SECTID1=1079896 THEN '099'
+                                                  ELSE ES.PRIOR_DISP_CD
+                                              END)                AS PRIOR_DISP_CD
+                                       FROM EC_SECT        ES
+                                           ,EC_SECT_PRDLST ESP
+                                           ,GS_SECT_TREE   GST
+                                      WHERE ESP.PRDID = #{_c.prdCd[0].value}
+                                        AND ES.SECTID = ESP.SECTID
+                                        AND ES.SECTID = GST.SECTID
+                                        AND GST.LINK_STS = 'A'
+                                        AND ES.PRD_DISP_YN = 'Y'
+                                        AND ES.SECT_GUBUN = #{_c.sectGubun[0].value}
+                                        AND ESP.DBSTS = 'A'
+                                        AND ES.DBSTS = 'A'
+                                    <if test='_c.sectGubun[0].value == "S"'>
+                                      ORDER BY ESP.CREDATE
+                                    </if>
+                                    <if test='_c.sectGubun[0].value == "G"'>
+                                      ORDER BY SECT_SEQ, PRIOR_DISP_CD, ESP.SECTID
+                                    </if>
+                                    )
+                              WHERE ROWNUM = 1 )
+      CONNECT BY SECTID = PRIOR SECTPRSTID
+        ORDER BY LEVEL DESC
+	</select>
+ 	<resultMap id="wishPrd" type="iceberg.capi.order.model.basket.WishPrd">
+		<result property="prdCd"    column="PRD_CD" />
+	</resultMap>
+
+	<!--
+		   	내용 : 찜에 등록된 상품코드 목록을 조회한다.
+		   	작성자 : 신슬기
+		   	작성일 : 2013.12.03
+
+		   	#{_c.ecCustNo[0].value} = 1191508407
+	-->
+
+	<select id = "findWishPrdCd" parameterType="criteria" resultMap="wishPrd">
+	   SELECT PRD_CD AS PRD_CD
+	     FROM (
+                     SELECT   LWI.PRDID AS PRD_CD
+                       FROM   PMO_BATCH_D PBD
+                                  , PRD_PRD_M PPM
+                                  , LGEC_WISH_ITMLIST LWI
+                                  , LGEC_WISH_CLOAK LWC
+                                  , PRD_SHOP_EXPOS_D PSED
+                                  , PRD_PRC_H PPH
+                                  , PRD_CHANL_D PCD
+                                  , PRD_NM_CHG_H PNCH
+                      WHERE   PPM.PRD_CD = PBD.PRD_CD(+)
+                        AND PPM.PRD_CD = LWI.PRDID
+                        AND LWI.CLOAKID = LWC.CLOAKID
+                        AND PPM.USE_YN = 'Y'
+                        AND LWI.PR_TYPE = 'G'
+                        AND LWC.WISHGUBUN = '1'
+                        AND LWC.ECUSERID = #{_c.ecCustNo[0].value}
+                        AND PPM.PRD_CD = PSED.PRD_CD
+                        AND PPM.PRD_CD = PPH.PRD_CD
+                        AND SYSDATE BETWEEN PPH.VALID_STR_DTM AND PPH.VALID_END_DTM
+                        AND PPH.PRD_ATTR_GBN_CD = 'P'
+                        AND PPM.PRD_CD = PCD.PRD_CD
+                        AND PCD.CHANL_CD = 'B'
+                        AND PCD.SALE_PSBL_YN = 'Y'
+                        AND PPM.PRD_CD = PNCH.PRD_CD(+)
+                        AND PNCH.CHANL_CD(+) = 'P'
+                        AND SYSDATE BETWEEN PNCH.VALID_STR_DTM(+) AND PNCH.VALID_END_DTM(+)
+                      UNION ALL
+                     SELECT   GAP.TR_PRDID AS PRDID
+                       FROM   GS_AP_PRD         GAP
+                            , LGEC_WISH_ITMLIST LWI
+                            , LGEC_WISH_CLOAK   LWC
+                      WHERE GAP.TR_PRDID = LWI.PRDID
+                        AND LWI.CLOAKID = LWC.CLOAKID
+                        AND GAP.DBSTS = 'A'
+                        AND LWI.PR_TYPE = 'T'
+                        AND LWC.WISHGUBUN = '1'
+                        AND LWC.ECUSERID = #{_c.ecCustNo[0].value}
+	     )
+	</select>
+
+	<resultMap id="recommendTpl" type="iceberg.capi.order.model.basket.RecommendTpl">
+		<result property="tpl_nm"    column="TPL_NM" />
+		<result property="tpl_flter_cond_val"    column="TPL_FLTER_COND_VAL" />
+		<result property="baynote_cll_web_addr"    column="BAYNOTE_CLL_WEB_ADDR" />
+		<result property="baynote_rcmd_prd_cnt"    column="BAYNOTE_RCMD_PRD_CNT" />
+		<result property="agrp_var_val"    column="AGRP_VAR_VAL" />
+		<result property="bgrp_var_val"    column="BGRP_VAR_VAL" />
+		<result property="tpl_st_cd"    column="TPL_ST_CD" />
+		<result property="tpl_apply_dtm"    column="TPL_APPLY_DTM" />
+		<result property="tpl_expir_dtm"    column="TPL_EXPIR_DTM" />
+		<result property="rcmd_cll_addr"    column="RCMD_CLL_ADDR" />
+		<result property="abtest_yn"    column="ABTEST_YN" />
+	</resultMap>
+	<select id = "findBaynoteTpl" parameterType="criteria" resultMap="recommendTpl">
+		    SELECT TPL_NM,
+		       TPL_FLTER_COND_VAL,
+		       BAYNOTE_CLL_WEB_ADDR,
+		       BAYNOTE_RCMD_PRD_CNT,
+		       AGRP_VAR_VAL,
+		       BGRP_VAR_VAL,
+		       TPL_ST_CD,
+		       TPL_APPLY_DTM,
+		       TPL_EXPIR_DTM,
+		       RCMD_CLL_ADDR,
+		       ABTEST_YN
+		      FROM (    SELECT
+		                TPL_NM, TPL_FLTER_COND_VAL, BAYNOTE_CLL_WEB_ADDR, BAYNOTE_RCMD_PRD_CNT,
+		                AGRP_VAR_VAL, BGRP_VAR_VAL, TPL_ST_CD,
+		                TPL_APPLY_DTM,
+		                TPL_EXPIR_DTM,
+		                RCMD_CLL_ADDR,
+		                NVL(ABTEST_YN, 'N') AS ABTEST_YN
+		            FROM GS_BAYNOTE_TPL
+		            WHERE   URL_ADDR              	  = /* p0 */ #{_c.uri[0].value}
+					    AND NVL(EXPOS_ID, ' ')        LIKE /* p1 */ NVL(#{_c.lsectid[0].value}, '%%')
+					    AND NVL(TO_CHAR(#{_c.section[0].value}), '0') LIKE /* p2 */ NVL(TO_CHAR(LRG_CLS_SHOP_NO), '%%')
+					ORDER BY LRG_CLS_SHOP_NO)
+			WHERE ROWNUM = 1
+	</select>
+</mapper>

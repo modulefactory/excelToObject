@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.orderpay.CelphnPaySqlMapRepository">
+	               
+	<!-- 
+		내용	: 휴대폰 소액결제 로그를 저장한다.
+		작성자	: 송영준
+		작성일	: 2013.11.20 신규작성
+	-->
+	
+<!-- 	<resultMap id="celphnPayLogSavProcMap" type="iceberg.capi.order.model.util.CmmCdInfo">
+		<result property="code"							column="CODE" />
+	</resultMap>
+ -->
+	<insert id="insertCelphnPayLogSavProc" parameterType="iceberg.capi.order.model.orderpay.CelphnPayLogInfo" >
+		<![CDATA[
+
+			INSERT INTO GS_ORD_MOBIL_LOG ( 
+            MOBIL_LOG_SEQ
+           ,VAN_GBN_VAL
+           ,IF_GBN_VAL
+           ,ORD_NO
+           ,IF_SND_SYS_ID
+           ,PAY_DTM
+           ,CNL_DTM
+           ,TXN_ID
+           ,RE_APRV_TXN_ID
+           ,MCOM_ID
+           ,FRNCS_TXN_ID
+           ,MOBIL_STORE_ID
+           ,PRD_CD
+           ,PRD_NM
+           ,PRD_INFO_VAL
+           ,CUST_NO
+           ,CUST_NM
+           ,EMAIL_ADDR
+           ,EMAIL_RCV_YN
+           ,PAY_AMT
+           ,PAY_PRSN_CELPHN_NO
+           ,SSNO_PRE7
+           ,REMAN_AMT
+           ,RFN_ACCHDR_NM
+           ,RFN_AMT
+           ,RFN_BANK_VAL
+           ,RFN_BANK_NM
+           ,RFN_ACCNT_NO
+           ,RFN_RSN_VAL
+           ,RSLT_VAL
+           ,RSLT_MSG_CNTNT
+           ,EDI_TNS_VAL
+           ,EDI_RSLT_VAL
+           ) VALUES (
+            GS_ORD_MOBIL_SEQ.NEXTVAL
+           ,#{vanGbnVal,jdbcType=VARCHAR}
+           ,#{ifGbnVal,jdbcType=VARCHAR}
+           ,#{ordNo,jdbcType=NUMERIC}
+           ,#{ifSndSysId,jdbcType=VARCHAR}
+           ,#{payDtm,jdbcType=DATE}
+           ,#{cnlDtm,jdbcType=DATE}
+           ,#{txnId,jdbcType=VARCHAR}
+           ,#{reAprvTxnId,jdbcType=VARCHAR}
+           ,#{mcomId,jdbcType=VARCHAR}
+           ,#{frncsTxnId,jdbcType=VARCHAR} 
+           ,#{mobilStoreId,jdbcType=VARCHAR}
+           ,#{prdCd,jdbcType=NUMERIC}
+           ,#{prdNm,jdbcType=VARCHAR}
+           ,#{prdInfoVal,jdbcType=VARCHAR}
+           ,#{custNo,jdbcType=NUMERIC}
+           ,#{custNm,jdbcType=VARCHAR} 
+           ,#{emailAddr,jdbcType=VARCHAR}
+           ,#{emailRcvYn,jdbcType=VARCHAR}
+           ,#{payAmt,jdbcType=NUMERIC}
+           ,#{payPrsnCelphnNo,jdbcType=VARCHAR}
+           ,#{ssnoPre7,jdbcType=VARCHAR}
+           ,#{remanAmt,jdbcType=NUMERIC} 
+           ,#{rfnAcchdrNm,jdbcType=VARCHAR}
+           ,#{rfnAmt,jdbcType=NUMERIC}
+           ,#{rfnBankVal,jdbcType=VARCHAR}
+           ,#{rfnBankNm,jdbcType=VARCHAR}
+           ,#{rfnAccntNo,jdbcType=VARCHAR}
+           ,#{rfnRsnVal,jdbcType=VARCHAR} 
+           ,#{rsltVal,jdbcType=VARCHAR}
+           ,#{rsltMsgCntnt,jdbcType=VARCHAR}
+           ,#{ediTnsVal,jdbcType=VARCHAR}
+           ,#{ediRsltVal,jdbcType=VARCHAR} )
+	
+			]]>
+	</insert>
+
+
+
+<!--
+   내용 : 전체 카드번호로 카드명을 조회한다.
+   작성자 : 송영준
+   작성일 : 2013. 11. 19
+   
+   #{cardNo} = 고객카드번호라 알수 없음
+
+-->
+<resultMap id="whlCardNmQryMap" type="iceberg.capi.order.model.ordermodify.OrderModifyListInfo">
+		<result property="cardType"													column="CARD_TYPE" />
+		<result property="cardBank"													column="CARD_BANK" />
+</resultMap>
+<select id="findWhlCardNmQry" parameterType="String" resultMap="whlCardNmQryMap">
+	<![CDATA[
+		SELECT  ETB.CARD_TYPE					AS CARD_TYPE
+			  , ETB.CARD_BANK					AS CARD_BANK
+		  FROM  EC_TB_BP011 ETB
+		 WHERE  PREFIX_NUM = #{cardNo}
+	 ]]>
+</select>
+
+<!--
+   내용 : 부분 카드번호로 카드명을 조회한다.
+   작성자 : 송영준
+   작성일 : 2013. 11. 19
+   
+   #{cardNo} = 고객카드번호라 알수 없음
+
+-->
+<resultMap id="partCardNmQryMap" type="iceberg.capi.order.model.ordermodify.OrderModifyListInfo">
+		<result property="cardType"													column="CARD_TYPE" />
+		<result property="cardBank"													column="CARD_BANK" />
+</resultMap>
+<select id="findPartCardNmQry" parameterType="criteria" resultMap="partCardNmQryMap">
+	<![CDATA[
+		SELECT  ETB.CARD_TYPE					AS CARD_TYPE
+			  , ETB.CARD_BANK					AS CARD_BANK
+		  FROM  EC_TB_BP011 ETB
+		 WHERE  PREFIX_NUM IN (#{_c.cardNo1[0].value},#{_c.cardNo2[0].value},#{_c.cardNo3[0].value},#{_c.cardNo4[0].value})
+	 ]]>
+</select>
+
+<!--
+   내용 : 카드번호로 제휴 카드명을 조회한다.
+   작성자 : 송영준
+   작성일 : 2013. 11. 19
+   
+   #{cardNo} = 고객카드번호라 알수 없음
+
+-->
+
+<resultMap id="aliaCardNmQryMap" type="iceberg.capi.order.model.util.CmmCdInfo">
+		<result property="cdNm"													column="CD_NM" />
+</resultMap>
+<select id="findAliaCardNmQry" parameterType="String" resultMap="aliaCardNmQryMap">
+	<![CDATA[
+		SELECT  ER.VAL							AS CD_NM
+		  FROM  EC_REFSETVAL ER
+		 WHERE  REFSETID = 5337
+		   AND 	DBSTS = 'A'
+		   AND	CODE = #{cdNm}
+	 ]]>
+</select>
+
+</mapper>

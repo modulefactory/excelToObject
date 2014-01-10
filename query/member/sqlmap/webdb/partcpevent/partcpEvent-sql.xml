@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.member.webdb.repository.partcpevent.PartcpEventSqlMapRepository">
+
+    <resultMap type="iceberg.capi.member.model.partcpevent.PartcpEvent" id="partcpEventMap">
+        <result property="eventNo"          column="EVENT_NO"/>
+        <result property="eventNm"          column="EVENT_NM"/>
+        <result property="eventGbnCd"       column="EVENT_GBNCD"/>
+        <result property="eventCaptrImgNm"  column="EVENT_CAPTR_IMG_NM"/>
+        <result property="eventUrl"         column="EVENT_URL"/>
+        <result property="eventStrDt"       column="EVENT_STR_DT"/>
+        <result property="eventEndDt"       column="EVENT_END_DT"/>
+        <result property="luckRoomNo"       column="LUCK_ROOM_NO"/>
+        <result property="chanlCd"          column="CHANL_CD"/>
+        <result property="luckRoomExistFlg" column="LUCK_ROOM_EXIST_FLG"/>
+        <result property="eventStCd"        column="EVENT_ST_CD"/>
+    </resultMap>
+
+
+	<select id="getPartcpEventList" parameterType="criteria" resultMap="partcpEventMap">
+        <!--
+            DBMS : WEBDB
+            분야 : 단품 getPartcpEventList
+            API : 참여 이벤트 조회
+            설명 : 각 사용자별 6개월 내 참여이벤트를 조회한다.
+            #{_p.pageItemSize} = 10
+            #{_c.ecCustNo[0].value} = 7381872
+            #{_c.custNo[0].value} = 7608979
+            #{_p.pageNumber} = 1
+        -->
+    <![CDATA[
+        SELECT X.*
+          FROM (SELECT CEIL(ROWNUM / #{_p.pageItemSize})                AS PAGEIDX
+                      ,LM.PROMO_NUM                                     AS EVENT_NO
+                      ,LM.PROMO_NAME                                    AS EVENT_NM
+                      ,LM.PROMO_GUBUN                                   AS EVENT_GBN_CD
+                      ,LM.CAPTR_IMG_NM                                  AS EVENT_CAPTR_IMG_NM
+                      ,LM.URL                                           AS EVENT_URL
+                      ,TO_CHAR(LM.START_DATE, 'YYYYMMDD')               AS EVENT_STR_DT
+                      ,TO_CHAR(LM.END_DATE, 'YYYYMMDD')                 AS EVENT_END_DT
+                      ,LM.WINID                                         AS LUCK_ROOM_NO
+                      ,NVL(LM.CHANL_CD, 'EC')                           AS CHANL_CD
+                      ,DECODE (PROMO_GUBUN,'G', 'G',NVL ( (SELECT 'Y'
+                                                             FROM LGEC_WINNER_LIST LWL
+                                                            WHERE LWL.WINID    = LM.WINID
+                                                              AND LWL.ECUSERID = #{_c.ecCustNo[0].value}),'N'))   AS LUCK_ROOM_EXIST_FLG
+                      
+                      ,CASE WHEN LM.WINID > 0
+                            THEN CASE WHEN LM.PROMO_GUBUN = 'G' AND SYSDATE BETWEEN LM.START_DATE
+                                                                                AND LM.END_DATE
+                                      THEN 1 ELSE 0 END
+                            WHEN SYSDATE BETWEEN LM.END_DATE
+                                             AND LM.START_DATE 
+                            THEN 1 ELSE 2 END                           AS EVENT_ST_CD 
+                  FROM LGEC_MKT LM
+                 WHERE LM.PROMO_NUM IN (SELECT DISTINCT (PROMO_NUM)
+                                          FROM LGEC_MKT_USER
+                                         WHERE DBSTS      = 'A'
+                                           AND ECUSERID   = #{_c.ecCustNo[0].value}
+                                           AND CREDATE    > TO_DATE (TO_CHAR (ADD_MONTHS (SYSDATE, -6), 'YYYYMMDD'), 'YYYYMMDD')
+                                           AND LM.MALL_GB <> 'X'
+                                        UNION
+                                        SELECT DISTINCT (LM.PROMO_NUM)
+                                          FROM LGEC_MKT           LM
+                                              ,LGEC_MKT_PRISE_TGT LMPT
+                                         WHERE LMPT.TARGET_GUBUN      =  'U'
+                                           AND LMPT.TARGET_ID         =  #{_c.custNo[0].value}
+                                           AND LM.PROMO_NUM           =  LMPT.PROMO_NUM
+                                           AND LM.DBSTS               != 'D'
+                                           AND LM.EVENT_LIST_EXPOS_YN =  'Y'
+                                           AND LM.PROMO_GUBUN         =  'P')
+                   AND LM.EVENT_LIST_EXPOS_YN  =  'Y'
+                   AND LM.DBSTS                != 'D'
+                   AND LM.END_DATE             >  TO_DATE (TO_CHAR (ADD_MONTHS (SYSDATE, -6), 'YYYYMMDD'), 'YYYYMMDD')
+                   AND LM.MALL_GB              =  'M'
+                 ORDER BY LM.START_DATE DESC) X
+         WHERE PAGEIDX =  #{_p.pageNumber}
+    ]]>
+	 </select>
+
+
+	<select id="getPartcpEventCount" parameterType="criteria" resultType="long">
+        <!--
+            DBMS : WEBDB
+            분야 : 단품 getPartcpEventList
+            API : 참여 이벤트 갯수
+            설명 : 각 사용자별 6개월 내 참여이벤트의 갯수를 조회한다.
+            #{_c.ecCustNo[0].value} = 7381872
+            #{_c.custNo[0].value} = 7608979
+        -->
+    <![CDATA[
+        SELECT COUNT (*) AS CNT
+          FROM LGEC_MKT LM
+         WHERE LM.PROMO_NUM IN
+                  (SELECT DISTINCT (PROMO_NUM)
+                     FROM LGEC_MKT_USER
+                    WHERE     DBSTS      =  'A'
+                          AND ECUSERID   =  #{_c.ecCustNo[0].value}
+                          AND CREDATE    >  TO_DATE (TO_CHAR (ADD_MONTHS (SYSDATE, -6), 'YYYYMMDD'), 'YYYYMMDD')
+                          AND LM.MALL_GB <> 'X'
+                   UNION
+                   SELECT DISTINCT (LM1.PROMO_NUM)
+                     FROM LGEC_MKT            LM1
+                         ,LGEC_MKT_PRISE_TGT  LMPT
+                    WHERE     LMPT.TARGET_GUBUN       =  'U'
+                          AND LMPT.TARGET_ID          =  #{_c.custNo[0].value}
+                          AND LM1.PROMO_NUM           =  LMPT.PROMO_NUM
+                          AND LM1.DBSTS               != 'D'
+                          AND LM1.EVENT_LIST_EXPOS_YN =  'Y'
+                          AND LM1.PROMO_GUBUN         =  'P')
+               AND LM.EVENT_LIST_EXPOS_YN =  'Y'
+               AND LM.DBSTS               != 'D'
+               AND LM.END_DATE            >  TO_DATE (TO_CHAR (ADD_MONTHS (SYSDATE, -6), 'YYYYMMDD'), 'YYYYMMDD')
+               AND LM.MALL_GB             =  'M'
+    ]]>
+    </select>
+</mapper>

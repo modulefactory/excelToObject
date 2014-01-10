@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.common.OrdLogSavCmmSqlMapRepository">
+
+
+	<!--
+	DBMS : WEBDB
+	설명 : 주문수정 로그를 생성한다.
+	-->
+	<update id="insertModifyBSLog" parameterType="iceberg.capi.order.model.common.GSOrdLogInfo" >
+		<![CDATA[
+		    INSERT 
+		      INTO GS_ORD_LOG_ORDERMODIFY (
+		       SEQNO
+		      ,ORDERNUM 
+		      ,CREDATE 
+		      ,MOD_TYPE 
+		      ,RTN_CODE 
+		      ,RTN_MSG  
+		      ,CATVID 
+		      ,RESEVED2
+		      ) VALUES (
+		       GS_ORD_LOG_ORDERMODIFY_SEQ.nextval
+		      ,#{ordNo} 
+		      ,sysdate
+		      ,#{ordModTyp}
+		      ,#{rtnCode}
+		      ,#{rtnMsg}
+		      ,#{custNo}
+		      ,#{paymentType} 
+		      ) 
+
+		]]>
+	</update>
+	
+	<!--
+	DBMS : WEBDB
+	설명 : ESB 호출 LOG저장
+	-->
+	<update id="insertESBLog" parameterType="iceberg.capi.order.model.common.GSOrdLogInfo" >
+		<![CDATA[
+			INSERT 
+		     INTO GS_SMART4C_ESB_LOG (
+		      ESB_LOG_SEQ
+		     ,ESB_ID 
+		     ,SEND_DATE 
+		     ,RECEIVE_DATE 
+		     ,RESULT_CODE 
+		     ,RESULT_MSG  
+		     ,ERROR_YN 
+		     ,SERVER_ID
+		     ,BIGO1
+		     ) VALUES ( 
+		      GS_SMART4C_ESB_LOG_SEQ.NEXTVAL
+		     ,#{esbId} 
+		     ,sysdate 
+		     ,#{receiveDate}
+		     ,#{resultCode}
+		     ,#{resultMsg}
+		     ,#{errorYn}
+		     ,#{serverId}
+		     ,#{bigo1}
+		      ) 
+
+		]]>
+	</update>
+	
+</mapper>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+	
+<mapper namespace="iceberg.capi.cust.smtcdb.repository.gsnpnt.GsnpntSqlMapRepository">	
+	  
+	<!-- 
+	내용 : GS N POINT 고객번호 조회 
+	작성자 : yhchoi24
+	작성일 : 2013. 12. 11 
+
+    #{_c.custNo[0].value} = '40766025'
+    #{_c.gsnpntCustStCd[0].value} = '01'
+	-->
+    <select id="findGsnpntCustNo" parameterType="criteria" resultType="String">
+       SELECT GSNPNT_CUST_NO  
+        FROM  CST_GSNPNT_CUST_M 
+        WHERE CUST_NO           = #{_c.custNo[0].value} 
+          AND GSNPNT_CUST_ST_CD = #{_c.gsnpntCustStCd[0].value}  
+     </select>
+
+</mapper>

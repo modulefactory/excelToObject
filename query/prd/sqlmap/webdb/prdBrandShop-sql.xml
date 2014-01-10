@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prd.PrdBrandShopSqlMapRepository">
+	
+	<resultMap type="iceberg.capi.product.model.prd.add.PrdBrandShop" id="prdBrandShopMap">
+		<result property = "brandCd"    	column = "BRAND_CD"  />                                  
+		<result property = "brandNm"    	column = "BRAND_NM"  />                                  
+		<result property = "shopNo"    	column = "SHOP_NO"  />                                  
+		<result property = "timgFileNm"    	column = "TIMG_FILE_NM"  />                                  
+		<result property = "simgFileNm"    	column = "SIMG_FILE_NM"  />                                  
+		<result property = "mimgFileNm"    	column = "MIMG_FILE_NM"  />                                  
+		<result property = "himgFileNm"    	column = "HIMG_FILE_NM"  />                                  
+		<result property = "limgFileNm"    	column = "LIMG_FILE_NM"  />                                  
+		<result property = "brandShopNo"    	column = "BRAND_SHOP_NO"  />                                  
+		<result property = "linkTyp"    	column = "LINK_TYP"  />                                  
+	</resultMap>
+	
+	<select id="findOnePrdBrandShop" parameterType="long" resultMap="prdBrandShopMap">
+		SELECT
+			PBM.BRAND_CD AS BRAND_CD
+			, PBM.BRAND_NM AS BRAND_NM
+			, PBD.SHOP_NO AS SHOP_NO					
+			, PBM.TIMG_FILE_NM AS TIMG_FILE_NM
+			, PBM.SIMG_FILE_NM AS SIMG_FILE_NM
+			, PBM.MIMG_FILE_NM AS MIMG_FILE_NM
+			, PBM.HIMG_FILE_NM AS HIMG_FILE_NM
+			, PBM.LIMG_FILE_NM AS LIMG_FILE_NM
+			, PBD.BRAND_SHOP_NO AS BRAND_SHOP_NO
+			, NVL(
+					(SELECT
+						'SUPP'
+					 FROM
+						EC_REFSETVAL
+					 WHERE
+						 REFSETID = 5367
+						 AND DBSTS = 'A'
+						 AND CODE = TO_CHAR(PBM.BRAND_CD)
+						 AND ROWNUM = 1
+					),
+						'BRAND'
+			) AS LINK_TYP
+		FROM
+				  PRD_PRD_M PPM
+				, PRD_BRAND_M PBM
+				, PRD_BRAND_D PBD
+		WHERE PPM.PRD_CD = #{prdCd}    
+			AND PPM.BRAND_CD = PBM.BRAND_CD
+			AND PBM.BRAND_ST_CD IN ('A','H')
+			AND PBM.BRAND_CD = PBD.BRAND_CD
+			AND PBD.SHOP_EXPOS_YN = 'Y'
+	</select>
+</mapper>

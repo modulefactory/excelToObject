@@ -1,0 +1,961 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.member.Smart4cOrderMemberSqlMapRepository">
+	               
+	<!-- 
+		내용	: 불량고객 체크 카드도용, 전과, 사기 등등 블랙리스트 체크
+		작성자	: 윤병찬
+		작성일	: 2013.10.29 신규작성
+		
+		#{custNo} = 9806081;
+		
+	-->
+	<select id="findCusLevel" parameterType="long"  resultType="String">
+		SELECT NVL(CUST_GRD_CD, '000') AS CUST_GRD_CD
+		  FROM CST_CUST_GRD_D             
+		 WHERE CUST_NO = #{custNo}                    
+		   AND CUST_GRD_GBN_CD = 'GS'     
+		   AND USE_YN = 'Y'										 
+	</select>
+	
+<!-- 
+		내용	: 고객번호로 주문관련 회원 정보 조회
+		작성자	: 윤병찬
+		작성일	: 2013.10.29 신규작성
+	
+		#{custNo} = 9806081;
+	
+	-->
+	
+	<resultMap id="memberInfoForOrdByCustNo" type="iceberg.capi.order.model.member.Cust">
+		<result property="basktNo" column="BASKT_NO"/>
+		<result property="custClsCd" column="CUST_CLS_CD"/>
+		<result property="custEmailAddr" column="CUST_EMAIL_ADDR"/>
+		<result property="custNm" column="CUST_NM"/>
+		<result property="custNo" column="CUST_NO"/>
+		<result property="dcRt" column="CUST_CLS_DC_RT"/>
+		<result property="empDcLimitAmt" column="EMP_DC_LIMIT_AMT"/>
+		<result property="empSaleTgtFlg" column="EMP_SALE_TGT_FLG"/>
+		<result property="gsnpntCustNo" column="GSNPNT_CUST_NO"/>
+		<result property="gsnpntCustStCd" column="GSNPNT_CUST_ST_CD"/>
+		<result property="loginId" column="LOGIN_ID"/>
+	</resultMap>
+	<select id="findMemberInfoForOrdByCustNo" parameterType="long"  resultMap="memberInfoForOrdByCustNo">
+		<![CDATA[
+			SELECT CCM.BASKT_NO
+			      , CCAM.LOGIN_ID
+			      , CCM.CUST_NO
+			      , NVL(CCM.CUST_CLS_CD, '01') AS CUST_CLS_CD
+			      , NVL(CCCDRD.EMP_SALE_TGT_YN, 'N') AS EMP_SALE_TGT_FLG
+			      , CGCM.GSNPNT_CUST_NO
+			      , CCM.EMP_DC_LIMIT_AMT
+			      , CCM.CUST_NM
+			      , LTRIM(RTRIM(NVL(CCM.CUST_EMAIL_ADDR,'NOEMAIL'))) CUST_EMAIL_ADDR
+			      , CGCM.GSNPNT_CUST_ST_CD
+			      , NVL(CCCDRD.DC_RT,0) AS CUST_CLS_DC_RT	/* 고객분류별할인율 */
+			   FROM CST_CUST_M CCM
+			      , CST_CUST_ACCNT_M CCAM
+			      , CST_CUST_CLS_DC_RT_D CCCDRD
+			      , CST_GSNPNT_CUST_M CGCM
+			  WHERE CCM.CUST_NO = #{custNo}
+			    AND CCM.CUST_NO = CCAM.CUST_NO(+)
+			    AND CCAM.CUST_ACCNT_GBN_CD(+) = 'GSEC'  /* 고객계정구분코드 : CMM_CMM_C.CMM_GRP_CD = 'CST017' : GSEC(GS샵닷컴) */
+			    AND CCAM.CUST_ACCNT_ST_CD(+) = 'A'
+			    AND CCM.CUST_CLS_CD = CCCDRD.CUST_CLS_CD(+)
+			    AND SYSDATE BETWEEN CCCDRD.VALID_STR_DTM(+) AND CCCDRD.VALID_END_DTM(+)
+			    AND CCM.CUST_NO = CGCM.CUST_NO(+)
+			    AND ROWNUM = 1
+		]]>
+	</select>
+	
+	<!-- 
+		내용	: 고객구분별 할인 정보 조회
+		작성자	: 윤병찬
+		작성일	: 2013.10.29 신규작성
+		
+		#{custClsCd} = '09';
+		
+	-->
+	<select id="findDcRateByCustClsCd" parameterType="String"  resultType="int">
+		<![CDATA[
+			SELECT NVL(
+                        (SELECT NVL(DC_RT,0) AS CUST_CLS_DC_RT
+                          FROM CST_CUST_CLS_DC_RT_D
+                         WHERE CUST_CLS_CD = #{custClsCd}
+                           AND VALID_STR_DTM <= SYSDATE
+                           AND NVL(VALID_END_DTM, TO_DATE('99991231','yyyymmdd')) >= SYSDATE
+                           AND DC_CHANL_CD IN ('01','03')
+                         ),0  
+                        )
+              FROM DUAL		
+			]]>
+	</select>
+	
+	
+	<!-- 
+		내용	: 고객번호로 회원 정보 조회
+		작성자	: 윤병찬
+		작성일	: 2013.11.13 신규작성
+		
+		회원API 프로젝트의 iceberg.capi.member.smtcdb.repository.MemberSqlMapRepository.findMember(Criteria criteria) 와 같음
+		향후  API 콜 대상임
+		
+		#{custNo} = 9806081;
+		
+	-->
+	<resultMap id="memberInfoByCustNoMap" type="iceberg.capi.order.model.member.Cust">
+		<result property="custNo" column="CUST_NO"/>
+		<result property="loginId" column="LOGIN_ID"/>
+		<result property="passwd" column="PASSWD"/>
+		<result property="ecCustNo" column="EC_CUST_NO"/>
+		<result property="custNm" column="CUST_NM"/>
+		<result property="custEmailAddr" column="CUST_EMAIL_ADDR"/>
+		<result property="ssnoPre7" column="SSNO_PRE7"/>
+		<result property="ssnoEcp" column="SSNO_ECP"/>
+		<result property="ecMemTypCd" column="EC_MEM_TYP_CD"/>
+		<result property="custClsCd" column="CUST_CLS_CD"/>
+		<result property="rlnmCertFlg" column="RLNM_CERT_YN"/>
+		<result property="ipinCustFlg" column="IPIN_CUST_YN"/>
+		<result property="basktNo" column="BASKT_NO"/>
+		<result property="regDtm" column="REG_DTM"/>
+		<result property="gsnpntCustNo" column="GSNPNT_CUST_NO"/>
+		<result property="empSaleTgtFlg" column="EMP_SALE_TGT_YN"/>
+		<result property="homeCntryNoCd" column="CNTRY_NO_CD_HOME"/>
+		<result property="homeRegonTelno" column="REGON_TELNO_HOME"/>
+		<result property="homeTxnoTelno" column="TXNO_TELNO_HOME"/>
+		<result property="homeDtlTelno" column="DTL_TELNO_HOME"/>
+		<result property="celphnAdmComCoCd" column="CELPHN_ADM_COM_CO_CD"/>
+		<result property="celphnRegonTelno" column="REGON_TELNO_CELPHN"/>
+		<result property="celphnTxnoTelno" column="TXNO_TELNO_CELPHN"/>
+		<result property="celphnDtlTelno" column="DTL_TELNO_CELPHN"/>
+		<result property="homeRcvrNm" column="RCVR_NM_HOME"/>
+		<result property="homeZipcd" column="ZIPCD_HOME"/>
+		<result property="homeBaseAddr" column="BASE_ADDR_HOME"/>
+		<result property="homeDtlAddr" column="DTL_ADDR_HOME"/>
+		<result property="homeEastnChkRsltCd" column="EASTN_CHK_RSLT_CD_HOME"/>
+		<result property="homeDmSndpGbnCd" column="DM_SNDP_GBN_CD_HOME"/>
+		<result property="ofcRcvrNm" column="RCVR_NM_OFC"/>
+		<result property="ofcRcvrNm" column="ZIPCD_OFC"/>
+		<result property="ofcBaseAddr" column="BASE_ADDR_OFC"/>
+		<result property="ofcDtlAddr" column="DTL_ADDR_OFC"/>
+		<result property="ofcEastnChkRsltCd" column="EASTN_CHK_RSLT_CD_OFC"/>
+		<result property="ofcDmSndpGbnCd" column="DM_SNDP_GBN_CD_OFC"/>
+		<result property="ipinCiNo" column="IPIN_CI_NO"/>
+		<result property="ecForgnShopTrmsAgreeFlg" column="EC_FORGN_SHOP_TRMS_AGREE_YN"/>
+		<result property="custEngNm" column="CUST_ENG_NM"/>
+		<result property="dcRt" column="DC_RT"/>
+		<result property="ipinDiNo" column="IPIN_DI_NO"/>
+		<result property="agreeCd9" column="THDPRT_INFO_AGREE_YN"/>
+		<result property="slfCertFlg" column="SLF_CERT_YN"/> 
+		<result property="empDcLimitAmt" column="EMP_DC_LIMIT_AMT"/> 
+	</resultMap>	
+	<select id="findMemberInfoByCustNo" parameterType="long"  resultMap="memberInfoByCustNoMap">
+		<![CDATA[
+			SELECT  
+                CCM.CUST_NO                                   AS CUST_NO
+               ,CCTM.LOGIN_ID                                 AS LOGIN_ID
+               ,CCTM.PASSWD                                   AS PASSWD
+               ,CCTM.EC_CUST_NO                               AS EC_CUST_NO
+               ,CCM.CUST_NM                                   AS CUST_NM
+               ,CCM.CUST_EMAIL_ADDR                           AS CUST_EMAIL_ADDR
+               ,CCM.SSNO_PRE7                                 AS SSNO_PRE7
+               ,CCM.SSNO_ECP                                  AS SSNO_ECP
+               ,CCM.EC_MEM_TYP_CD                             AS EC_MEM_TYP_CD
+               ,CCM.CUST_CLS_CD                               AS CUST_CLS_CD
+               ,NVL(CCM.RLNM_CERT_YN, 'N')                    AS RLNM_CERT_YN    
+               ,NVL(CCM.IPIN_CUST_YN, 'N')                    AS IPIN_CUST_YN        
+               ,CCM.BASKT_NO                                  AS BASKT_NO
+               ,TO_CHAR(CCM.REG_DTM, 'yyyymmdd')              AS REG_DTM        
+               ,CGCM.GSNPNT_CUST_NO                           AS GSNPNT_CUST_NO
+               ,NVL(CCCDRD.EMP_SALE_TGT_YN, 'N')              AS EMP_SALE_TGT_YN        
+               ,CCTD1.CNTRY_NO_CD                             AS CNTRY_NO_CD_HOME       
+               ,CCTD1.REGON_TELNO                             AS REGON_TELNO_HOME           
+               ,CCTD1.TXNO_TELNO                              AS TXNO_TELNO_HOME           
+               ,CCTD1.DTL_TELNO                               AS DTL_TELNO_HOME            
+               ,CCTD2.CELPHN_ADM_COM_CO_CD                    AS CELPHN_ADM_COM_CO_CD        
+               ,CCTD2.REGON_TELNO                             AS REGON_TELNO_CELPHN       
+               ,CCTD2.TXNO_TELNO                              AS TXNO_TELNO_CELPHN        
+               ,CCTD2.DTL_TELNO                               AS DTL_TELNO_CELPHN        
+               ,CCAD1.RCVR_NM                                 AS RCVR_NM_HOME        
+               ,CCAD1.ZIPCD                                   AS ZIPCD_HOME        
+               ,CCAD1.BASE_ADDR                               AS BASE_ADDR_HOME        
+               ,CCAD1.DTL_ADDR                                AS DTL_ADDR_HOME       
+               ,CCAD1.EASTN_CHK_RSLT_CD                       AS EASTN_CHK_RSLT_CD_HOME        
+               ,DECODE(CCM.DM_SNDP_GBN_CD, '1', 'Y', 'N')     AS DM_SNDP_GBN_CD_HOME        
+               ,CCAD2.RCVR_NM                                 AS RCVR_NM_OFC 
+               ,CCAD2.ZIPCD                                   AS ZIPCD_OFC        
+               ,CCAD2.BASE_ADDR                               AS BASE_ADDR_OFC        
+               ,CCAD2.DTL_ADDR                                AS DTL_ADDR_OFC        
+               ,CCAD2.EASTN_CHK_RSLT_CD                       AS EASTN_CHK_RSLT_CD_OFC        
+               ,DECODE(CCM.DM_SNDP_GBN_CD, '2', 'Y', 'N')     AS DM_SNDP_GBN_CD_OFC        
+               ,CCM.IPIN_CI_NO                                AS IPIN_CI_NO
+               ,NVL(CCTM.EC_FORGN_SHOP_TRMS_AGREE_YN, 'N')    AS EC_FORGN_SHOP_TRMS_AGREE_YN        
+               ,CCM.CUST_ENG_NM                               AS CUST_ENG_NM
+               ,CCAD1.ADDR_CNTC_NO                            AS ADDR_CNTC_NO_HOME
+               ,NVL(CCCDRD.DC_RT,0)                           AS DC_RT        
+               ,CCM.IPIN_DI_NO                                AS IPIN_DI_NO
+               ,NVL(CGCM.THDPRT_INFO_AGREE_YN, 'N')           AS THDPRT_INFO_AGREE_YN        
+               ,NVL(CCM.SLF_CERT_YN, 'N')                     AS SLF_CERT_YN        
+               ,CCM.EMP_DC_LIMIT_AMT                          AS EMP_DC_LIMIT_AMT
+         FROM  CST_CUST_M             CCM                     
+              ,CST_CUST_ACCNT_M       CCTM
+              ,CST_GSNPNT_CUST_M      CGCM
+              ,CST_CUST_CLS_DC_RT_D   CCCDRD
+              ,CST_CUST_TELNO_D       CCTD1
+              ,CST_CUST_TELNO_D       CCTD2
+              ,CST_CUST_ADDR_D        CCAD1
+              ,CST_CUST_ADDR_D        CCAD2
+        WHERE  CCM.CUST_NO                 = CCTM.CUST_NO         
+          AND  CCM.CUST_NO                 = CGCM.CUST_NO(+)
+          AND  CCM.CUST_CLS_CD             = CCCDRD.CUST_CLS_CD(+)
+          AND  CCM.CUST_NO                 = CCTD1.CUST_NO(+)
+          AND  CCM.CUST_NO                 = CCTD2.CUST_NO(+)
+          AND  CCM.CUST_NO                 = CCAD1.CUST_NO(+)
+          AND  CCM.CUST_NO                 = CCAD2.CUST_NO(+)
+          AND  CCM.CUST_NO                 = #{custNo}
+          AND  CCM.CUST_ST_CD              = 'Y'
+          AND  CCTM.CUST_ACCNT_GBN_CD      = 'GSEC'
+          AND  CCTM.CUST_ACCNT_ST_CD       = 'A'          
+          AND  CGCM.GSNPNT_CUST_ST_CD(+)   = '01'          
+          AND  SYSDATE BETWEEN CCCDRD.VALID_STR_DTM(+) 
+                           AND CCCDRD.VALID_END_DTM(+)         
+          AND  CCTD1.TELNO_TYP_CD(+)       = 'HP'
+          AND  CCTD1.USE_YN(+)             = 'Y'          
+          AND  CCTD2.TELNO_TYP_CD(+)       = 'CP'
+          AND  CCTD2.USE_YN(+)             = 'Y'          
+          AND  CCAD1.ADDR_USE_YN(+)        = 'Y'
+          AND  CCAD1.ADDR_GBN_CD(+)        = '01'          
+          AND  CCAD2.ADDR_USE_YN(+)        = 'Y'
+          AND  CCAD2.ADDR_GBN_CD(+)        = '02'          
+			]]>
+	</select>		
+	
+	<!-- 
+		내용	:  GS&POINT 회원 여부 조회
+		작성자	: 윤병찬
+		작성일	: 2013.11.19 신규작성
+		
+		#{custNo} = 9806081;
+		
+	-->
+	<select id="findCountForGSnPointMemberYN" parameterType="long"  resultType="int">
+		<![CDATA[
+			SELECT COUNT(*) AS CUST_CNT
+			  FROM CST_GSNPNT_CUST_M CGCM   /* GS엔포인트고객기본 */
+			      ,CST_CUST_M        CCM    /* 고객기본 */
+			 WHERE CCM.CUST_NO = CGCM.CUST_NO  /* 고객번호 */
+			   AND CCM.CUST_NO = #{custNo}  /* 고객번호 */
+			   AND CCM.CUST_ST_CD = 'Y'     /* 고객상태코드 : CMM_CMM_C.CMM_GRP_CD = 'CST002' */
+			   AND CGCM.GSNPNT_CUST_ST_CD = '01'  /* GS엔포인트고객상태코드 */          
+			]]>
+	</select>			
+	
+	
+	
+	
+	<!-- 
+		내용	:  주문서에서 사용하는 회원의 최근주소한건(주문 기준)
+		작성자	: 윤병찬
+		작성일	: 2013.11.20 신규작성
+		
+		#{_c.custNo[0].value} = 9806081;
+		#{_c.chanlCd[0].value} = ('P','B');
+		
+	-->
+	<resultMap id="ordShtCustRecntAddrOfOrdMap" type="iceberg.capi.order.model.member.SaddrPer">
+		<result property="rowId" column="ROW_ID"/>
+		<result property="addrTypeCd" column="ADDR_TYP_CD"/>
+		<result property="addrNm" column="ADDR_NM"/>
+		<result property="xReceiver" column="RCVR_NM"/>
+		<result property="phNum" column="DLVP_TELNO"/>
+		<result property="zipcode" column="ZIPCD"/>
+		<result property="city" column="BASE_ADDR"/>
+		<result property="addr" column="DTL_ADDR"/>
+		<result property="xZipConv" column="EASTN_CHK_RSLT_CD"/>
+		<result property="xCellPhone" column="DLVP_CELPHN_TELNO"/>
+		<result property="xReceiverEng" column="RCVR_ENG_NM"/>
+		<result property="xCommentsEc" column="DLV_UNUL_MATR_CNTNT"/>
+	</resultMap>	
+	<select id="findOrdShtCustRecntAddrOfOrd" parameterType="criteria"  resultMap="ordShtCustRecntAddrOfOrdMap">
+			  SELECT X.* 
+	            FROM (SELECT OOM.ORD_NO
+	                        ,OOM.ORD_DTM
+	                        ,CCAD.ADDR_CNTC_NO AS ROW_ID     
+	                        ,CCAD.ADDR_GBN_CD  AS ADDR_TYP_CD 
+	                        ,CCAD.ADDR_CNTC_NO AS ADDR_NM                              
+	                        ,CCAD.RCVR_NM      AS RCVR_NM                           
+	                        ,CCAD.DLVP_TELNO   AS DLVP_TELNO                                     
+	                        ,CCAD.ZIPCD        AS ZIPCD                              
+	                        ,CCAD.BASE_ADDR    AS BASE_ADDR                         
+	                        ,CCAD.DTL_ADDR     AS DTL_ADDR                                    
+	                        ,CCAD.EASTN_CHK_RSLT_CD   AS EASTN_CHK_RSLT_CD 
+	                        ,CCAD.DLVP_CELPHN_TELNO   AS DLVP_CELPHN_TELNO
+	                        ,CCAD.RCVR_ENG_NM  AS RCVR_ENG_NM
+	                        ,CCAD.DLV_UNUL_MATR_CNTNT AS DLV_UNUL_MATR_CNTNT
+	                    FROM ORD_ORD_M       OOM
+	                        ,ORD_ITEM_D      OID
+	                        ,CST_CUST_ADDR_D CCAD
+	                   WHERE OOM.CUST_NO = #{_c.custNo[0].value}
+	                     AND OOM.ORD_TYP_DTL_CD = 'Sales Order'
+	                     AND OOM.CHANL_CD IN 
+	                 <foreach collection="_c.chanlCd[0].value" item="item" index="index" open="(" separator="," close=")">
+	                  #{item}
+	                </foreach>
+	         <![CDATA[      
+	                     AND OOM.ORD_DTM >= ADD_MONTHS(SYSDATE, TO_NUMBER(-6))
+	         ]]>                  
+	                     AND OOM.ORD_NO = OID.ORD_NO   
+	                     AND OID.DLVP_ADDR_NO = CCAD.ADDR_CNTC_NO
+	                   ORDER BY OOM.ORD_DTM DESC
+	                  ) X
+	           WHERE ROWNUM = 1
+	</select>	
+	
+	
+	<!-- 
+		내용	: 고객의 자산정보를 조회한다.	1) 적립급	2) 예치금	3) 연간할인권
+		작성자	: 윤병찬
+		작성일	: 2013.11.22 신규작성
+		
+		#{custNo} = 9806081;
+		
+	-->
+	<resultMap id="custAllAssetListMap" type="iceberg.capi.order.model.member.CustAssetInfo">
+		<result property="foryyDcCpnUseAmt" column="FORYY_DC_CPN_USE_AMT"/>
+		<result property="accmAmt" column="ACCM_AMT"/>
+		<result property="tmprcvAmt" column="TMPRCV_AMT"/>
+	</resultMap>	
+	<select id="findCustAllAssetList" parameterType="long"  resultMap="custAllAssetListMap">
+		<![CDATA[
+			SELECT NVL((SELECT DCCPN_AMT
+			          FROM CST_DCCPN_M
+			        WHERE  CUST_NO = #{custNo}
+			          AND  DCCPN_TYP_CD = 'ECY'
+			          AND ROWNUM = 1),0) AS FORYY_DC_CPN_USE_AMT
+			       ,NVL((SELECT ASSET_AMT
+			          FROM CST_ASSET_M 
+			         WHERE CUST_NO = #{custNo}
+			           AND ASSET_TYP_CD = 'ACCM'
+			           AND ROWNUM = 1),0) AS ACCM_AMT    
+			       ,NVL((SELECT ASSET_AMT
+			          FROM CST_ASSET_M 
+			         WHERE CUST_NO = #{custNo}
+			           AND ASSET_TYP_CD = 'TMPRCV'
+			           AND ROWNUM = 1),0) AS TMPRCV_AMT  
+			   FROM DUAL
+		  ]]>     
+	</select>	
+	
+	
+	
+	<!-- 
+		내용	: 고객의 상품권 리스트를 가져온다.
+		작성자	: 윤병찬
+		작성일	: 2013.11.22 신규작성
+		
+		#{custNo} = 8602049;
+		
+	-->
+	<resultMap id="custGftcertListMap" type="iceberg.capi.order.model.member.CstAssetM">
+		<result property="gftcertNo" column="GFTCERT_NO"/>
+		<result property="gftcertOrgAmt" column="GFTCERT_ORG_AMT"/>
+		<result property="assetAmt" column="ASSET_AMT"/>
+	</resultMap>	
+	<select id="findCustGftcertList" parameterType="long"  resultMap="custGftcertListMap">
+		<![CDATA[
+			 SELECT GFTCERT_NO
+			       ,GFTCERT_ORG_AMT
+			       ,ASSET_AMT
+			   FROM CST_ASSET_M
+			  WHERE CUST_NO = #{custNo}
+			    AND ASSET_TYP_CD = 'GFTCERT'
+			    AND ASSET_AMT     > 0
+			    AND GFTCERT_ST_CD <> '05'
+			    AND GFTCERT_ACT_DT > ADD_MONTHS(SYSDATE,-60)
+			   ORDER BY REG_DTM
+		  ]]>     
+	</select>	
+	
+	
+	<!-- 
+		내용	: 회원정보(GS SHOP / GS&POINT) 조회
+		작성자	: 윤병찬
+		작성일	: 2013.11.22 신규작성
+		
+		#{custNo} = 9806081;
+		
+	-->
+	<resultMap id="gSShopAndGSnPointMemberInfoMap" type="iceberg.capi.order.model.member.Cust">
+		<result property="custNo" column="CUST_NO"/>
+		<result property="loginId" column="LOGIN_ID"/>
+		<result property="custNm" column="CUST_NM"/>
+		<result property="infoSmsAgreeFlg" column="INFO_SMS_AGREE_FLG"/>
+		<result property="infoEmailAgreeFlg" column="INFO_EMAIL_AGREE_FLG"/>
+		<result property="custEmailAddr" column="CUST_EMAIL_ADDR"/>
+		<result property="advrSmsAgreeFlg" column="ADVR_SMS_AGREE_FLG"/>
+		<result property="advrEmailAgreeFlg" column="ADVR_EMAIL_AGREE_FLG"/>
+		<result property="slfBrthDt" column="CUST_BRTH_DT"/>
+		<result property="slfBrthSollunGbnCd" column="CUST_BRTH_SOLLUN_GBN_CD"/>
+		<result property="weddFlg" column="WEDD_YN"/>
+		<result property="homeRcvrNm" column="HOME_RCVR_NM"/>
+		<result property="homeZipcd" column="HOME_ZIPCD"/>
+		<result property="homeBaseAddr" column="HOME_BASE_ADDR"/>
+		<result property="homeDtlAddr" column="HOME_DTL_ADDR"/>
+		<result property="homeEastnChkRsltCd" column="HOME_EASTN_CHK_RSLT_CD"/>
+		<result property="homeDmSndpGbnCd" column="HOME_DM_SNDP_GBN_CD"/>
+		<result property="fnciAgreeFlg" column="FNC_PRD_AGREE_FLG"/>
+		<result property="child1BrthSollunGbnCd" column="CUST_CHILD1_BRTH_SOLLUN_GBN_CD"/>
+		<result property="child1BrthDt" column="CUST_CHILD1_BRTH_DT"/>
+		<result property="child1GendrCd" column="CUST_CHILD1_GENDR_CD"/>
+		<result property="child2BrthSollunGbnCd" column="CUST_CHILD2_BRTH_SOLLUN_GBN_CD"/>
+		<result property="child2BrthDt" column="CUST_CHILD2_BRTH_DT"/>
+		<result property="child2GendrCd" column="CUST_CHILD2_GENDR_CD"/>
+		<result property="celphnAdmComCoCd" column="CELPHN_ADM_COM_CO_CD"/>
+		<result property="gsnpntCustNo" column="GSNPNT_CUST_NO"/>
+		<result property="dmSndAgreeFlg" column="DM_SND_AGREE_YN"/>
+		<result property="emailSndAgreeFlg" column="EMAIL_SND_AGREE_YN"/>
+		<result property="tmktAgreeFlg" column="TMKT_AGREE_YN"/>
+		<result property="smsSndAgreeFlg" column="SMS_SND_AGREE_YN"/>
+		<result property="ofcRcvrNm" column="OFC_RCVR_NM"/>
+		<result property="ofcZipcd" column="OFC_ZIPCD"/>
+		<result property="ofcBaseAddr" column="OFC_BASE_ADDR"/>
+		<result property="ofcDtlAddr" column="OFC_DTL_ADDR"/>
+		<result property="ofcEastnChkRsltCd" column="OFC_EASTN_CHK_RSLT_CD"/>
+		<result property="ofcDmSndpGbnCd" column="OFC_DM_SNDP_GBN_CD"/>
+		<result property="celphnRegonTelno" column="CELPHN_REGON_TELNO"/>
+		<result property="celphnTxnoTelno" column="CELPHN_TXNO_TELNO"/>
+		<result property="celphnDtlTelno" column="CELPHN_DTL_TELNO"/>
+		<result property="homeCntryNoCd" column="HOME_CNTRY_NO_CD"/>
+		<result property="homeRegonTelno" column="HOME_REGON_TELNO"/>
+		<result property="homeTxnoTelno" column="HOME_TXNO_TELNO"/>
+		<result property="homeDtlTelno" column="HOME_DTL_TELNO"/>
+		<result property="ofcCntryNoCd" column="OFC_CNTRY_NO_CD"/>
+		<result property="ofcRegonTelno" column="OFC_REGON_TELNO"/>
+		<result property="ofcTxnoTelno" column="OFC_TXNO_TELNO"/>
+		<result property="ofcDtlTelno" column="OFC_DTL_TELNO"/>
+		<result property="infoTelAgreeFlg" column="INFO_TEL_AGREE_FLG"/>
+		<result property="infoPostAgreeFlg" column="INFO_POST_AGREE_FLG"/>
+		<result property="advrTelAgreeFlg" column="ADVR_TEL_AGREE_FLG"/>
+		<result property="advrPostAgreeFlg" column="ADVR_POST_AGREE_FLG"/>
+		<result property="mateBrthSollunGbnCd" column="CUST_MATE_BRTH_SOLLUN_GBN_CD"/>
+		<result property="mateBrthDt" column="CUST_MATE_BRTH_DT"/>
+		<result property="mateGendrCd" column="CUST_MATE_GENDR_CD"/>
+		<result property="ipinCustFlg" column="IPIN_CUST_YN"/>
+		<result property="ssnoPre7" column="SSNO_PRE7"/>
+		<result property="ssnoEcp" column="SSNO_ECP"/>
+		<result property="gsnpntCustStCd" column="GSNPNT_CUST_ST_CD"/>
+		<result property="ecMemTypCd" column="EC_MEM_TYP_CD"/>
+		<result property="dlvsAgreeFlg" column="DLV_SMS_AGREE_FLG"/>
+		<result property="chgBefCustClsCd" column="CUST_CLS_CD"/>
+		<result property="certCd" column="CERT_CD"/>
+		<result property="rlnmCertFlg" column="RLNM_CERT_YN"/>
+		<result property="ipinCiNo" column="IPIN_CI_NO"/>
+		<result property="agreeCd9" column="THDPRT_INFO_AGREE_YN"/>
+		<result property="gshsMktThdprtInfoProvdFlg" column="THDPRT_MKT_AGREE_YN"/>
+	</resultMap>	
+	<select id="findGSShopAndGSnPointMemberInfo" parameterType="long"  resultMap="gSShopAndGSnPointMemberInfoMap">
+		<![CDATA[
+			  SELECT CCM.CUST_NO                  /* 고객번호 */
+			       ,CCAM.LOGIN_ID                /* 로그인ID */
+			       ,CCM.CUST_NM                  /* 고객성명 */
+			       ,CCAIH.INFO_SMS_AGREE_FLG     /* 동의여부 : 정보성SMS */     
+			       ,CCAIH.INFO_EMAIL_AGREE_FLG   /* 동의여부 : 정보성email */
+			       ,CCM.CUST_EMAIL_ADDR          /* 고객이메일주소 */
+			       ,CCAIH.ADVR_SMS_AGREE_FLG     /* 동의여부 : 광고성SMS */
+			       ,CCAIH.ADVR_EMAIL_AGREE_FLG   /* 동의여부 : 광고성email */
+			       ,CCAD_BRTH_SELF.CUST_ANVR_DT    AS CUST_BRTH_DT  /* 생일 */
+			       ,CCAD_BRTH_SELF.SOLLUN_GBN_CD   AS CUST_BRTH_SOLLUN_GBN_CD /* 생일 양력음력구분 */
+			       ,CCM.WEDD_YN                  /* 결혼여부 */
+			       ,CCAD_01.RCVR_NM                AS HOME_RCVR_NM    /* 수취인성명 */
+			       ,CCAD_01.ZIPCD                  AS HOME_ZIPCD      /* 우편번호 */
+			       ,CCAD_01.BASE_ADDR              AS HOME_BASE_ADDR  /* 기본주소 */
+			       ,CCAD_01.DTL_ADDR               AS HOME_DTL_ADDR   /* 상세주소 */
+			       ,CCAD_01.EASTN_CHK_RSLT_CD      AS HOME_EASTN_CHK_RSLT_CD  /* 이스턴체크결과코드 */
+			       ,DECODE(CCM.DM_SNDP_GBN_CD, '1', 'Y', 'N')   AS HOME_DM_SNDP_GBN_CD  /* DM발송지구분코드 */
+			       ,CCAIH.FNC_PRD_AGREE_FLG      /* 동의여부 : 금융상품 */
+			       ,CCAD_BRTH_CHD1.SOLLUN_GBN_CD   AS CUST_CHILD1_BRTH_SOLLUN_GBN_CD /* 자녀1 생일 양력음력구분 */
+			       ,CCAD_BRTH_CHD1.CUST_ANVR_DT    AS CUST_CHILD1_BRTH_DT    /* 자녀1 생일 */
+			       ,CCAD_BRTH_CHD1.GENDR_CD        AS CUST_CHILD1_GENDR_CD   /* 자녀1 성별코드 */
+			       ,CCAD_BRTH_CHD2.SOLLUN_GBN_CD   AS CUST_CHILD2_BRTH_SOLLUN_GBN_CD /* 자녀2 생일 양력음력구분 */
+			       ,CCAD_BRTH_CHD2.CUST_ANVR_DT    AS CUST_CHILD2_BRTH_DT    /* 자녀2 생일 */
+			       ,CCAD_BRTH_CHD2.GENDR_CD        AS CUST_CHILD2_GENDR_CD   /* 자녀2 성별코드 */
+			       ,CCTD_CP.CELPHN_ADM_COM_CO_CD                             /* 핸드폰가입통신회사코드 */
+			       ,CGCM.GSNPNT_CUST_NO    /* GS엔포인트고객번호 */
+			       ,NVL(CGCM.DM_SND_AGREE_YN, 'N')    AS DM_SND_AGREE_YN     /* DM발송동의여부 */
+			       ,NVL(CGCM.EMAIL_SND_AGREE_YN, 'N') AS EMAIL_SND_AGREE_YN  /* 이메일발송동의여부 */
+			       ,NVL(CGCM.TMKT_AGREE_YN, 'N')      AS TMKT_AGREE_YN       /* 텔레마케팅동의여부 */
+			       ,NVL(CGCM.SMS_SND_AGREE_YN, 'N')   AS SMS_SND_AGREE_YN    /* SMS발송동의여부 */
+			       ,CCAD_02.RCVR_NM           AS OFC_RCVR_NM    /* 수취인성명 */
+			       ,CCAD_02.ZIPCD             AS OFC_ZIPCD      /* 우편번호 */
+			       ,CCAD_02.BASE_ADDR         AS OFC_BASE_ADDR  /* 기본주소 */
+			       ,CCAD_02.DTL_ADDR          AS OFC_DTL_ADDR   /* 상세주소 */
+			       ,CCAD_02.EASTN_CHK_RSLT_CD AS OFC_EASTN_CHK_RSLT_CD  /* 이스턴체크결과코드 */
+			       ,DECODE(CCM.DM_SNDP_GBN_CD, '2', 'Y', 'N')   AS OFC_DM_SNDP_GBN_CD  /* DM발송지구분코드 */
+			       ,CCTD_CP.REGON_TELNO       AS CELPHN_REGON_TELNO   /* 지역전화번호 : 핸드폰 */
+			       ,CCTD_CP.TXNO_TELNO        AS CELPHN_TXNO_TELNO    /* 국번전화번호 : 핸드폰 */
+			       ,CCTD_CP.DTL_TELNO         AS CELPHN_DTL_TELNO     /* 상세전화번호 : 핸드폰 */
+			       ,CCTD_HP.CNTRY_NO_CD       AS HOME_CNTRY_NO_CD     /* 국가번호코드 : 자택 */
+			       ,CCTD_HP.REGON_TELNO       AS HOME_REGON_TELNO     /* 지역전화번호 : 자택 */
+			       ,CCTD_HP.TXNO_TELNO        AS HOME_TXNO_TELNO      /* 국번전화번호 : 자택 */
+			       ,CCTD_HP.DTL_TELNO         AS HOME_DTL_TELNO       /* 상세전화번호 : 자택 */
+			       ,CCTD_OP.CNTRY_NO_CD       AS OFC_CNTRY_NO_CD      /* 국가번호코드 : 직장 */
+			       ,CCTD_OP.REGON_TELNO       AS OFC_REGON_TELNO      /* 지역전화번호 : 직장 */
+			       ,CCTD_OP.TXNO_TELNO        AS OFC_TXNO_TELNO       /* 국번전화번호 : 직장 */
+			       ,CCTD_OP.DTL_TELNO         AS OFC_DTL_TELNO        /* 상세전화번호 : 직장 */
+			       ,CCAIH.INFO_TEL_AGREE_FLG    /* 동의여부 : 정보성전화 */
+			       ,CCAIH.INFO_POST_AGREE_FLG   /* 동의여부 : 정보성우편 */
+			       ,CCAIH.ADVR_TEL_AGREE_FLG    /* 동의여부 : 광고성전화 */
+			       ,CCAIH.ADVR_POST_AGREE_FLG   /* 동의여부 : 광고성우편 */
+			       ,CCAD_BRTH_MATE.SOLLUN_GBN_CD    AS CUST_MATE_BRTH_SOLLUN_GBN_CD /* 배우자 생일 양력음력구분 */
+			       ,CCAD_BRTH_MATE.CUST_ANVR_DT     AS CUST_MATE_BRTH_DT      /* 배우자 생일 */
+			       ,CCAD_BRTH_MATE.GENDR_CD         AS CUST_MATE_GENDR_CD     /* 배우자 성별코드 */
+			       ,NVL(CCM.IPIN_CUST_YN, 'N')      AS IPIN_CUST_YN  /* 아이핀고객여부 */
+			       ,CCM.SSNO_PRE7           /* 주민등록번호앞7자리값 */
+			       ,CCM.SSNO_ECP            /* 주민등록번호암호화값 */
+			       ,CGCM.GSNPNT_CUST_ST_CD  /* GS엔포인트고객상태코드 */
+			       ,CCM.EC_MEM_TYP_CD       /* EC회원유형코드 : CMM_CMM_C.CMM_GRP_CD = 'CST007' */
+			       ,CCAIH.DLV_SMS_AGREE_FLG /* 동의여부 : 배송SMS */
+			       ,CCM.CUST_CLS_CD         /* 고객분류코드 */
+			       ,CGCM.CERT_CD            /* 인증코드 */
+			       ,CCM.RLNM_CERT_YN        /* 실명인증여부 */
+			       /* 201207113 1.개요:주민번호수집금지 | 2. 처리내용 : 주민번호변경에 따른 로직변경 | 3. 작성자 :  배진국 */
+			       ,CCM.IPIN_CI_NO  /* 아이핀 CI번호 */
+			       /*  2013.02.18 mhKim PJT20130307 주민번호2차 엔포인트 제3자약관동의 추가  */
+			       ,NVL(CGCM.THDPRT_INFO_AGREE_YN, 'N')   AS THDPRT_INFO_AGREE_YN       /*GSHS 제3자 정보제공 동의 여부 */
+			       ,NVL(CGCM.THDPRT_MKT_AGREE_YN, 'N')    AS THDPRT_MKT_AGREE_YN        /* GSHS 마케팅 정보제공 동의 여부*/
+			   FROM CST_CUST_M        CCM      /* 고객기본 */
+			       ,CST_CUST_ACCNT_M  CCAM     /* 고객계정기본 */
+			       ,CST_GSNPNT_CUST_M CGCM     /* GS엔포인트고객기본 */
+			       ,CST_CUST_ADDR_D   CCAD_01  /* 고객주소정보 : 자택(01) */
+			       ,CST_CUST_ADDR_D   CCAD_02  /* 고객주소정보 : 직장(02) */
+			       ,(SELECT MAX(CUST_NO)              AS CUST_NO
+			               ,MAX(ADVR_EMAIL_AGREE_FLG) AS ADVR_EMAIL_AGREE_FLG
+			               ,MAX(ADVR_POST_AGREE_FLG)  AS ADVR_POST_AGREE_FLG
+			               ,MAX(ADVR_SMS_AGREE_FLG)   AS ADVR_SMS_AGREE_FLG
+			               ,MAX(ADVR_TEL_AGREE_FLG)   AS ADVR_TEL_AGREE_FLG
+			               ,MAX(DLV_SMS_AGREE_FLG)    AS DLV_SMS_AGREE_FLG
+			               ,MAX(FNC_PRD_AGREE_FLG)    AS FNC_PRD_AGREE_FLG
+			               ,MAX(INFO_EMAIL_AGREE_FLG) AS INFO_EMAIL_AGREE_FLG
+			               ,MAX(INFO_POST_AGREE_FLG)  AS INFO_POST_AGREE_FLG
+			               ,MAX(INFO_SMS_AGREE_FLG)   AS INFO_SMS_AGREE_FLG
+			               ,MAX(INFO_TEL_AGREE_FLG)   AS INFO_TEL_AGREE_FLG
+			           FROM (SELECT CUST_NO
+			                       ,DECODE(AGREE_ITM_CD, 'ADVRE', AGREE_YN, '') AS ADVR_EMAIL_AGREE_FLG  /* 동의여부 : 광고성email */
+			                       ,DECODE(AGREE_ITM_CD, 'ADVRP', AGREE_YN, '') AS ADVR_POST_AGREE_FLG   /* 동의여부 : 광고성우편 */
+			                       ,DECODE(AGREE_ITM_CD, 'ADVRS', AGREE_YN, '') AS ADVR_SMS_AGREE_FLG    /* 동의여부 : 광고성SMS */
+			                       ,DECODE(AGREE_ITM_CD, 'ADVRT', AGREE_YN, '') AS ADVR_TEL_AGREE_FLG    /* 동의여부 : 광고성전화 */
+			                       ,DECODE(AGREE_ITM_CD, 'DLVS', AGREE_YN, '')  AS DLV_SMS_AGREE_FLG     /* 동의여부 : 배송SMS */
+			                       ,DECODE(AGREE_ITM_CD, 'FNCI', AGREE_YN, '')  AS FNC_PRD_AGREE_FLG     /* 동의여부 : 금융상품 */
+			                       ,DECODE(AGREE_ITM_CD, 'INFOE', AGREE_YN, '') AS INFO_EMAIL_AGREE_FLG  /* 동의여부 : 정보성email */
+			                       ,DECODE(AGREE_ITM_CD, 'INFOP', AGREE_YN, '') AS INFO_POST_AGREE_FLG   /* 동의여부 : 정보성우편 */
+			                       ,DECODE(AGREE_ITM_CD, 'INFOS', AGREE_YN, '') AS INFO_SMS_AGREE_FLG    /* 동의여부 : 정보성SMS */
+			                       ,DECODE(AGREE_ITM_CD, 'INFOT', AGREE_YN, '') AS INFO_TEL_AGREE_FLG    /* 동의여부 : 정보성전화 */
+			                   FROM CST_CUST_AGREE_INFO_H  /* 고객동의정보이력 */
+			                  WHERE AGREE_ITM_CD IN ('ADVRE', 'ADVRP', 'ADVRS', 'ADVRT', 'DLVS', 'FNCI', 'INFOE', 'INFOP', 'INFOS', 'INFOT')  /* 동의항목코드 : CMM_CMM_C.CMM_GRP_CD = 'CST015' : ADVRE(광고성email), ADVRP(광고성우편), ADVRS(광고성SMS), ADVRT(광고성전화), DLVS(배송SMS), FNCI(금융상품), INFOE(정보성email), INFOP(정보성우편), INFOS(정보성SMS), INFOT(정보성전화) */
+			                    AND CUST_NO =  #{custNo}   /* 고객번호 */
+			                    AND SYSDATE BETWEEN VALID_STR_DTM 
+			                                    AND VALID_END_DTM  /* VALID_STR_DTM : 유효시작일시, VALID_END_DTM : 유효종료일시 */ )
+			        ) CCAIH
+			       ,CST_CUST_TELNO_D CCTD_HP           /* 고객전화번호정보 : 자택(HP) */
+			       ,CST_CUST_TELNO_D CCTD_CP           /* 고객전화번호정보 : 핸드폰(CP) */
+			       ,CST_CUST_TELNO_D CCTD_OP           /* 고객전화번호정보 : 직장(OP) */
+			       ,CST_CUST_ANVR_D CCAD_BRTH_SELF      /* 고객기념일정보 : 생일 */
+			       ,CST_CUST_ANVR_D CCAD_BRTH_MATE      /* 고객기념일정보 : 배우자 생일 */
+			       ,CST_CUST_ANVR_D CCAD_BRTH_CHD1      /* 고객기념일정보 : 자녀1 생일 */
+			       ,CST_CUST_ANVR_D CCAD_BRTH_CHD2      /* 고객기념일정보 : 자녀2 생일 */
+			  WHERE CCM.CUST_NO    =  #{custNo}            /* 고객번호 */
+			    AND CCM.CUST_ST_CD = 'Y'               /* 고객상태코드 : CMM_CMM_C.CMM_GRP_CD = 'CST002' */
+			    AND CCM.CUST_NO    = CCAM.CUST_NO      /* 고객번호 */
+			    AND CCAM.CUST_ACCNT_GBN_CD = 'GSEC'    /* 고객계정구분코드 : CMM_CMM_C.CMM_GRP_CD = 'CST017' : GSEC(GS샵닷컴) */
+			    AND CCAM.CUST_ACCNT_ST_CD  = 'A'       /* 고객계정상태코드 : CMM_CMM_C.CMM_GRP_CD = 'CST018' : A(활성) */
+			    AND CCM.CUST_NO = CGCM.CUST_NO(+)      /* 고객번호 */
+			    AND CCM.CUST_NO = CCAIH.CUST_NO(+)     /* 고객번호 */
+			    AND CCM.CUST_NO = CCTD_HP.CUST_NO(+)   /* 고객번호 */
+			    AND CCTD_HP.TELNO_TYP_CD(+) = 'HP'     /* 전화번호유형코드 : CMM_CMM_C.CMM_GRP_CD = 'CST013' : HP(자택) */
+			    AND CCTD_HP.USE_YN(+)       = 'Y'      /* 사용여부 */
+			    AND CCM.CUST_NO = CCTD_CP.CUST_NO(+)   /* 고객번호 */
+			    AND CCTD_CP.TELNO_TYP_CD(+) = 'CP'     /* 전화번호유형코드 : CMM_CMM_C.CMM_GRP_CD = 'CST013' : CP(핸드폰) */
+			    AND CCTD_CP.USE_YN(+)       = 'Y'      /* 사용여부 */
+			    AND CCM.CUST_NO = CCTD_OP.CUST_NO(+)   /* 고객번호 */
+			    AND CCTD_OP.TELNO_TYP_CD(+) = 'OP'     /* 전화번호유형코드 : CMM_CMM_C.CMM_GRP_CD = 'CST013' : OP(직장) */
+			    AND CCTD_OP.USE_YN(+)       = 'Y'      /* 사용여부 */
+			    AND CCM.CUST_NO = CCAD_BRTH_SELF.CUST_NO(+)    /* 고객번호 */
+			    AND CCAD_BRTH_SELF.CUST_ANVR_TYP_CD(+) = 'BRTH'  /* 고객기념일유형코드 : CMM_CMM_C.CMM_GRP_CD = 'CST020' : BRTH(생일) */
+			    AND CCAD_BRTH_SELF.REL_TYP_CD(+)       = 'SELF'  /* 관계유형코드 : CMM_CMM_C.CMM_GRP_CD = 'CST021' : SELF(본인) */
+			    AND CCM.CUST_NO = CCAD_BRTH_MATE.CUST_NO(+) /* 고객번호 */
+			    AND CCAD_BRTH_MATE.CUST_ANVR_TYP_CD(+) = 'BRTH'  /* 고객기념일유형코드 */
+			    AND CCAD_BRTH_MATE.REL_TYP_CD(+)       = 'MATE'  /* 관계유형코드 : CMM_CMM_C.CMM_GRP_CD = 'CST021' : MATE(배우자) */
+			    AND CCM.CUST_NO = CCAD_BRTH_CHD1.CUST_NO(+) /* 고객번호 */
+			    AND CCAD_BRTH_CHD1.CUST_ANVR_TYP_CD(+) = 'BRTH'  /* 고객기념일유형코드 */
+			    AND CCAD_BRTH_CHD1.REL_TYP_CD(+)       = 'CHD1'  /* 관계유형코드 : CMM_CMM_C.CMM_GRP_CD = 'CST021' : CHD1(자녀1) */
+			    AND CCM.CUST_NO = CCAD_BRTH_CHD2.CUST_NO(+) /* 고객번호 */
+			    AND CCAD_BRTH_CHD2.CUST_ANVR_TYP_CD(+) = 'BRTH'  /* 고객기념일유형코드 */
+			    AND CCAD_BRTH_CHD2.REL_TYP_CD(+)       = 'CHD2'  /* 관계유형코드 : CMM_CMM_C.CMM_GRP_CD = 'CST021' : CHD2(자녀2) */
+			    AND CCM.CUST_NO = CCAD_01.CUST_NO(+)  /* 고객번호 */
+			    AND NVL(CCAD_01.ADDR_USE_YN(+), 'Y') != 'N'  /* 주소사용여부 */
+			    AND CCAD_01.ADDR_GBN_CD(+)            = '01' /* 주소구분코드 : CMM_CMM_C.CMM_GRP_CD = 'CST016' : 01(자택) */
+			    AND CCM.CUST_NO = CCAD_02.CUST_NO(+)  /* 고객번호 */
+			    AND NVL(CCAD_02.ADDR_USE_YN(+), 'Y') != 'N'     /* 주소사용여부 */
+			    AND CCAD_02.ADDR_GBN_CD(+)            = '02'    /* 주소구분코드 : CMM_CMM_C.CMM_GRP_CD = 'CST016' : 02(직장) */   
+		  ]]>     
+	</select>
+	
+	<!-- 
+		내용	: 고객동의여부 조회
+		작성자	: 윤병찬
+		작성일	: 2013.11.22 신규작성
+		
+		#{_c.custNo[0].value} = 9806081;
+		#{_c.agreeItmCd[0].value} = 'SMC';
+		
+	-->
+	<select id="findCstCustAgreeInfoWithAgreeItmCd" parameterType="criteria"  resultType="String">
+		<![CDATA[
+			 SELECT NVL(CCAIH.AGREE_YN, 'N') AS AGREE_YN
+			   FROM CST_CUST_AGREE_INFO_H CCAIH
+			  WHERE SYSDATE BETWEEN VALID_STR_DTM 
+			                    AND VALID_END_DTM
+			    AND CUST_NO = #{_c.custNo[0].value}
+				AND AGREE_ITM_CD = #{_c.agreeItmCd[0].value}
+				AND ROWNUM = 1
+		  ]]>     
+	</select>	
+
+	<!-- 
+		내용 : 이전 배송지 총갯수 조회
+		작성자 : 박노정
+		작성일 : 2013.12.19 신규작성
+		
+		#{custNo} = 40766028;
+	-->
+
+	<select id="findPreDlvpTotCnt" parameterType="long" resultType="Integer">
+	    SELECT COUNT(*) AS CNT
+	      FROM CST_CUST_ADDR_D CCAD
+	     WHERE CCAD.CUST_NO                = #{custNo}
+	       AND NVL(CCAD.ADDR_USE_YN, 'Y') != 'N'
+	       AND CCAD.MOD_DTM                > (SYSDATE - (3 * 365))
+	       AND CCAD.ADDR_GBN_CD            = '03'
+	</select>
+		
+	<!-- 
+		내용 : 이전 배송지 목록 조회
+		작성자 : 박노정
+		작성일 : 2013.12.19 신규작성
+		
+		#{_c.custNo[0].value} = 40766028;
+		#{_c.startRow[0].value} = 1;
+		#{_c.endRow[0].value} = 10;
+	-->
+	
+	<resultMap id="custAddrMap" type="iceberg.capi.order.model.member.CustAddr">
+		<result property="addrCntcNo"         column="ADDR_CNTC_NO"        />
+		<result property="addrGbnCd"          column="ADDR_GBN_CD"         />
+		<result property="rcvrNm"             column="RCVR_NM"             />
+		<result property="dlvpTelno"          column="DLVP_TELNO"          />
+		<result property="zipcd"              column="ZIPCD"               />
+		<result property="baseAddr"           column="BASE_ADDR"           />
+		<result property="dtlAddr"            column="DTL_ADDR"            />
+		<result property="eastnChkRsltCd"     column="EASTN_CHK_RSLT_CD"   />
+		<result property="dlvpCelphnTelno"    column="DLVP_CELPHN_TELNO"   />
+		<result property="modDtm"             column="MOD_DTM"             />
+		<result property="rcvrEngNm"          column="RCVR_ENG_NM"         />
+		<result property="dlvUnulMatrCntnt"   column="DLV_UNUL_MATR_CNTNT" />
+	</resultMap>
+	<select id="findPreDlvpList" parameterType="criteria" resultMap="custAddrMap">
+		SELECT XX.*
+		  FROM (
+		        SELECT X.*, ROWNUM AS RN
+		          FROM (
+		                SELECT CCAD.ADDR_CNTC_NO
+		                     , CCAD.ADDR_GBN_CD
+		                     , CCAD.RCVR_NM
+		                     , CCAD.DLVP_TELNO
+		                     , CCAD.ZIPCD
+		                     , CCAD.BASE_ADDR
+		                     , CCAD.DTL_ADDR
+		                     , CCAD.EASTN_CHK_RSLT_CD
+		                     , CCAD.DLVP_CELPHN_TELNO
+		                     , CCAD.MOD_DTM
+		                     , CCAD.RCVR_ENG_NM
+		                     , CCAD.DLV_UNUL_MATR_CNTNT
+		                  FROM CST_CUST_ADDR_D CCAD
+		                 WHERE CCAD.CUST_NO                = #{_c.custNo[0].value}
+		                   AND NVL(CCAD.ADDR_USE_YN, 'Y') != 'N'
+		                   AND CCAD.MOD_DTM                > (SYSDATE - (3 * 365))
+		                   AND CCAD.ADDR_GBN_CD            = '03'
+		                 ORDER BY MOD_DTM DESC) X
+		        ) XX
+		 WHERE RN BETWEEN #{_c.startRow[0].value} AND #{_c.endRow[0].value}
+	</select>
+	
+	
+	
+	
+	<!-- 
+		내용	: 고객의 사용가능 가수금/적립금정보(잔액)를 구한다.
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+		
+		#{_c.number[0].value} = (105002532565, 105003732667);
+		
+	-->
+	<resultMap id="getTicketInfoMap" type="iceberg.capi.order.model.member.Ticket">
+		<result property="number" column="ASSET_NUM"/>
+		<result property="serialNumber" column="SERIAL_NUM"/>
+		<result property="value" column="ASSET_VALUE_AMT"/>
+		<result property="status" column="STATUS_CD"/>
+		<result property="replacementValue" column="RPLCMNT_VAL_AMT"/>
+		<result property="personUId" column="PERSONUID"/>
+	</resultMap>	
+	<select id="findTicketInfo" parameterType="criteria"  resultMap="getTicketInfoMap">
+	<![CDATA[
+			SELECT  SELECT X.ASSET_NUM
+			       ,X.SERIAL_NUM
+			       ,X.ASSET_VALUE_AMT
+			       ,X.STATUS_CD
+			       ,X.RPLCMNT_VAL_AMT
+			       ,X.PERSONUID
+			  FROM (SELECT  ASSET_NO AS ASSET_NUM  /* 자산번호 */
+			               ,GFTCERT_NO AS SERIAL_NUM  /* 상품권번호 */
+			               ,ASSET_AMT AS ASSET_VALUE_AMT  /* 자산금액 */
+			               ,NVL(GFTCERT_ST_CD, '04') AS STATUS_CD  /* 상품권상태코드 */
+			               ,GFTCERT_ORG_AMT AS RPLCMNT_VAL_AMT  /* 상품권원금액 */
+			               ,ASSET_TYP_CD AS TYPE_CD  /* 자산유형코드 */
+			               ,NVL(CUST_NO,'') AS PERSONUID  /* 고객번호 */
+			               ,DECODE(SIGN(GFTCERT_ACT_DT - (ADD_MONTHS(SYSDATE,-60))),-1,'N','Y') AS EXP_YN  /* 상품권활성일자 */
+			          FROM CST_ASSET_M  /* 자산기본 */
+			         WHERE GFTCERT_NO IN
+			        <foreach collection="_c.number[0].value" item="item" index="index" open="(" separator="," close=")">
+	                  #{item}
+	                </foreach>
+			           AND ASSET_TYP_CD = 'GFTCERT'  /* 자산유형코드 */
+			           AND GFTCERT_ST_CD <> '05'  /* 상품권상태코드 */
+			       ) X
+			 WHERE X.EXP_YN = 'Y'
+	 ]]>		 
+	</select>		
+	
+	
+	
+	
+	
+		
+	<!-- 
+		내용	: 배송지 수정시 동일주소인지 판단한다.
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+		
+		#{_c.custNo[0].value} = 9806081;
+		#{_c.zipCode[0].value} = '150944';
+		#{_c.city[0].value} = '서울 영등포구 문래동6가';
+		#{_c.receiver[0].value} = '윤병찬';
+		#{_c.addrDetail[0].value} = '10번지 GS강서타워 6층 EC정보';
+		#{_c.phone1[0].value} = '0220044719';
+		#{_c.phone2[0].value} = '01062591488';
+
+	-->
+	<resultMap id="getShipAddrMODChkMap" type="iceberg.capi.order.model.ordermodify.AddressInfo">
+		<result property="id" column="ADDR_CNTC_NO"/>
+		<result property="name" column="ADDR_CNTC_NO"/>
+		<result property="receiverEngName" column="RCVR_ENG_NM"/>
+		<result property="dlvMemo" column="EC_DLV_MSG_CNTNT"/>
+	</resultMap>	
+	<select id="findShipAddrMODChk" parameterType="criteria"  resultMap="getShipAddrMODChkMap">
+	<![CDATA[
+			 SELECT  ADDR_CNTC_NO 
+			        ,RCVR_ENG_NM 
+			        ,EC_DLV_MSG_CNTNT 
+			   FROM  CST_CUST_ADDR_D 
+			  WHERE CUST_NO = #{_c.custNo[0].value}
+			    AND ZIPCD||'' =#{_c.zipCode[0].value} 
+			    AND BASE_ADDR||'' = #{_c.city[0].value} 
+			    AND RCVR_NM||''= #{_c.receiver[0].value} 
+			    AND REPLACE(DTL_ADDR, ' ', '') = REPLACE(#{_c.addrDetail[0].value}, ' ', '') 
+			    AND DLVP_TELNO  LIKE '%'||#{_c.phone1[0].value}||'%' 
+			    AND NVL(DLVP_CELPHN_TELNO, ' ') LIKE '%'||#{_c.phone2[0].value}||'%' 
+			    AND ROWNUM = 1
+	]]>		    
+	</select>			
+		
+		
+	<!-- 
+		내용	: 고객정보중 성별,연령대 정보 조회
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+		
+		#{custNo} = 9806081;
+
+	-->
+	<resultMap id="memberAgeInfoForOrdByCustNoMap" type="iceberg.capi.order.model.member.Cust">
+		<result property="agreeFlg" column="AGREE_YN"/>
+		<result property="gendrCd" column="GENDER"/>
+		<result property="cusAge" column="CUS_AGE"/>
+	</resultMap>	
+	<select id="findMemberAgeInfoForOrdByCustNo" parameterType="long"  resultMap="memberAgeInfoForOrdByCustNoMap">
+	<![CDATA[
+			 SELECT   NVL(CUST.PRODUCTEMAIL, 'N') AS AGREE_YN
+					, CUST.GENDER AS GENDER
+			        , CASE
+			            WHEN CUST.AGE BETWEEN  0 AND 19 THEN '10'
+			            WHEN CUST.AGE BETWEEN 20 AND 29 THEN '20'
+			            WHEN CUST.AGE BETWEEN 20 AND 29 THEN '30'
+			            WHEN CUST.AGE BETWEEN 20 AND 29 THEN '40'
+			            WHEN CUST.AGE >= 50  THEN '50'
+			            ELSE '30'
+			          END AS CUS_AGE
+			   FROM
+			        (
+			            SELECT
+			                    (SELECT AGREE_YN
+			                        FROM   CST_CUST_AGREE_INFO_H M
+			                        WHERE  M.CUST_NO = CCM.CUST_NO
+			                          AND  M.AGREE_ITM_CD = 'INFOE'
+			                          AND  SYSDATE BETWEEN M.VALID_STR_DTM AND M.VALID_END_DTM
+			                          AND  ROWNUM = 1
+			                    ) AS PRODUCTEMAIL
+			                   ,CASE
+			                        WHEN SUBSTR(SSNO_PRE7, 7, 1) = '1' OR SUBSTR(SSNO_PRE7, 7, 1) = '3' THEN 'M'
+			                        WHEN SUBSTR(SSNO_PRE7, 7, 1) = '3' OR SUBSTR(SSNO_PRE7, 7, 1) = '4' THEN 'F'
+			                        ELSE 'F'
+			                    END AS GENDER
+			                   ,CASE
+			                        WHEN SUBSTR(SSNO_PRE7, 7, 1) = '1' OR SUBSTR(SSNO_PRE7, 7, 1) = '2'
+			                            THEN TO_CHAR(SYSDATE, 'YYYY') - ('19'||SUBSTR(SSNO_PRE7, 0, 2))
+			                        WHEN SUBSTR(SSNO_PRE7, 7, 1) = '3' OR SUBSTR(SSNO_PRE7, 7, 1) = '4'
+			                            THEN TO_CHAR(SYSDATE, 'YYYY') - ('20'||SUBSTR(SSNO_PRE7, 0, 2))
+			                        ELSE 30
+			                    END AS AGE
+			            FROM CST_CUST_M CCM
+			            WHERE CCM.CUST_NO = #{custNo}
+			       ) CUST
+	]]>			       
+	</select>			
+		
+		
+		<!--
+   	내용 : 고객정보
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 02
+
+   	#{_c.ecCustNo[0].value} = 1353096836
+   	-->
+	<select id = "findCstCustInfo" parameterType = "criteria" resultType = "String">
+	<![CDATA[
+	SELECT CCM.CUST_CLS_CD AS CUST_CLS_CD    /*고객분류코드*/			
+	  FROM CST_CUST_M CCM                                        	
+	         , CST_CUST_ACCNT_M CCAM                                   	
+	WHERE CCM.CUST_NO = CCAM.CUST_NO                                	
+		AND CCAM.EC_CUST_NO = #{_c.ecCustNo[0].value}                                     	
+		AND CCAM.CUST_ACCNT_GBN_CD = 'GSEC'     						
+		AND CCAM.CUST_ACCNT_ST_CD = 'A'  
+	]]>
+	</select>
+	
+	<!--
+   	내용 : 사내임직원 한도액
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 03
+
+   	#{_c.custNo[0].value} = 11130036
+   	-->
+	<select id = "findStaffRate" parameterType = "criteria" resultType = "long">
+	<![CDATA[
+	SELECT NVL(EMP_DC_LIMIT_AMT, 0) AS EMP_DC_LIMIT_AMT   /* 사내임직원 한도액 */
+	   FROM CST_CUST_M A    /* 고객기본 */
+	 WHERE CUST_NO = #{_c.custNo[0].value}
+	]]>
+	</select>
+
+	<!--
+   	내용 : 연간할인금액 추출
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 03
+
+   	#{_c.custNo[0].value} = 31701633
+   	-->
+	<select id = "findYearSalePoint" parameterType = "criteria" resultType = "int">
+	<![CDATA[
+	SELECT DCCPN_AMT
+ 	  FROM CST_DCCPN_M 
+    WHERE CUST_NO = #{_c.custNo[0].value}
+        AND DCCPN_TYP_CD = 'ECY'
+        AND ROWNUM = 1
+	]]>
+	</select>
+
+	<!--
+   	내용 : 상품권이 사용가능한 상품권인지 체크
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 07
+
+   	#{_c.custNo[0].value} = 31701633
+   	-->
+	<select id = "findPrepayStatus" parameterType = "long" resultType = "int">
+	<![CDATA[
+	SELECT COUNT(*)
+ 	  FROM CST_GFTCERT_USE_AUTH_D 
+    WHERE CUST_NO = #{custNo}
+        AND GFTCERT_USE_AUTH_YN = 'N'
+	]]>
+	</select>
+
+	<!--
+   	내용 : 고객이 입력한 상품권을 인증
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 07
+
+   	#{_c.custNo[0].value} = 31701633
+   	-->
+   	<resultMap id="findMPrepayChkData" type="iceberg.capi.order.model.member.Ticket">
+		<result property="assetNo" column="ASSET_NO"/>
+		<result property="gftcertNo" column="GFTCERT_NO"/>
+		<result property="assetAmt" column="ASSET_AMT"/>
+		<result property="gftcertSt" column="GFTCERT_ST"/>
+		<result property="gftcertOrgAmt" column="GFTCERT_ORG_AMT"/>
+		<result property="assetTypCd" column="ASSET_TYP_CD"/>
+		<result property="gftcertUseCust" column="GFTCERT_USE_CUST"/>
+	</resultMap>	
+	<select id = "findMPrepayChk" parameterType = "String" resultMap = "findMPrepayChkData">
+	<![CDATA[
+	SELECT TB.ASSET_NO 
+	       ,TB.GFTCERT_NO
+	       ,TB.ASSET_AMT 
+	       ,TB.GFTCERT_ST 
+	       ,TB.GFTCERT_ORG_AMT 
+	       ,TB.ASSET_TYP_CD
+	       ,TB.GFTCERT_USE_CUST 
+	  FROM (SELECT ASSET_NO AS ASSET_NO  /* 자산번호 */ 
+		               ,GFTCERT_NO AS GFTCERT_NO  /* 상품권번호 */ 
+		               ,ASSET_AMT AS ASSET_AMT  /* 자산금액 */ 
+		               ,NVL(GFTCERT_ST_CD, '04') AS GFTCERT_ST  /* 상품권상태코드 */ 
+		               ,GFTCERT_ORG_AMT AS GFTCERT_ORG_AMT  /* 상품권원금액 */ 
+		               ,ASSET_TYP_CD AS ASSET_TYP_CD  /* 자산유형코드 */ 
+		               ,NVL(CUST_NO,'') AS GFTCERT_USE_CUST  /* 고객번호 */ 
+		               ,DECODE(SIGN(GFTCERT_ACT_DT - (ADD_MONTHS(SYSDATE,-60))),-1,'N','Y') AS GFTCERT_ACT_DT  /* 상품권활성일자 */ 
+	          FROM CST_ASSET_M  /* 자산기본 */ 
+	         WHERE GFTCERT_NO = #{gftcertNo}	
+	           AND ASSET_TYP_CD = 'GFTCERT'  /* 자산유형코드 */ 
+	           AND GFTCERT_ST_CD <> '05'  /* 상품권상태코드 */ 
+	       ) TB
+	 WHERE TB.GFTCERT_ACT_DT = 'Y' 
+	]]>
+	</select>
+	
+	<!--
+   	내용 : 상품권 인증 횟수 조회
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 07
+
+   	#{custNo} = 31701633
+   	-->
+	<select id = "findPrepayCnt" parameterType = "long" resultType = "int">
+	<![CDATA[
+	SELECT COUNT(*)
+ 	  FROM CST_GFTCERT_USE_MATR_D 
+    WHERE CUST_NO = #{custNo}
+        AND ST_CD = 'A'
+	]]>
+	</select>
+	
+</mapper>

@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.cust.webdb.repository.wish.WishFoldrSqlMapRepository">
+ 
+ 	<resultMap type="iceberg.capi.cust.model.wish.WishFoldr" id="wishFoldrMap">
+		<result property ="wishFoldrCd"           column= "WISH_FOLDR_CD"          /> 
+		<result property ="wishFoldrNm"           column= "WISH_FOLDR_NM"          /> 
+		<result property ="wishFoldrPrdCnt"       column= "WISH_FOLDR_PRD_CNT"     />  
+ 	</resultMap>
+ 	
+ 	<!--
+ 	 API : 찜
+ 	 설명  : 찜폴더 리스트 조회
+ 	 작성자 : kakim
+ 	 작성일 : 2013.12.11 
+ 	 #{_c.ecCustNo[0].value} = 2001322804
+ 	-->
+ 	<select id="findWishFoldrList" parameterType="criteria" resultMap="wishFoldrMap">
+ 	SELECT X1.CLOAKID     AS WISH_FOLDR_CD  
+          ,X1.CLOAKNAME   AS WISH_FOLDR_NM
+          ,X1.TOTALCNT    AS WISH_FOLDR_PRD_CNT
+     FROM  (SELECT LWC3.CLOAKID
+                  ,LWC3.CLOAKNAME
+                  ,COUNT(X.ITEMID) AS TOTALCNT
+             FROM  LGEC_WISH_CLOAK LWC3
+                  ,(SELECT LWC1.CLOAKID    
+                          ,LWC1.CLOAKNAME   
+                          ,LWI1.ITEMID      
+                     FROM  PRD_PRD_M           PPM
+                          ,LGEC_WISH_ITMLIST   LWI1
+                          ,LGEC_WISH_CLOAK     LWC1
+                          ,PRD_CHANL_D PCD
+                     WHERE PPM.PRD_CD       = LWI1.PRDID
+                       AND LWI1.CLOAKID     = LWC1.CLOAKID
+                       AND PPM.PRD_CD       = PCD.PRD_CD
+                       AND PPM.USE_YN       = 'Y'
+                       AND LWI1.PR_TYPE     = 'G'
+                       AND PCD.CHANL_CD     = 'B'
+                       AND PCD.SALE_PSBL_YN = 'Y'
+                       AND LWC1.WISHGUBUN   = '1'
+                       AND LWC1.ECUSERID    = #{_c.ecCustNo[0].value}
+                     UNION ALL
+                    SELECT LWC2.CLOAKID
+                          ,LWC2.CLOAKNAME
+                          ,LWI2.ITEMID
+                     FROM  GS_AP_PRD             GAP
+                          ,LGEC_WISH_ITMLIST     LWI2
+                          ,LGEC_WISH_CLOAK       LWC2
+                     WHERE GAP.TR_PRDID   = LWI2.PRDID
+                       AND LWI2.CLOAKID   = LWC2.CLOAKID
+                       AND GAP.DBSTS      = 'A'
+                       AND LWI2.PR_TYPE   = 'T'
+                       AND LWC2.WISHGUBUN = '1'
+                       AND LWC2.ECUSERID  = #{_c.ecCustNo[0].value} ) X
+             WHERE LWC3.CLOAKID   = X.CLOAKID (+)
+               AND LWC3.CLOAKNAME = X.CLOAKNAME (+)
+               AND LWC3.WISHGUBUN = '1'
+               AND LWC3.ECUSERID  = #{_c.ecCustNo[0].value}
+             GROUP BY LWC3.CLOAKID, LWC3.CLOAKNAME) X1
+     ORDER BY X1.CLOAKID ASC 
+ 	</select>
+ 	
+ 	<!--
+ 	 API : 찜하기
+ 	 설명  : 찜 기본폴더코드조회 
+ 	 작성자 : kakim
+ 	 작성일 : 2013.12.11 
+ 	 #{_c.ecCustNo[0].value} = 2001322804
+ 	-->
+ 	<select id="findWishFoldrBaseCd"  parameterType="criteria" resultType="long">
+    SELECT NVL(MIN(CLOAKID),0)
+     FROM  LGEC_WISH_CLOAK LWC
+     WHERE LWC.ECUSERID = #{_c.ecCustNo[0].value} 
+ 	</select>
+	
+ 	<!--
+ 	 API : 찜폴더 추가
+ 	 설명  : 찜폴더 개수 조회 
+ 	 작성자 : kakim
+ 	 작성일 : 2013.12.11 
+ 	 #{_c.ecCustNo[0].value} = 2001322804
+ 	-->
+	<select id="countWishFoldr" parameterType="criteria" resultType="long">
+        SELECT COUNT(1)
+         FROM  LGEC_WISH_CLOAK
+         WHERE ECUSERID = #{_c.ecCustNo[0].value} 
+	       AND WISHGUBUN = '1' 
+	</select>
+	
+	<delete id="deleteWishFoldr" parameterType="criteria">
+        DELETE /* 찜폴더 삭제 2013.12.09 by kakim */	   
+          FROM LGEC_WISH_CLOAK
+         WHERE CLOAKID   =#{_c.wishFoldrCd[0].value} 
+           AND ECUSERID  = #{_c.ecCustNo[0].value} 
+	</delete>
+	
+	<update id="updateWishFoldr" parameterType="iceberg.capi.cust.model.wish.WishFoldr">
+        UPDATE /* 찜폴더 수정 2013.12.09 by kakim */	   
+               LGEC_WISH_CLOAK
+           SET CLOAKNAME = #{wishFoldrNm}
+              ,UPDDATE   = SYSDATE
+         WHERE ECUSERID  = #{ecCustNo}
+           AND CLOAKID   = #{wishFoldrCd}
+           AND WISHGUBUN = #{wishGbn}
+	</update>
+	
+	<insert id="createWishFoldr" parameterType="iceberg.capi.cust.model.wish.WishFoldr"  >
+        INSERT /* 찜폴더 추가 2013.12.09 by kakim */	   
+          INTO LGEC_WISH_CLOAK
+               (
+               CLOAKID,WISHGUBUN,ECUSERID,CLOAKNAME,CATVID
+              ,CREDATE
+               )
+        VALUES (
+               LGEC_WISH_CLOAK_SEQ.NEXTVAL
+              ,#{wishGbn} 
+              ,#{ecCustNo}
+              ,#{wishFoldrNm}
+              ,#{custNo}
+              ,SYSDATE
+               )	
+	</insert>
+</mapper>	

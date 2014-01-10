@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.smtcdb.repository.prd.ProductAttributeSqlMapRepository">
+	<resultMap type="iceberg.capi.product.model.prd.add.ProductAttribute" id="productAttributeMap">
+		<result property = "orderNumber"        column = "ORD_NO"  /> 
+		<result property = "orderDayAndTime"    column = "ORD_DTM"  /> 
+		<result property = "prdCd"              column = "PRD_CD"  />
+		<result property = "prdNm"              column = "PRD_NM"  />  
+		<result property = "stateCode"          column = "ST_CD"  /> 
+		<result property = "prdAttrColor"	column = "PRD_ATTR_COLOR"/>		<!-- 평가항목명1	 -->
+		<result property = "prdAttrSize"	column = "PRD_ATTR_SIZE"/>		<!-- 평가항목명2	 -->
+		<result property = "prdAttrStyle"	column = "PRD_ATTR_STYLE"/>		<!-- 평가항목명3	 -->
+		<result property = "prdAttrGft"		column = "PRD_ATTR_GFT"/>		<!-- 평가항목명4	 -->
+		<!-- 2013.11.27 추가 -->
+		<result property = "attrPrdCd"          column = "ATTR_PRD_CD"  /> 
+		<result property = "ecAttrPrdCd"        column = "EC_ATTR_PRD_CD"  /> 
+		<result property = "attrPrdRepCd"       column = "ATTR_PRD_REP_CD"  /> 
+		<result property = "exposDfaltValYn"    column = "EXPOS_DFALT_VAL_YN"  /> 
+		<result property = "prdAttrColorVal" 	column = "PRD_ATTR_COLOR_VAL"/>
+		<result property = "prdAttrSizeVal" 	column = "PRD_ATTR_SIZE_VAL"/>
+		<result property = "prdAttrStyleVal" 	column = "PRD_ATTR_STYLE_VAL"/>
+		<result property = "prdAttrGftVal" 		column = "PRD_ATTR_GFT_VAL"/>
+		<result property = "colorVal"           column = "COLOR_VAL"  /> 
+		<result property = "imgFileNm"          column = "IMG_FILE_NM"  /> 
+		<result property = "orderQty"           column = "ORDER_QTY"  /> 
+		<result property = "sptNonStockYn"      column = "SPT_NON_STOCK_FLG"  /> 
+		<result property = "exposSeq"           column = "EXPOS_SEQ"  /> 
+		<result property = "tempoutFlgVal" 		column = "TEMPOUT_FLG_VAL"/>
+		<result property = "StockYnNm"          column = "STOCK_YN_NM"  /> 
+		<result property = "allNonstockYn"      column = "ALL_NONSTOCK_YN"  /> 
+		<result property = "sizeallNonstockYn"  column = "SIZEALL_NONSTOCK_YN"  /> 
+		<result property = "styleallNonstockYn" column = "STYLEALL_NONSTOCK_YN"  /> 
+	</resultMap>
+
+	<select id="getProductAttributeList" parameterType="criteria" resultMap="productAttributeMap">
+		<!-- 
+		DBMS : SMTC
+		분야 : 단품 getProductAttributeList
+		API  : 주문 상품 스타일 정보
+		설명 : 주문 상품 스타일 정보 조회
+		
+		#{_c.orderNumber[0].value} = 599856484
+		#{_c.productCode[0].value} = 11407599
+		-->
+		SELECT ORDER_NUM   AS ORD_NO
+		      ,ORDER_DT    AS ORD_DTM
+		      ,PART_NUM    AS PRD_CD
+		      ,STATUS_CD   AS ST_CD
+		      ,DECODE(STYLE1,'None','',STYLE1) AS PRD_ATTR_COLOR
+		      ,DECODE(STYLE2,'None','',STYLE2) AS PRD_ATTR_SIZE
+		      ,DECODE(STYLE3,'None','',STYLE3) AS PRD_ATTR_STYLE
+		      ,DECODE(STYLE4,'None','',STYLE4) AS PRD_ATTR_GFT
+		  FROM (SELECT OOM.ORD_NO              AS ORDER_NUM
+		              ,OOM.ORD_DTM             AS ORDER_DT
+		              ,OID.PRD_CD              AS PART_NUM
+		              ,OID.ST_CD               AS STATUS_CD
+		              ,DECODE(OID.LINE_TYP_CD, '11',
+		                      SUBSTR(REP_PRD_SUP_ATTR_PRD_NM,1,INSTR(REP_PRD_SUP_ATTR_PRD_NM,',')-1),
+		                      PAPM.ATTR_VAL_1) AS STYLE1
+		              ,DECODE(OID.LINE_TYP_CD, '11',
+		                      SUBSTR(REP_PRD_SUP_ATTR_PRD_NM,INSTR(REP_PRD_SUP_ATTR_PRD_NM,',')+1,
+		                      (INSTR(REP_PRD_SUP_ATTR_PRD_NM,',',1,2)-INSTR(REP_PRD_SUP_ATTR_PRD_NM,','))-1),
+		                      PAPM.ATTR_VAL_2) AS STYLE2
+		              ,DECODE(OID.LINE_TYP_CD, '11',
+		                      SUBSTR(REP_PRD_SUP_ATTR_PRD_NM,INSTR(REP_PRD_SUP_ATTR_PRD_NM,',',1,2)+1,
+		                      (INSTR(REP_PRD_SUP_ATTR_PRD_NM,',',1,3)-INSTR(REP_PRD_SUP_ATTR_PRD_NM,',',1,2))-1),
+		                      PAPM.ATTR_VAL_3) AS STYLE3
+		              ,DECODE(OID.LINE_TYP_CD, '11',
+		                      SUBSTR(REP_PRD_SUP_ATTR_PRD_NM,INSTR(REP_PRD_SUP_ATTR_PRD_NM,',',1,3)+1,
+		                      (INSTR(REP_PRD_SUP_ATTR_PRD_NM,',',1,4)-INSTR(REP_PRD_SUP_ATTR_PRD_NM,',',1,3))-1),
+		                      PAPM.ATTR_VAL_4) AS STYLE4
+		          FROM ORD_ORD_M      OOM
+		              ,ORD_ITEM_D     OID
+		              ,PRD_ATTR_PRD_M PAPM
+						 WHERE OOM.ORD_NO       = #{_c.orderNumber[0].value}
+		               AND OOM.ORD_NO       = OID.ORD_NO		   
+		               AND DECODE(OID.LINE_TYP_CD, '11', OID.REP_PRD_SUP_PRD_CD, OID.PRD_CD) = #{_c.productCode[0].value}
+		               AND OID.PRD_CD       = PAPM.PRD_CD(+)
+		               AND OID.ATTR_PRD_CD  = PAPM.ATTR_PRD_CD(+)
+						 UNION ALL
+						SELECT TO_NUMBER(ORPRD.RSRV_NO)  AS ORDER_NUM
+		              ,ORPRD.RSRV_DTM            AS ORDER_DT
+		              ,ORPRD.PRD_CD              AS PART_NUM
+		              ,ORPRD.CUST_REACT_CD       AS STATUS_CD
+		              ,null                      AS STYLE1
+		              ,null                      AS STYLE2
+		              ,null                      AS STYLE3
+		              ,null                      AS STYLE4
+		         FROM ORD_RENT_PRD_RSRV_D ORPRD
+		        WHERE ORPRD.RSRV_NO = #{_c.orderNumber[0].value}
+		          AND ORPRD.PRD_CD  = #{_c.productCode[0].value}
+		       ) 
+	</select>
+	
+	<select id="getSmtcAttrPrdList"  resultMap="productAttributeMap">
+	<![CDATA[
+	SELECT X1.PRD_CD                        AS PRC_CD              /*상품코드*/
+	      ,X1.ATTR_PRD_CD                   AS ATTR_PRD_CD         /*속성상품코드*/                                                            
+	      ,X1.EC_ATTR_PRD_CD                AS EC_ATTR_PRD_CD      /*EC속성상품코드*/
+		  ,X1.ATTR_PRD_REP_CD               AS ATTR_PRD_REP_CD     /*속성상품대표코드 */
+	      ,X1.ATTR_VAL_CD_1                 AS PRD_ATTR_COLOR_VAL  /*색상설명*/
+	      ,X1.ATTR_VAL_CD_2                 AS PRD_ATTR_SIZE_VAL   /*사이즈설명*/
+	      ,X1.ATTR_VAL_CD_3                 AS PRD_ATTR_STYLE_VAL  /*스타일설명*/
+	      ,X1.ATTR_VAL_CD_4                 AS PRD_ATTR_GFT_VAL    /*사은품설명*/
+	      ,X1.EXPOS_DFALT_VAL_YN            AS EXPOS_DFALT_VAL_FLG /*노출디폴트값여부*/
+	      ,X1.COLOR_VAL                     AS COLOR_VAL           /*색상값*/
+	      ,X1.IMG_FILE_NM                   AS IMG_FILE_NM         /*이미지파일명*/
+	      ,X1.ORDER_QTY                     AS ORDER_QTY           /*주문가능수량*/
+	      ,X1.SPT_NON_STOCK_YN              AS SPT_NON_STOCK_FLG   /*속성일시품절여부*/
+		  ,X1.EXPOS_SEQ                     AS EXPOS_SEQ           /*노출순서*/
+	      ,CASE WHEN X1.SPT_NON_STOCK_YN = 'N' THEN '판매중' 
+		        ELSE '품절' 
+		   END                              AS TEMPOUT_FLG_VAL      /*속성일시품절노출명*/
+	      ,X3.ALLSTOCK_YN||X1.ATTR_VAL_CD_1 AS ALL_NONSTOCK_YN      /*색상품절여부+설명*/
+	      ,X5.ALLSTOCK_YN||X1.ATTR_VAL_CD_2 AS SIZEALL_NONSTOCK_YN  /*사이즈품절여부+설명*/
+	      ,X7.ALLSTOCK_YN||X1.ATTR_VAL_CD_3 AS STYLEALL_NONSTOCK_YN /*스타일품절여부+설명*/  
+	       
+	  FROM (
+	        SELECT X.PRD_CD                                  AS PRD_CD
+	              ,X.ATTR_PRD_CD                             AS ATTR_PRD_CD 
+	              ,X.EC_ATTR_PRD_CD                          AS EC_ATTR_PRD_CD 			  
+	              ,X.ATTR_PRD_REP_CD                         AS ATTR_PRD_REP_CD  
+	              ,X.ATTR_VAL_CD_1                           AS ATTR_VAL_CD_1      
+	              ,X.ATTR_VAL_CD_2                           AS ATTR_VAL_CD_2      
+	              ,X.ATTR_VAL_CD_3                           AS ATTR_VAL_CD_3       
+	              ,X.ATTR_VAL_CD_4                           AS ATTR_VAL_CD_4  
+	              ,X.EXPOS_DFALT_VAL_YN                      AS EXPOS_DFALT_VAL_YN      
+	              ,X.ORDER_QTY                               AS ORDER_QTY       
+	              ,CASE WHEN X.SPT_NON_STOCK_YN   = 'Y' THEN 'Y' 
+				        WHEN X.SPT_NON_STOCK_YN_2 = 'Y' THEN 'Y' 
+					    ELSE 'N' 
+				   END                                       AS SPT_NON_STOCK_YN
+	              ,X.EXPOS_SEQ                               AS EXPOS_SEQ   
+	              ,PCID.COLOR_VAL                            AS COLOR_VAL     
+	              ,PCID.IMG_FILE_NM                          AS IMG_FILE_NM 			   
+	          FROM (
+	               SELECT PAPM.PRD_CD                        AS PRD_CD
+	                	 ,PAPM.ATTR_PRD_CD                   AS ATTR_PRD_CD 
+	                	 ,PAPM.EC_ATTR_PRD_CD                AS EC_ATTR_PRD_CD
+	                     ,PAPM.ATTR_PRD_REP_CD               AS ATTR_PRD_REP_CD
+	                	 ,NVL(PAPM.ATTR_VAL_1,'None')        AS ATTR_VAL_CD_1          
+	                	 ,NVL(PAPM.ATTR_VAL_2,'None')        AS ATTR_VAL_CD_2 
+	                     ,NVL(PAPM.ATTR_VAL_3,'None')        AS ATTR_VAL_CD_3  	  
+	                	 ,NVL(PAPM.ATTR_VAL_4,'None')        AS ATTR_VAL_CD_4      
+	                	 ,NVL(PAPM.EXPOS_DFALT_VAL_YN,'N')   AS EXPOS_DFALT_VAL_YN                      
+	                	 ,NVL(POPQD.ORD_PSBL_QTY - SUM(NVL(POSTD.ORD_QTY,0)),0) AS ORDER_QTY    
+	                	 ,CASE WHEN NVL(POPQD.ORD_PSBL_QTY - SUM(NVL(POSTD.ORD_QTY,0)),0) > 0 THEN 'N' 
+	                	       ELSE 'Y' 
+	                	  END                                AS SPT_NON_STOCK_YN
+	                	 ,DECODE(NVL(PSD.TEMPOUT_YN,'N')
+	                	         ,'Y','Y'
+	                		     ,'N')                       AS SPT_NON_STOCK_YN_2
+	                	 ,PAPM.EXPOS_SEQ                     AS EXPOS_SEQ
+	                 FROM PRD_ATTR_PRD_M     PAPM         /*속성마스터*/
+	                     ,PRD_STOCK_D        PSD          /*상품재고정보*/
+	                     ,PRD_ORD_PSBL_QTY_D POPQD        /*주문가능수량정보*/
+	                     ,PRD_ORD_PSBL_TMP_D POSTD         /*주문가능수량임시정보*/
+	                WHERE PAPM.PRD_CD = #{prdCd}
+	                	  AND PAPM.ATTR_PRD_REP_CD= PSD.ATTR_PRD_REP_CD
+	                	  AND SYSDATE BETWEEN NVL(PAPM.SALE_STR_DTM, SYSDATE) AND NVL(PAPM.SALE_END_DTM, SYSDATE)
+	                	  AND PAPM.ATTR_PRD_APRV_ST_CD = '30' /*속성승인상태코드*/
+	                	  AND PAPM.USE_YN = 'Y'
+	                	  AND PSD.ATTR_PRD_REP_CD = POPQD.ATTR_PRD_REP_CD    
+	                	  AND POPQD.CHANL_GRP_CD = (  
+	                		   				        SELECT CHANL_GRP_CD    
+	                		 					      FROM PRD_CHANL_MAPPN_D    
+	                		 					     WHERE CHANL_CD = 'P'    
+	                		 					       AND CHANL_GRP_TYP_CD = 'A' 
+	                						        )    
+	                	  AND POPQD.ATTR_PRD_REP_CD = POSTD.ATTR_PRD_REP_CD(+)    
+	                	  AND POPQD.CHANL_GRP_CD = POSTD.CHANL_GRP_CD(+)
+	                	  AND POSTD.QTY_GBN_CD(+) = 'ORD'
+	                GROUP BY PAPM.PRD_CD 
+	                        ,PAPM.ATTR_PRD_CD 
+	                		,PAPM.EC_ATTR_PRD_CD
+	                		,PAPM.ATTR_PRD_REP_CD
+	                		,PAPM.EXPOS_SEQ 
+	                		,PAPM.ATTR_VAL_1 
+	                		,PAPM.ATTR_VAL_2
+	                		,PAPM.ATTR_VAL_3 
+	                		,PAPM.ATTR_VAL_4 
+	                		,PAPM.EXPOS_DFALT_VAL_YN
+	                		,PSD.TEMPOUT_YN
+	                		,POPQD.ORD_PSBL_QTY
+	                ) X 
+				   ,PRD_COLOR_IMG_D PCID     /*상품색상이미지정보*/
+	          WHERE X.PRD_CD = PCID.PRD_CD(+)
+	            AND X.ATTR_VAL_CD_1 = PCID.COLOR_NM(+)
+	        ) X1
+	       ,(
+			SELECT X2.ATTR_VAL_CD_1                                  AS ATTR_VAL_CD_1
+	              ,CASE WHEN SUM(X2.STOCK_YN) <= 0          THEN 'Y' 
+				        WHEN SUM(X2.SPT_NON_STOCK_YN) <= 0  THEN 'Y' 
+						ELSE 'N' 
+				   END                                               AS ALLSTOCK_YN
+	          FROM (
+	               SELECT X.ATTR_VAL_1                               AS ATTR_VAL_CD_1
+	                     ,X.ATTR_PRD_REP_CD                          AS ATTR_PRD_REP_CD
+	                     ,CASE WHEN NVL(POPQD.ORD_PSBL_QTY - SUM(NVL(POPTD.ORD_QTY,0)),0) > 0 THEN 1 
+		                       ELSE 0 
+		                   END                                       AS SPT_NON_STOCK_YN
+	                     ,DECODE(NVL(PSD.TEMPOUT_YN,'N'),'N',1,0)    AS STOCK_YN
+	                 FROM (
+	                      SELECT PAPM.ATTR_PRD_REP_CD
+	                            ,PAPM.ATTR_VAL_1
+	                        FROM PRD_ATTR_PRD_M PAPM
+	                       WHERE PAPM.PRD_CD = #{prdCd}
+	                         AND SYSDATE BETWEEN NVL(PAPM.SALE_STR_DTM, SYSDATE) AND NVL(PAPM.SALE_END_DTM, SYSDATE)
+	                         AND PAPM.USE_YN = 'Y'
+	                         AND PAPM.ATTR_PRD_APRV_ST_CD = '30'
+	                       GROUP BY PAPM.ATTR_PRD_REP_CD
+	                               ,PAPM.ATTR_VAL_1
+	                       ) X
+	                      ,PRD_STOCK_D           PSD
+	                      ,PRD_ORD_PSBL_QTY_D    POPQD    /*주문가능수량정보*/
+	                      ,PRD_ORD_PSBL_TMP_D    POPTD    /*주문가능수량임시정보*/
+	                WHERE X.ATTR_PRD_REP_CD = PSD.ATTR_PRD_REP_CD
+	                  AND PSD.ATTR_PRD_REP_CD =  POPQD.ATTR_PRD_REP_CD
+	                  AND POPQD.CHANL_GRP_CD  = (  
+					                            SELECT PCMD.CHANL_GRP_CD    
+	                                              FROM PRD_CHANL_MAPPN_D PCMD  
+	                                             WHERE PCMD.CHANL_CD = 'P'    
+	                                               AND PCMD.CHANL_GRP_TYP_CD = 'A' 
+										        ) 
+	                 AND POPQD.ATTR_PRD_REP_CD = POPTD.ATTR_PRD_REP_CD(+)    
+	                 AND POPQD.CHANL_GRP_CD = POPTD.CHANL_GRP_CD(+)
+	                 AND POPTD.QTY_GBN_CD(+) = 'ORD'
+	               GROUP BY X.ATTR_VAL_1 
+	                       ,POPQD.ORD_PSBL_QTY
+	                       ,PSD.TEMPOUT_YN
+	                       ,X.ATTR_PRD_REP_CD
+	                ) X2
+	         GROUP BY X2.ATTR_VAL_CD_1
+	        ) X3 
+	       ,(
+			SELECT X4.ATTR_VAL_CD_2                                  AS ATTR_VAL_CD_2
+	              ,CASE WHEN SUM(X4.STOCK_YN) <= 0          THEN 'Y' 
+				        WHEN SUM(X4.SPT_NON_STOCK_YN) <= 0  THEN 'Y' 
+						ELSE 'N' 
+				   END                                               AS ALLSTOCK_YN
+	          FROM (
+	               SELECT X.ATTR_VAL_2                               AS ATTR_VAL_CD_2
+	                     ,X.ATTR_PRD_REP_CD                          AS ATTR_PRD_REP_CD
+	                     ,CASE WHEN NVL(POPQD.ORD_PSBL_QTY - SUM(NVL(POPTD.ORD_QTY,0)),0) > 0 THEN 1 
+		                       ELSE 0 
+		                   END                                       AS SPT_NON_STOCK_YN
+	                     ,DECODE(NVL(PSD.TEMPOUT_YN,'N'),'N',1,0)    AS STOCK_YN
+	                 FROM (
+	                      SELECT PAPM.ATTR_PRD_REP_CD
+	                            ,PAPM.ATTR_VAL_2
+	                        FROM PRD_ATTR_PRD_M PAPM
+	                       WHERE PAPM.PRD_CD = #{prdCd}
+	                         AND SYSDATE BETWEEN NVL(PAPM.SALE_STR_DTM, SYSDATE) AND NVL(PAPM.SALE_END_DTM, SYSDATE)
+	                         AND PAPM.USE_YN = 'Y'
+	                         AND PAPM.ATTR_PRD_APRV_ST_CD = '30'
+	                       GROUP BY PAPM.ATTR_PRD_REP_CD
+	                               ,PAPM.ATTR_VAL_2
+	                       ) X
+	                      ,PRD_STOCK_D           PSD
+	                      ,PRD_ORD_PSBL_QTY_D    POPQD    /*주문가능수량정보*/
+	                      ,PRD_ORD_PSBL_TMP_D    POPTD    /*주문가능수량임시정보*/
+	                WHERE X.ATTR_PRD_REP_CD = PSD.ATTR_PRD_REP_CD
+	                  AND PSD.ATTR_PRD_REP_CD =  POPQD.ATTR_PRD_REP_CD
+	                  AND POPQD.CHANL_GRP_CD  = (  
+					                            SELECT PCMD.CHANL_GRP_CD    
+	                                              FROM PRD_CHANL_MAPPN_D PCMD  
+	                                             WHERE PCMD.CHANL_CD = 'P'    
+	                                               AND PCMD.CHANL_GRP_TYP_CD = 'A' 
+										        ) 
+	                 AND POPQD.ATTR_PRD_REP_CD = POPTD.ATTR_PRD_REP_CD(+)    
+	                 AND POPQD.CHANL_GRP_CD = POPTD.CHANL_GRP_CD(+)
+	                 AND POPTD.QTY_GBN_CD(+) = 'ORD'
+	               GROUP BY X.ATTR_VAL_2 
+	                       ,POPQD.ORD_PSBL_QTY
+	                       ,PSD.TEMPOUT_YN
+	                       ,X.ATTR_PRD_REP_CD
+	                ) X4
+	         GROUP BY X4.ATTR_VAL_CD_2
+	        ) X5 
+	       ,(
+			SELECT X6.ATTR_VAL_CD_3                                  AS ATTR_VAL_CD_3
+	              ,CASE WHEN SUM(X6.STOCK_YN) <= 0          THEN 'Y' 
+				        WHEN SUM(X6.SPT_NON_STOCK_YN) <= 0  THEN 'Y' 
+						ELSE 'N' 
+				   END                                               AS ALLSTOCK_YN
+	          FROM (
+	               SELECT X.ATTR_VAL_3                               AS ATTR_VAL_CD_3
+	                     ,X.ATTR_PRD_REP_CD                          AS ATTR_PRD_REP_CD
+	                     ,CASE WHEN NVL(POPQD.ORD_PSBL_QTY - SUM(NVL(POPTD.ORD_QTY,0)),0) > 0 THEN 1 
+		                       ELSE 0 
+		                   END                                       AS SPT_NON_STOCK_YN
+	                     ,DECODE(NVL(PSD.TEMPOUT_YN,'N'),'N',1,0)    AS STOCK_YN
+	                 FROM (
+	                      SELECT PAPM.ATTR_PRD_REP_CD
+	                            ,PAPM.ATTR_VAL_3
+	                        FROM PRD_ATTR_PRD_M PAPM
+	                       WHERE PAPM.PRD_CD = #{prdCd}
+	                         AND SYSDATE BETWEEN NVL(PAPM.SALE_STR_DTM, SYSDATE) AND NVL(PAPM.SALE_END_DTM, SYSDATE)
+	                         AND PAPM.USE_YN = 'Y'
+	                         AND PAPM.ATTR_PRD_APRV_ST_CD = '30'
+	                       GROUP BY PAPM.ATTR_PRD_REP_CD
+	                               ,PAPM.ATTR_VAL_3
+	                       ) X
+	                      ,PRD_STOCK_D           PSD
+	                      ,PRD_ORD_PSBL_QTY_D    POPQD    /*주문가능수량정보*/
+	                      ,PRD_ORD_PSBL_TMP_D    POPTD    /*주문가능수량임시정보*/
+	                WHERE X.ATTR_PRD_REP_CD = PSD.ATTR_PRD_REP_CD
+	                  AND PSD.ATTR_PRD_REP_CD =  POPQD.ATTR_PRD_REP_CD
+	                  AND POPQD.CHANL_GRP_CD  = (  
+					                            SELECT PCMD.CHANL_GRP_CD    
+	                                              FROM PRD_CHANL_MAPPN_D PCMD  
+	                                             WHERE PCMD.CHANL_CD = 'P'    
+	                                               AND PCMD.CHANL_GRP_TYP_CD = 'A' 
+										        ) 
+	                 AND POPQD.ATTR_PRD_REP_CD = POPTD.ATTR_PRD_REP_CD(+)    
+	                 AND POPQD.CHANL_GRP_CD = POPTD.CHANL_GRP_CD(+)
+	                 AND POPTD.QTY_GBN_CD(+) = 'ORD'
+	               GROUP BY X.ATTR_VAL_3 
+	                       ,POPQD.ORD_PSBL_QTY
+	                       ,PSD.TEMPOUT_YN
+	                       ,X.ATTR_PRD_REP_CD
+	                ) X6
+	         GROUP BY X6.ATTR_VAL_CD_3
+	        ) X7 
+	 WHERE X1.ATTR_VAL_CD_1||X1.ATTR_VAL_CD_2||X1.ATTR_VAL_CD_3||DECODE(X1.ATTR_VAL_CD_4
+	                                                                    ,'none','none'
+															            ,'사은품')
+	                                                           ||DECODE(X1.SPT_NON_STOCK_YN
+													                    ,'N','N'
+															            ,'Y') <> 'nonenonenone사은품Y'
+	   AND X1.ATTR_VAL_CD_1 = X3.ATTR_VAL_CD_1(+)
+	   AND X1.ATTR_VAL_CD_2 = X5.ATTR_VAL_CD_2(+)
+	   AND X1.ATTR_VAL_CD_3 = X7.ATTR_VAL_CD_3(+)
+	 ORDER BY X1.EXPOS_SEQ
+	         ,X1.EC_ATTR_PRD_CD
+	]]>
+	</select>
+
+	<select id="getPrdStyleOrderQty"  parameterType="criteria"  resultMap="productAttributeMap">
+	<!-- 
+		DBMS : SMTC
+		분야 : 단품 getProductAttributeList
+		API  : 주문 상품 스타일 정보
+		설명 : 상품코드, 속성 상품 코드로 상품 스타일, 주문가능 수량 조회
+		#{_c.prdCd[0].value} = 5547264
+		#{_c.ecAttrPrdCd[0].value} = 5547264001
+	-->	
+	SELECT PAPM.PRD_CD                        	AS PRD_CD
+		  ,PPM.PRD_NM							AS PRD_NM
+          ,PAPM.ATTR_PRD_CD                   	AS ATTR_PRD_CD 
+          ,PAPM.EC_ATTR_PRD_CD                	AS EC_ATTR_PRD_CD
+          ,PAPM.ATTR_PRD_REP_CD               	AS ATTR_PRD_REP_CD
+          ,NVL(PAPM.ATTR_VAL_1,'00000')        	AS PRD_ATTR_COLOR          
+          ,NVL(PAPM.ATTR_VAL_2,'00000')        	AS PRD_ATTR_SIZE 
+          ,NVL(PAPM.ATTR_VAL_3,'00000')        	AS PRD_ATTR_STYLE        
+          ,NVL(PAPM.ATTR_VAL_4,'00000')        	AS PRD_ATTR_GFT      
+          ,NVL(PAPM.EXPOS_DFALT_VAL_YN,'N')   	AS EXPOS_DFALT_VAL_YN                      
+          ,NVL(POPQD.ORD_PSBL_QTY - SUM(NVL(POSTD.ORD_QTY,0)),0) AS ORDER_QTY    
+          ,PAPM.EXPOS_SEQ                     	AS EXPOS_SEQ
+      FROM PRD_ATTR_PRD_M     PAPM         /*속성마스터*/
+          ,PRD_STOCK_D        PSD          /*상품재고정보*/
+          ,PRD_PRD_M		  PPM
+          ,PRD_ORD_PSBL_QTY_D POPQD        /*주문가능수량정보*/
+          ,PRD_ORD_PSBL_TMP_D POSTD        /*주문가능수량임시정보*/
+     WHERE PAPM.PRD_CD 			= #{_c.prdCd[0].value}
+       AND PAPM.EC_ATTR_PRD_CD 	= #{_c.ecAttrPrdCd[0].value}
+       AND PAPM.ATTR_PRD_REP_CD	= PSD.ATTR_PRD_REP_CD
+       AND PAPM.PRD_CD 			= PPM.PRD_CD
+       AND SYSDATE BETWEEN NVL(PAPM.SALE_STR_DTM, SYSDATE) AND NVL(PAPM.SALE_END_DTM, SYSDATE)
+       AND PAPM.ATTR_PRD_APRV_ST_CD = '30' /*속성승인상태코드*/
+       AND PAPM.USE_YN = 'Y'
+       AND PSD.ATTR_PRD_REP_CD = POPQD.ATTR_PRD_REP_CD    
+       AND POPQD.CHANL_GRP_CD = (  
+                                  SELECT CHANL_GRP_CD    
+                                    FROM PRD_CHANL_MAPPN_D    
+                                   WHERE CHANL_CD = 'P'    
+                                     AND CHANL_GRP_TYP_CD = 'A' 
+                                 )    
+	   AND POPQD.ATTR_PRD_REP_CD = POSTD.ATTR_PRD_REP_CD(+)    
+       AND POPQD.CHANL_GRP_CD = POSTD.CHANL_GRP_CD(+)
+       AND POSTD.QTY_GBN_CD(+) = 'ORD'
+     GROUP BY PAPM.PRD_CD
+     		 ,PPM.PRD_NM 
+			 ,PAPM.ATTR_PRD_CD 
+             ,PAPM.EC_ATTR_PRD_CD
+             ,PAPM.ATTR_PRD_REP_CD
+             ,PAPM.EXPOS_SEQ 
+             ,PAPM.ATTR_VAL_1 
+             ,PAPM.ATTR_VAL_2
+             ,PAPM.ATTR_VAL_3 
+             ,PAPM.ATTR_VAL_4 
+             ,PAPM.EXPOS_DFALT_VAL_YN
+             ,PSD.TEMPOUT_YN
+             ,POPQD.ORD_PSBL_QTY
+	</select>
+	                 
+</mapper>

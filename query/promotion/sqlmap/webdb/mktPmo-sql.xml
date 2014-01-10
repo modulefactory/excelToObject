@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.promotion.webdb.repository.mkt.MktPmoSqlMapRepository">
+
+	<resultMap type="iceberg.capi.promotion.model.mkt.MktPmoBase" id="resultMktPmoBase"  >
+		<result property = "pmoNo" 				column = "PMO_NO"/>
+		<result property = "sortSeq" 				column = "SORT_SEQ"/>
+		<result property = "cnsltDocTitleNm" 	column = "TITLE"/>
+		<result property = "gftUrlCntnt" 			column = "URL"/>
+		<result property = "dcPrcExposFlg" 		column = "DC_PRC_EXPOS_FLG"/>
+		<result property = "chrDcRt" 				column = "CHR_DC_RT"/>
+		<result property = "maxDcPsblAmt" 	column = "MAX_DC_PSBL_AMT"/>
+		<result property = "minPayAmt" 			column = "MIN_PAY_AMT"/>
+		<result property = "ecCardNm" 			column = "EC_CARD_NM"/>
+		<result property = "cardAprvStrDtm" 	column = "CARD_APRV_STR_DTM"/>
+		<result property = "cardAprvEndDtm" 	column = "CARD_APRV_END_DTM"/>
+		<result property = "cardGbnCd" 			column = "CARD_GBN_CD"/>
+	</resultMap>
+	<select id="findPrdCardDiscountAllTodayList" parameterType="long" resultMap="resultMktPmoBase">
+	<!-- 
+	DBMS : WEBDB
+	분야 : 단품  findPrdCardDiscountAllTodayList
+	API  : 상품  정보 조회
+	설명 : 카드 청구 할인 조회
+	
+	#{prdCd} = 10557455
+
+	-->		
+		
+		<![CDATA[
+		SELECT NVL(X.PMO_NO, 0)    AS PMO_NO
+		       ,X.D_VALUE          AS SORT_SEQ
+		       ,X.TITLE            AS TITLE
+		       ,''                 AS URL
+		       ,DECODE(X.DISPLAY_CD,'Y',1,0) AS DC_PRC_EXPOS_FLG
+		       ,X.DC_RATE          AS CHR_DC_RT
+		       ,NVL(X.MAX_AMT, 0)  AS MAX_DC_PSBL_AMT
+		       ,NVL(X.MIN_AMT, 0)  AS MIN_PAY_AMT
+		       ,NVL(X.CARD_NM, '') AS EC_CARD_NM
+		       ,X.STR_DATE         AS CARD_APRV_STR_DTM
+		       ,X.END_DATE         AS CARD_APRV_END_DTM
+		       ,X.CARD_DC_GBN_CD   AS CARD_GBN_CD
+		   FROM (SELECT /*+ INDEX(MPBD IX_MKT_PMO_BNFT_D_01) */
+		                MPM.PMO_SEQ            AS PMO_NO           /*프로모션번호*/
+		               ,''                     AS D_VALUE          /* EXB_SEQ */
+		               ,MPM.PMO_NM             AS TITLE            /*제목*/
+		               ,MPBD.DC_PRC_EXPOS_YN   AS DISPLAY_CD       /*할인가격 노출여부 */
+		               ,MPBD.CHR_DC_RT         AS DC_RATE          /*청구할인률 */ 
+		               ,MPBD.MAX_DC_PSBL_AMT   AS MAX_AMT          /* 최대할인가능금액*/  
+		               ,MPBD.MIN_PAY_AMT       AS MIN_AMT          /*카드청구할인최소금액-최소결제금액*/ 
+		               ,DECODE(MPBD.MOBIL_CARD_EXCLU_YN,'Y',REPLACE(MPBD.EC_CARD_NM,'카드','모바일카드'),MPBD.EC_CARD_NM)   AS CARD_NM /*EC카드명*/
+		               ,MPBD.CARD_APRV_STR_DTM AS STR_DATE         /*카드승인시작일시 */
+		               ,MPBD.CARD_APRV_END_DTM AS END_DATE         /*카드승인종료일시 */                  
+		               ,'EX'                   AS CARD_DC_GBN_CD   /*카드구분 */
+		           FROM MKT_PMO_M           MPM   
+		               ,MKT_PMO_CUST_GRP_D  MPCGD
+		               ,MKT_PMO_BNFT_D      MPBD
+		          WHERE MPBD.CARD_APRV_STR_DTM    <= SYSDATE
+		            AND MPBD.CARD_APRV_END_DTM    >= SYSDATE             
+		            AND MPM.PMO_SEQ          =  MPCGD.PMO_SEQ           
+		            AND MPCGD.PMO_SEQ        =  MPBD.PMO_SEQ
+		            AND MPCGD.CUST_GRP_SEQ   =  MPBD.CUST_GRP_SEQ
+		            AND (MPM.EC_YN='Y' OR MPM.MC_YN='Y')  /*모바일여부*/                     
+		            AND MPM.PRCH_AFT_IMM_YN          =  'Y'            /*구매후 즉시지급*/  
+		            AND MPM.CARD_CHR_DC_YN           =  'Y'            /*카드청구*/
+		            AND MPBD.BNFT_GBN_CD             = '50'            /*청구할인*/ 
+		            AND MPCGD.TGT_PRD_EXCPT_MTHOD_CD = '10'                       
+		            AND MPM.ST_CD                    = '30'             /*상태값*/     
+		            AND NOT EXISTS (SELECT /*+ INDEX(MPTPD IX_MKT_PMO_TGT_PRD_D_01) */     /* NOT EXISTS 가 아니고 EXISTS*/ 
+		                                   1
+		                              FROM MKT_PMO_TGT_PRD_D  MPTPD
+		                             WHERE MPTPD.PMO_SEQ           = MPM.PMO_SEQ
+		                               AND MPTPD.CUST_GRP_SEQ      = MPCGD.CUST_GRP_SEQ
+		                               AND MPTPD.PMO_APPLY_EXCPT_YN   = 'Y'                /*적용제외 상품*/
+		                               AND MPTPD.APPLY_STR_DTM    <= SYSDATE
+		                               AND MPTPD.APPLY_END_DTM    >= SYSDATE
+		                               AND MPTPD.PRD_CD            = #{prdCd} ) 
+		          UNION ALL   
+		         SELECT /*+ INDEX(MPBD IX_MKT_PMO_BNFT_D_01) */
+		                MPM.PMO_SEQ            AS PMO_NO        /*프로모션번호*/
+		               ,''                     AS D_VALUE       /* EXB_SEQ */
+		               ,MPM.PMO_NM             AS TITLE         /*제목*/
+		               ,MPBD.DC_PRC_EXPOS_YN   AS DISPLAY_CD    /*할인가격 노출여부 */
+		               ,MPBD.CHR_DC_RT         AS DC_RATE       /*할인률 */
+		               ,MPBD.MAX_DC_PSBL_AMT   AS MAX_AMT       /* 최대금액 수정 */
+		               ,MPBD.MIN_PAY_AMT       AS MIN_AMT       /*카드청구할인최소금액*/ 
+		               ,DECODE(MPBD.MOBIL_CARD_EXCLU_YN,'Y',REPLACE(MPBD.EC_CARD_NM,'카드','모바일카드'),MPBD.EC_CARD_NM)   AS CARD_NM    /*카드명*/
+		               ,MPBD.CARD_APRV_STR_DTM AS STR_DATE      /*시작일시 */
+		               ,MPBD.CARD_APRV_END_DTM AS END_DATE      /*종료일시 */
+		               ,'IN'                   AS CARD_DC_GBN_CD    /*카드구분 */
+		           FROM MKT_PMO_M          MPM   
+		               ,MKT_PMO_CUST_GRP_D MPCGD
+		               ,MKT_PMO_BNFT_D     MPBD
+		          WHERE MPBD.CARD_APRV_STR_DTM     <= SYSDATE
+		            AND MPBD.CARD_APRV_END_DTM     >= SYSDATE
+		            AND MPM.PMO_SEQ            = MPCGD.PMO_SEQ           
+		            AND MPCGD.PMO_SEQ          = MPBD.PMO_SEQ
+		            AND MPCGD.CUST_GRP_SEQ     = MPBD.CUST_GRP_SEQ
+		            AND (MPM.EC_YN='Y' OR MPM.MC_YN='Y')   /*모바일여부*/                                  
+		            AND MPM.PRCH_AFT_IMM_YN    = 'Y'           /*구매후 즉시지급*/  
+		            AND MPM.CARD_CHR_DC_YN     = 'Y'           /*카드청구*/
+		            AND MPBD.BNFT_GBN_CD       = '50'          /*청구할인*/     
+		            AND MPCGD.TGT_PRD_SEL_MTHOD_CD  = '10'        
+		            AND MPM.ST_CD              = '30'          /* 상태값*/      
+		            AND EXISTS (SELECT /*+ INDEX(MPTPD IX_MKT_PMO_TGT_PRD_D_01) */
+		                               1
+		                          FROM   MKT_PMO_TGT_PRD_D MPTPD
+		                         WHERE MPTPD.PMO_SEQ          = MPM.PMO_SEQ
+		                           AND MPTPD.CUST_GRP_SEQ     = MPCGD.CUST_GRP_SEQ
+		                           AND MPTPD.PMO_APPLY_EXCPT_YN  = 'N' /*적용 상품*/
+		                           AND MPTPD.APPLY_STR_DTM   <= SYSDATE
+		                           AND MPTPD.APPLY_END_DTM   >= SYSDATE
+		                           AND MPTPD.PRD_CD           = #{prdCd} ) )X
+		 		ORDER BY TO_NUMBER(DC_RATE) DESC, MIN_AMT DESC
+ 		]]> 
+	</select>
+</mapper>

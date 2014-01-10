@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.ordersheet.OrderFinishSqlMapRepository">
+
+	<!--
+   	내용 : 주문완료 -  네이버 CPA 데이터 재 조회
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 02
+
+   	#{_c.custNo[0].value} = 31701633
+   	#{_c.ordNo[0].value} = 585940014
+   	-->
+   	<resultMap id="findEcSmsOrderListData" type="iceberg.capi.order.model.ordersheet.OrderFinish">
+		<result property="dspatNo" column="DSPAT_NO"/>
+		<result property="rcvNo" column="RCV_NO"/>
+		<result property="smsKind" column="SMS_KIND"/>
+		<result property="smsTyp" column="SMS_TYP"/>
+		<result property="title" column="TITLE"/>
+		<result property="cntnt" column="CNTNT"/>
+		<result property="supCd" column="SUP_CD"/>
+		<result property="rcvName" column="RCV_NM"/>
+	</resultMap>
+	
+	<select id = "findEcSmsOrderList" parameterType = "criteria" resultMap = "findEcSmsOrderListData">
+	<![CDATA[
+	SELECT GOLG.S_PH_NUM AS DSPAT_NO		/*[문자쿠폰]발신번호*/
+	        , GOLG.R_PH_NUM AS RCV_NO 			/*[문자쿠폰]수신번호*/
+	        , GOLG.SMS_KIND          					/*[문자쿠폰]문자종류 ('MMS', 'SMS')*/
+	        , GOLG.SMS_TYPE AS SMS_TYP         	/*[문자쿠폰]문자유형 ('A:제목+본문', 'B:본문만입력', 'C:메시지없음')*/
+	        , GOLG.TITLE             						/*[문자쿠폰]제목*/
+	        , GOLG.CONTENTS AS CNTNT				/*[문자쿠폰]내용*/
+	        , GOLG.SUPP_CODE AS SUP_CD			/*[문자쿠폰]업체코드*/
+	        , GOLG.R_NAME AS RCV_NM				/*[문자쿠폰]받는분*/
+	FROM  GS_ORD_LOG_GIFT GOLG 
+	WHERE GOLG.ORD_NO = 585940014
+	ORDER BY GOLG.ORD_ITEM_NO 	
+	]]>
+	</select>
+
+
+</mapper>

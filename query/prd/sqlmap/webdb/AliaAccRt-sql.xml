@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prd.PrdAliaAccRtSqlMapRepository">
+	
+	<resultMap type="iceberg.capi.product.model.prd.add.AliaAccRt" id="resultAliaAccRt">
+		<result property = "alia" column = "ALIA"/>
+		<result property = "accRt" column = "ACC_RT"/>
+		<result property = "accTyp" column = "ACC_TYP"/>
+		<result property = "strDtm" column = "STR_DTM"/>
+		<result property = "endDtm" column = "END_DTM"/>
+	</resultMap>
+	
+	<select id="findOneAliaAccRt" parameterType="String" resultMap="resultAliaAccRt">
+	<!-- 
+        DBMS : WEBDB
+        분야 : 제휴 추가 적립율 조회 findOneAliaAccRt
+        API  : 제휴 추가 적립율 조회
+        설명 : 제휴 코드 기준으로 추가 적립율을 조회한다.
+        
+        #{alia} = Zw        
+	-->
+	<![CDATA[
+     SELECT AFFILIATE_COM  AS ALIA
+           ,JUKLIB_CLASS   AS ACC_RT
+           ,JUKLIB_TYPE    AS ACC_TYP
+           ,BEGIN_DATE     AS STR_DTM
+           ,END_DATE       AS END_DTM
+       FROM LGEC_AFFILIATE_JUKLIBCLASS
+      WHERE 1=1
+        AND AFFILIATE_COM = #{alia}
+        AND BEGIN_DATE 	 <= SYSDATE
+        AND END_DATE 	 >= SYSDATE
+		]]>
+	</select>
+</mapper>

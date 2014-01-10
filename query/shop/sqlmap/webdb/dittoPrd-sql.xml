@@ -1,0 +1,564 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.shop.webdb.repository.DittoPrdSqlMapRepository">
+	
+	<resultMap type="iceberg.capi.shop.model.CornerInfo" id="CornerInfoMap">
+		<result property = "conctNo"    			column = "CONCT_NO"  />                                  
+		<result property = "expirStrDt"    			column = "EXPIR_STR_DT"  />                                  
+		<result property = "expirEndDt"    			column = "EXPIR_END_DT"  />                                  
+	</resultMap>
+	
+	<select id="findMainCornerInfos" parameterType="criteria" resultMap="CornerInfoMap">
+		<!-- 
+		DBMS : WEBDB
+		분야 : Ditto findMainCornerInfos
+		API  : 필요한 코너 정보 조회(Ditto)
+		설명 : 필요한 코너 정보 조회(Ditto)
+		
+		#{_c.gubun[0].value}  : DITTO
+		#{_c.code[0].value}   : AU363431
+		#{_c.corner[0].value} : AU363431
+		#{commonChannelModel.cmmBaseChanl} : P
+		-->
+		<![CDATA[	
+		SELECT  
+				GSD.LINK_NUM AS CONCT_NO,  
+		        NVL((
+			          SELECT LP.PLAN_TYPE
+			          FROM LGEC_PLANPRD LP
+			          WHERE  LP.PLAN_SEQ = GSD.LINK_NUM)
+			          , 'H'
+		        ) PLAN_TYPE,  
+		        GSD.OPEN_TYPE,  
+		        GD.GUBUN1,  
+		        GD.GUBUN2,  
+		        GD.CORNER,  
+		        GSD.EXB_SEQ, 
+		        NVL(GSD.REMARK5, 'X0') REMARK5,
+		        GSD.TITLE,
+		        NVL(PNCH.EXPOS_PMO_NM,'') || NVL(PNCH.EXPOS_PRD_NM,'') || NVL(PNCH.EXPOS_PR_SNTNC_NM,'') NAME, 
+		        GSD.REMARK1 AS EXPIR_STR_DT, 
+		        GSD.REMARK2 AS EXPIR_END_DT, 
+		        GSD.BANNER1, 
+		        GSD.BANNER2, 
+		        '' AS BANNER_YN, 
+		        NVL(GSD.URL, '#'), 
+		        NVL(GSD.LINK_GB, 'NO') LINK_GB,
+		        TO_CHAR(GSD.ST_DATE, 'YYYYMMDD') ST_DATE,  
+		        TO_CHAR(GSD.EN_DATE, 'YYYYMMDD') EN_DATE,  
+		        NVL(DECODE(GSD.LINK_GB, 'PRD', (DECODE(NVL(PPM.DC_MRK_GBN_CD, '01'), '01', DECODE (PBD.DC_RTAMT_CD, '01', PPH.SALE_PRC - FLOOR (PPH.SALE_PRC * PBD.SUP_DC_RTAMT * 0.001) * 10, '02', PPH.SALE_PRC - PBD.SUP_DC_RTAMT, PPH.SALE_PRC), PPH.SALE_PRC)) ), 0) PRDPRICE,
+		        NVL(DECODE(GSD.LINK_GB, 'PRD', PPH.SALE_PRC), 0) KHS_PRICE, 
+		        DECODE(RTRIM(NVL(PBD.NO_INT_YN, 'N')), 'Y', NVL(PBD.NO_INT_MM_CNT, 0), 0) MUIJA, 
+		        NVL(PBD.ACC_RTAMT_CD, '99')||TO_CHAR(NVL(PBD.GSHS_ACC_RTAMT, 0)+NVL(PBD.SUP_ACC_RTAMT, 0)) JUKLIB,
+		        NVL(PPM.BASE_ACCM_LIMIT_YN, 'N') JUKLIB_LIMIT,
+		        NVL(PPM.SEL_ACCM_APPLY_YN, 'N') JUKLIB_FLAG,  
+		        NVL(PPM.SEL_ACC_RT, 0) JUKLIB_RATE,  
+		        PPM.SUP_CD SUPP_CODE, 
+		        LPAD(NVL(( 
+		         				SELECT SUM(
+							         				DECODE(M.UDA_NO, 1003, 1
+							         										  , 1004, 10
+							         										  , 1005, 100
+							         										  , 1006, 1000
+							         										  , 1007, 10000
+							         										  , 1008, 100000
+							         										  , 1009, 1000000
+							         										  , 1010, 10000000
+							         										  , 1011, 100000000
+							         										  , 1012, 1000000000
+							         										  , 1013, 10000000000
+							         										  , 0)
+							         				)  
+		         					FROM  PRD_UDA_D N  
+		               						,PRD_UDA_C M  
+		         					WHERE N.UDA_GBN_CD = M.UDA_GBN_CD 
+							            AND N.UDA_NO = M.UDA_NO
+							            AND N.UDA_GBN_CD = '20' 
+							            AND M.USE_YN = 'Y' 
+							            AND N.PRD_CD = PPM.PRD_CD  
+							            AND N.VALID_STR_DTM <= SYSDATE
+							            AND N.VALID_END_DTM >= SYSDATE ), 0)
+							      , 11, 0) PROPERTY,  
+		        GSD.DSPL_SEQ,
+		        '' PRD_IMG,
+		        PNCH.EXPOS_PMO_NM GOODS_NAME1,  
+		        PNCH.EXPOS_PRD_NM GOODS_NAME2,  
+		        PNCH.EXPOS_PR_SNTNC_NM GOODS_NAME3,
+		        PSED.CPN_DC_CNTNT COUPON_DESC,  
+		        NVL(PSED.PRC_REDUCT_BEF_LOW_PRC, 0) COMPARE_PRC,  
+		        PPM.LAST_APRV_CNF_DTM LAST_CONF_DATE,
+		        PSED.PRC_REDUCT_DTM PRC_DOWN_DT,
+		        PSED.PRC_DC_DTM PRC_DISCNT_DT,  
+		        PPM.COMPR_PRC_MRK_YN PRICE_DISPLAY_YN,  
+		        '' RULE_IGNORE_YN,  
+		        0 PLANPRICE,  
+		        (SELECT BANNER_T FROM LGEC_PLANPRD WHERE PLAN_SEQ = GSD.LINK_NUM) BANNER_T, 
+		        (SELECT BANNER_S FROM LGEC_PLANPRD WHERE PLAN_SEQ = GSD.LINK_NUM) BANNER_S, 
+		        (SELECT BANNER_M FROM LGEC_PLANPRD WHERE PLAN_SEQ = GSD.LINK_NUM) BANNER_M, 
+		        (SELECT BANNER_H FROM LGEC_PLANPRD WHERE PLAN_SEQ = GSD.LINK_NUM) BANNER_H, 
+		        (SELECT BANNER_L FROM LGEC_PLANPRD WHERE PLAN_SEQ = GSD.LINK_NUM) BANNER_L, 
+		        PPM.PRD_CD PRDID,  
+		        PSED.FLGD_PRC AS LOWEST_PRICE, 	
+		        PPM.PRD_GBN_CD AS PRD_GB,
+		        0 SOURCE_PRICE,  
+		        GSD.LOC_SEQ, 	  
+		        GSD.DBSTS, 	  
+		        GSD.BANNER3, 	  
+		        GSD.BANNER4,  	 
+		        GSD.REMARK3,  	 
+		        GSD.REMARK4,  	 
+		        GSD.REMARK6,  	 
+		        GSD.REMARK7,  	 
+		        GSD.REMARK8,  	 
+		        GSD.REMARK9,  	 
+		        GSD.REMARK10,  	 
+		        GSD.AUTO_YN,  	 
+		        DECODE(PPM.PRD_GBN_CD, '10', NVL(PBM.BRAND_ENG_NM, PBM.BRAND_NM), PBM.BRAND_NM) AS MFR,																																											
+		        NVL(GSD.MOBIL_EXPOS_FLAG, 'N') MOBIL_EXPOS_FLAG,  	 
+		        NVL(GSD.MOBIL_BANNER, '') MOBIL_BANNER  	
+		FROM GS_SECT_DISPLAY GSD
+		        , PRD_PRD_M PPM 
+		        , PMO_BATCH_D PBD  
+		        , PRD_NM_CHG_H PNCH 
+		 	    , GS_DISPLAY GD  
+		        , PRD_PRC_H PPH 
+		        , PRD_SHOP_EXPOS_D PSED
+		        , PRD_BRAND_M PBM																																																																			
+		WHERE GD.GUBUN1 = #{_c.gubun[0].value}
+		  AND  GD.GUBUN2 = #{_c.code[0].value}
+		  AND  GD.CORNER = #{_c.corner[0].value}
+		  AND  GD.DBSTS = 'A'
+		  AND  GD.LOC_SEQ = GSD.LOC_SEQ
+		  AND  GSD.DBSTS = 'A' 
+		  AND  GSD.LINK_NUM = PPM.PRD_CD(+)  
+		  AND  PPM.PRD_CD = PBD.PRD_CD(+) 
+		  AND  PPM.PRD_CD = PNCH.PRD_CD(+) 
+		  AND  PPM.PRD_CD = PPH.PRD_CD(+) 
+		  AND  PPM.PRD_CD = PSED.PRD_CD(+) 
+		  AND  NVL(PBD.CHANL_CD, #{_c.cmmBaseChanl[0].value}) = #{_c.cmmBaseChanl[0].value}
+		  AND  DECODE(GSD.LINK_GB, 'PRD', PPM.SALE_END_DTM, SYSDATE + 1) > SYSDATE
+		  AND  DECODE(GSD.LINK_GB, 'PRD', DECODE(RTRIM(PPM.EXPOS_ST_CD), 'Y', 'Y', 'N'), 'Y') = 'Y'
+		  AND  DECODE(GSD.LINK_GB, 'PRD', DECODE(PPM.USE_YN, 'Y', 'Y', 'N'), 'Y') = 'Y'
+		  AND  GSD.ST_DATE <= TRUNC(SYSDATE, 'MI')
+		  AND  GSD.EN_DATE >= TRUNC(SYSDATE, 'MI')
+		  AND  NVL(PNCH.CHANL_CD, #{_c.cmmBaseChanl[0].value}) = #{_c.cmmBaseChanl[0].value}
+		  AND  SYSDATE BETWEEN NVL(PNCH.VALID_STR_DTM, SYSDATE) AND NVL(PNCH.VALID_END_DTM, SYSDATE) 
+		  AND  NVL(PPH.PRD_ATTR_GBN_CD, 'P') = 'P'
+		  AND  SYSDATE BETWEEN NVL(PPH.VALID_STR_DTM, SYSDATE) AND NVL(PPH.VALID_END_DTM, SYSDATE) 
+		  AND  PPM.BRAND_CD = PBM.BRAND_CD(+)																																																															
+		 ORDER BY GD.GUBUN2, GD.CORNER, NVL(GSD.EXB_SEQ, 999), GSD.ST_DATE DESC
+		]]>   
+	</select>
+	
+	<resultMap type="iceberg.capi.shop.model.DittoPrd" id="DittoPrdInfoMap">
+		<result property = "conctNo"    			column = "CONCT_NO"  />                                  
+		<result property = "thumbUri"    			column = "THUMB_URI"  />                                  
+		<result property = "thumbUri3"    		column = "THUMB_URI3"  />                                  
+		<result property = "thumbUri4"    		column = "THUMB_URI4"  />                                  
+		<result property = "title"    				column = "TITLE"  />                                  
+		<result property = "expirStrDt"    		column = "EXPIR_STR_DT"  />                                  
+		<result property = "expirEndDt"    		column = "EXPIR_END_DT"  />                                  
+		<result property = "refThemeCd"    	column = "REF_THEME_CD"  />                                  
+		<result property = "foldHeight"    	    column = "FOLD_HEIGHT"  />                                  
+		<result property = "themeCd"    		    column = "THEME_CD"  />                                  
+		<result property = "dittoTmaGbnFlg"    column = "DITTO_TMA_GBN_FLG"  />                                  
+	</resultMap>
+	
+	<select id="oneDittoThisWeekNewThema" parameterType="criteria" resultMap="DittoPrdInfoMap">
+	<!-- 
+		DBMS : WEBDB
+		분야 : Ditto 금 주 최신테마
+		API  : Ditto 금 주 최신테마
+		설명 : Ditto 금 주 최신테마
+		
+		#{_c.gubun[0].value}   : DITTO
+		#{_c.code[0].value}     : AU363431
+		#{_c.corner[0].value}   : AU363431
+		#{_c.conctNo[0].value} : 100169
+		#{_c.today[0].value}    : 201401061820
+		
+		-->
+		<![CDATA[
+		SELECT
+				GDB.BBS_SEQ AS CONCT_NO
+				, X.BANNER2 THUMB_URI
+				, (SELECT FILE_PATH FROM GS_DITTO_BBS_FILE WHERE X.BBS_SEQ = BBS_SEQ AND IMG_TYPE = 'T1' AND DBSTS = 'A') AS THUMB_URI3
+				, (SELECT FILE_PATH FROM GS_DITTO_BBS_FILE WHERE X.BBS_SEQ = BBS_SEQ AND IMG_TYPE = 'M1' AND DBSTS ='A') AS THUMB_URI4
+				, X.TITLE
+				, X.REMARK1 EXPIR_STR_DT
+				, X.REMARK2 EXPIR_END_DT
+				, X.REMARK8 REF_THEME_CD
+				, NVL(X.REMARK9, '100') AS FOLD_HEIGHT
+				, GDB.THEME_CD
+				, CASE WHEN 
+						TO_DATE(#{_c.today[0].value},'YYYYMMDDHH24MI') BETWEEN X.ST_DATE AND X.EN_DATE 
+						THEN 'Y'
+						ELSE 'N' END AS DITTO_TMA_GBN_FLG
+		FROM (
+					SELECT
+							 GSD.LINK_NUM BBS_SEQ,
+							 GSD.TITLE,
+							 GSD.BANNER1,
+							 GSD.BANNER2,
+							 GSD.BANNER3,
+							 GSD.BANNER4,
+							 GSD.REMARK1,
+							 GSD.REMARK2,
+							 GSD.REMARK8,
+							 GSD.REMARK9,
+							 GSD.EXB_SEQ,
+							 GSD.ST_DATE,
+							 GSD.EN_DATE
+					FROM  GS_SECT_DISPLAY GSD
+						     , GS_DISPLAY GD
+					WHERE GD.GUBUN1 = #{_c.gubun[0].value}
+					    AND GD.GUBUN2 = #{_c.code[0].value}
+					    AND GD.CORNER = #{_c.corner[0].value}
+					    AND GD.DBSTS = 'A'
+					    AND GD.LOC_SEQ = GSD.LOC_SEQ
+					    AND GSD.DBSTS = 'A'
+					    AND GSD.ST_DATE <= TO_DATE (#{_c.today[0].value}, 'YYYYMMDDHH24MI')
+					    AND GSD.EN_DATE >= TO_DATE (#{_c.today[0].value}, 'YYYYMMDDHH24MI')
+					    AND NVL( GSD.REMARK6 , 'THEME') = 'THEME'
+					    AND GSD.LINK_NUM = #{_c.conctNo[0].value}
+				   ) X
+			       , GS_DITTO_BBS GDB
+		WHERE	GDB.BBS_SEQ = X.BBS_SEQ
+		    AND   GDB.DBSTS ='A'
+		    AND   #{_c.today[0].value} ||'00'  between GDB.START_DT and GDB.END_DT
+		    AND    ROWNUM = 1
+		]]>
+	</select>
+	
+	<select id="findDittoNewsThema" parameterType="criteria" resultMap="DittoPrdInfoMap">
+	<!-- 
+		DBMS : WEBDB
+		분야 : findDittoNewsThema
+		API  : Ditto 최신테마
+		설명 : Ditto  최신테마
+		
+		#{_c.gubun[0].value}   : DITTO
+		#{_c.code[0].value}     : AU363431
+		#{_c.corner[0].value}   : AU363431
+		#{_c.conctNo[0].value} : 100169
+		#{_c.today[0].value}    : 201401061820
+		#{_c.prdCd[0].value}    : 12058013
+		
+		-->
+		SELECT
+		    BBS_SEQ AS CONCT_NO
+		    , THUMB_URI
+		    , (SELECT FILE_PATH FROM GS_DITTO_BBS_FILE WHERE X2.BBS_SEQ = BBS_SEQ AND IMG_TYPE = 'T1' AND DBSTS = 'A') AS THUMB_URI3
+		    , (SELECT FILE_PATH FROM GS_DITTO_BBS_FILE WHERE X2.BBS_SEQ = BBS_SEQ AND IMG_TYPE = 'M1' AND DBSTS ='A') AS THUMB_URI4
+		    , TITLE
+		    , START_DT AS EXPIR_STR_DT
+		    , END_DT   AS EXPIR_END_DT
+		    , REF_THEME_CD
+		    , FOLD_HEIGHT
+		    , THEME_CD
+		    , DITTO_TMA_GBN_FLG
+		FROM(
+		    SELECT
+			    GDB.BBS_SEQ
+				, X.BANNER2 THUMB_URI
+				, X.TITLE
+				, X.REMARK1 START_DT
+				, X.REMARK2 END_DT
+				, X.REMARK8 REF_THEME_CD
+				, NVL(X.REMARK9, '100') AS FOLD_HEIGHT
+				, GDB.THEME_CD
+				, CASE WHEN 
+						TO_DATE(#{_c.today[0].value},'YYYYMMDDHH24MI') BETWEEN X.ST_DATE AND X.EN_DATE 
+						THEN 'Y' 
+						ELSE 'N' END AS DITTO_TMA_GBN_FLG
+		    FROM
+		           (
+					SELECT
+						GSD.LINK_NUM BBS_SEQ,
+						GSD.TITLE,
+						GSD.BANNER1,
+						GSD.BANNER2,
+						GSD.BANNER3,
+						GSD.BANNER4,
+						GSD.REMARK1,
+						GSD.REMARK2,
+						GSD.REMARK8,
+						GSD.REMARK9,
+						GSD.EXB_SEQ,
+						GSD.ST_DATE,
+						GSD.EN_DATE
+						,DECODE(GSD.LINK_NUM, #{_c.conctNo[0].value},'Z','A') ORD
+					FROM GS_SECT_DISPLAY GSD
+						 , GS_DISPLAY GD
+					WHERE GD.GUBUN1 = #{_c.gubun[0].value}
+					  AND GD.GUBUN2 = #{_c.code[0].value}
+					  AND GD.CORNER = #{_c.corner[0].value}
+					  AND GD.DBSTS = 'A'
+					  AND GD.LOC_SEQ = GSD.LOC_SEQ
+					  AND GSD.DBSTS = 'A'
+					  AND NVL( GSD.REMARK6 , 'THEME') = 'THEME'
+			       ) X,
+			       (		
+		            SELECT
+						GSD.LINK_NUM BBS_SEQ,				
+						GSD.REMARK1				
+					FROM GS_SECT_DISPLAY GSD,
+						 GS_DISPLAY GD
+					WHERE GD.GUBUN1 = #{_c.gubun[0].value}
+					  AND GD.GUBUN2 = 'AU381399'
+					  AND GD.CORNER = 'AU381399'
+					  AND GD.DBSTS = 'A'
+					  AND GD.LOC_SEQ = GSD.LOC_SEQ
+					  AND GSD.DBSTS = 'A'
+					  AND NVL(GSD.REMARK1,' ') LIKE '%'
+		               || NVL(  (
+								     SELECT
+								        TO_CHAR(SECTID)
+								     FROM
+									        (
+									        SELECT
+										          SECTID
+										        , SECTPRSTID
+									        FROM EC_SECT
+									        WHERE DBSTS = 'A'
+									        AND SECT_GUBUN = 'S'
+				                            START WITH SECTID IN (
+							                                                   SELECT X.SECTID
+																	           FROM (
+																			            SELECT 
+																			            		ES.SECTID
+																			            FROM EC_SECT ES
+																				             , EC_SECT_PRDLST ESP
+																			            WHERE ES.SECTID = ESP.SECTID
+																			                AND ES.SECT_GUBUN = 'S'
+																			                AND ES.DBSTS = 'A'
+																			                AND ESP.DBSTS = 'A'
+																			                AND ESP.PRDID = #{_c.prdCd[0].value}
+																			            ORDER BY NVL(ESP.SECT_SEQ, 999)
+																			                          , ESP.CREDATE
+																	                ) X										
+														            			)					        
+									        CONNECT BY PRIOR SECTPRSTID = SECTID
+									        )
+								     WHERE SECTPRSTID IS NULL 
+			                           AND SECTID != 719275
+								       AND ROWNUM =1
+						        	) ,'%')
+		               || '%'
+					  AND GSD.ST_DATE <![CDATA[ <= ]]> TO_DATE (#{_c.today[0].value}, 'YYYYMMDDHH24MI')
+					  AND GSD.EN_DATE <![CDATA[ >= ]]> TO_DATE (#{_c.today[0].value}, 'YYYYMMDDHH24MI')
+				      ) X1
+			          , GS_DITTO_BBS GDB
+		    WHERE GDB.BBS_SEQ = X.BBS_SEQ
+		      AND X.BBS_SEQ = X1.BBS_SEQ
+		      AND GDB.DBSTS ='A'
+		      AND #{_c.today[0].value} ||'00'  BETWEEN GDB.START_DT AND GDB.END_DT
+		    ORDER BY X.ORD, X.EXB_SEQ
+		    ) X2
+		WHERE ROWNUM <![CDATA[ < ]]> 4
+	
+	</select>
+	
+	<select id="findDittoRandThema" parameterType="criteria" resultMap="DittoPrdInfoMap">
+	<!-- 
+		DBMS : WEBDB
+		분야 : findDittoRandThema
+		API  : Ditto 랜덤 테마 정보 
+		설명 : Ditto 랜덤 테마 정보
+		
+		#{_c.gubun[0].value}   : DITTO
+		#{_c.code[0].value}     : AU363431
+		#{_c.corner[0].value}   : AU363431
+		#{_c.conctNo[0].value} : 100169
+		#{_c.today[0].value}    : 201401061820
+		#{_c.prdCd[0].value}    : 12058013
+		#{_c.conctNoArray.value}    : 81044, 96190, 88102 
+		-->
+		SELECT
+				BBS_SEQ AS CONCT_NO
+				, THUMB_URI
+				, (SELECT FILE_PATH FROM GS_DITTO_BBS_FILE WHERE X2.BBS_SEQ = BBS_SEQ AND IMG_TYPE = 'T1' AND DBSTS = 'A') AS THUMB_URI3
+				, (SELECT FILE_PATH FROM GS_DITTO_BBS_FILE WHERE X2.BBS_SEQ = BBS_SEQ AND IMG_TYPE = 'M1' AND DBSTS ='A') AS THUMB_URI4
+				, TITLE
+				, START_DT AS EXPIR_STR_DT
+				, END_DT   AS EXPIR_END_DT
+				, REF_THEME_CD
+				, FOLD_HEIGHT
+				, THEME_CD
+				, DITTO_TMA_GBN_FLG
+		FROM
+		        (
+		        SELECT
+		                GDB.BBS_SEQ
+		                , X.BANNER2 THUMB_URI
+		                , X.TITLE
+		                , X.REMARK1 START_DT
+		                , X.REMARK2 END_DT
+		                , X.REMARK8 REF_THEME_CD
+		                , NVL(X.REMARK9, '100') AS FOLD_HEIGHT
+		                , GDB.THEME_CD
+		                , CASE WHEN TO_DATE(#{_c.today[0].value},'YYYYMMDDHH24MI') BETWEEN X.ST_DATE AND X.EN_DATE THEN 'Y' ELSE 'N' END AS DITTO_TMA_GBN_FLG
+		        FROM
+			            (		
+			            SELECT
+			                GSD.LINK_NUM BBS_SEQ,
+			                GSD.TITLE,
+			                GSD.BANNER1,
+			                GSD.BANNER2,
+			                GSD.BANNER3,
+			                GSD.BANNER4,
+			                GSD.REMARK1,
+			                GSD.REMARK2,
+			                GSD.REMARK8,
+			                GSD.REMARK9,
+			                GSD.EXB_SEQ,
+			                GSD.ST_DATE,
+			                GSD.EN_DATE
+			            FROM GS_SECT_DISPLAY GSD,
+			                 GS_DISPLAY GD
+			            WHERE GD.GUBUN1 = #{_c.gubun[0].value}
+			              AND GD.GUBUN2 = #{_c.code[0].value}
+			              AND GD.CORNER = #{_c.corner[0].value}
+			              AND GD.DBSTS = 'A'
+			              AND GD.LOC_SEQ = GSD.LOC_SEQ
+			              AND GSD.DBSTS = 'A'
+			              AND NVL( GSD.REMARK6 , 'THEME') = 'THEME'
+			            ) X,
+			            (
+			            SELECT
+			                GSD.LINK_NUM BBS_SEQ,				
+			                GSD.REMARK1				
+			            FROM GS_SECT_DISPLAY GSD,
+			                 GS_DISPLAY GD
+			            WHERE GD.GUBUN1 = 'DITTO'
+			              AND GD.GUBUN2 = 'AU381399'
+			              AND GD.CORNER = 'AU381399'
+			              AND GD.DBSTS = 'A'
+			              AND GD.LOC_SEQ = GSD.LOC_SEQ
+			              AND GSD.DBSTS = 'A'
+			              AND GSD.ST_DATE <![CDATA[ <= ]]> TO_DATE (#{_c.today[0].value}, 'YYYYMMDDHH24MI')
+			              AND GSD.EN_DATE <![CDATA[ >= ]]> TO_DATE (#{_c.today[0].value}, 'YYYYMMDDHH24MI')
+			            ) X1
+			            , GS_DITTO_BBS GDB
+		        WHERE GDB.BBS_SEQ = X.BBS_SEQ
+		            AND X.BBS_SEQ = X1.BBS_SEQ
+		            AND GDB.DBSTS = 'A'
+		            AND #{_c.today[0].value} ||'00'  BETWEEN GDB.START_DT AND GDB.END_DT
+		            AND X.BBS_SEQ NOT IN 
+                  	<foreach collection="_c.conctNoArray[0].value" item="item" index="index" open="(" separator="," close=")">
+						#{item}
+ 					</foreach>
+		        ORDER BY DBMS_RANDOM.VALUE
+		        ) X2
+		WHERE ROWNUM <![CDATA[ <= ]]>2
+	
+	</select>
+	
+	<resultMap type="iceberg.capi.shop.model.DittoPrd" id="DittoShopPrdInfo">
+		<result property = "shopNo"    			column = "SHOP_NO"  />                                  
+		<result property = "prdCd"    				column = "PRD_CD"  />                                  
+		<result property = "dispPlanDt"    		column = "DISP_PLAN_DT"  />                                  
+		<result property = "flgdPrc"    			column = "FLGD_PRC"  />                                  
+		<result property = "prcTyp1"    			column = "PRC_TYP1"  />                                  
+		<result property = "prdPrc"    			column = "PRD_PRC"  />                                  
+		<result property = "totCnt"    			column = "TOT_CNT"  />                                  
+		<result property = "ordQtyWeek"    		column = "ORD_QTY_WEEK"  />                                  
+		<result property = "ordQtyWeekPt"    	column = "ORD_QTY_WEEK_PT"  />                                  
+		<result property = "currPage"    		    column = "CURR_PAGE"  />                                  
+	</resultMap>
+	<select id="findDittoShopPrds" parameterType="criteria" resultMap="DittoShopPrdInfo">
+	<!-- 
+		DBMS : WEBDB
+		분야 : Ditto findDittoShopPrds
+		API  : Ditto 인기 상품 정보 조회
+		설명 : Ditto 인기 상품 정보 조회
+		
+		#{_p.pageItemSize}      : 6
+		#{_c.shopNo[0].value}  : 719328
+		#{_p.pageNumber}        : 1
+		_c.prdDispFlg[0].value    : N
+		-->
+		SELECT    
+		      X2.SECTID AS SHOP_NO
+		    , X2.PRDID AS PRD_CD
+		    , X2.DISP_PLAN_DATE AS DISP_PLAN_DT
+		    , X2.LOWEST_PRICE AS FLGD_PRC
+		    , X2.PRICE_TYPE1 AS PRC_TYP1
+		    , X2.KHS_PRICE AS PRD_PRC
+		    , X2.TOTALCNT AS TOT_CNT
+		    , X2.ORD_QTY_WEEK AS ORD_QTY_WEEK
+		    , X2.ORD_QTY_WEEK_PT AS ORD_QTY_WEEK_PT
+		    , X2.PAGEIDX AS CURR_PAGE
+		FROM (
+		        SELECT  X1.*
+				        , CEIL( ROWNUM / #{_p.pageItemSize} ) PAGEIDX
+				FROM (
+						SELECT X.*
+						       , NVL(GSPB.RANK, (100000000000000 - TO_NUMBER(TO_CHAR(X.DISP_PLAN_DATE, 'YYYYMMDDHH24MISS')))) ORD_QTY_WEEK
+		                       , NVL(GSPB.POINT, (100000000000000 - TO_NUMBER(TO_CHAR(X.DISP_PLAN_DATE, 'YYYYMMDDHH24MISS')))) ORD_QTY_WEEK_PT
+						FROM (
+								SELECT /*+ ORDERED INDEX(ESP EC_SECT_PRDLST_PK)  INDEX(ES EC_SECT_ID_IND) */ 
+		                                DISTINCT
+		                                <if test="'Y'.equals(_c.prdDispFlg[0].value) " > 									
+		                                ES.SECTID AS SECTID
+		                                </if>
+		                                <if test="!'Y'.equals(_c.prdDispFlg[0].value) " >
+		                                ES.SECTPRSTID AS SECTID
+		                                </if>
+										, ESP.PRDID
+										, PPM.EXPOS_SCHD_DT AS DISP_PLAN_DATE
+										, PSED.FLGD_PRC      AS LOWEST_PRICE
+										, PPM.DC_MRK_GBN_CD AS PRICE_TYPE1
+										, PPH.SALE_PRC      AS KHS_PRICE
+										, COUNT(DISTINCT ESP.PRDID) OVER () AS TOTALCNT
+								FROM    EC_SECT ES
+								        INNER JOIN EC_SECT_PRDLST ESP 
+		                                    ON  ES.SECTID = ESP.SECTID 
+		                                    AND ESP.DBSTS = 'A'
+									    INNER JOIN PRD_PRD_M PPM 
+		                                    ON  ESP.PRDID = PPM.PRD_CD 
+		                                    AND PPM.SALE_END_DTM <![CDATA[ > ]]> SYSDATE 
+		                                    AND RTRIM(PPM.EXPOS_ST_CD) = 'Y' 
+		                                    AND PPM.GFT_TYP_CD = '00' 
+		                                    AND PPM.DITTO_YN = 'Y' 
+		                                    AND PPM.TEMPOUT_YN = 'N' 
+		                                    AND PPM.USE_YN = 'Y'
+									    INNER JOIN GS_DITTO_BBS GDB 
+		                                    ON  GDB.PRDID = ESP.PRDID 
+		                                    AND GDB.BBS_INFO_SEQ = 1 
+		                                    AND GDB.DBSTS = 'A'
+									    INNER JOIN PRD_PRC_H PPH 
+		                                    ON  PPM.PRD_CD = PPH.PRD_CD 
+		                                    AND PPH.PRD_ATTR_GBN_CD='P' 
+		                                    AND SYSDATE BETWEEN PPH.VALID_STR_DTM 
+		                                    AND PPH.VALID_END_DTM
+									    INNER JOIN PRD_SHOP_EXPOS_D PSED 
+		                                    ON  PPM.PRD_CD = PSED.PRD_CD								
+								WHERE
+										<if test="'Y'.equals(_c.prdDispFlg[0].value) " >   
+										     ES.SECTID = #{_c.shopNo[0].value}
+										</if>
+										<if test="!'Y'.equals(_c.prdDispFlg[0].value) " >
+			                                 ES.SECTID IN (SELECT SECTID 
+					                                             FROM  EC_SECT 
+					                                             WHERE DBSTS='A' 
+					                                             START WITH SECTID = #{_c.shopNo[0].value} 
+					                                                AND SECT_GUBUN = 'S' 
+					                                             CONNECT BY SECTPRSTID = PRIOR SECTID
+					                                            )
+										</if>
+										AND ES.DBSTS = 'A'
+						) X
+						LEFT OUTER JOIN GS_SECT_PRD_BEST GSPB
+		                  ON  GSPB.BEST_CD = 'SS10' 
+		                  AND GSPB.SECTID = X.SECTID 
+		                  AND GSPB.PRDID = X.PRDID
+						ORDER BY ORD_QTY_WEEK, ORD_QTY_WEEK_PT DESC, X.PRDID
+				) X1				
+				WHERE ROWNUM <![CDATA[ <= ]]> #{_p.pageNumber} * #{_p.pageItemSize}
+		) X2
+		WHERE PAGEIDX = #{_p.pageNumber}
+	</select> 
+</mapper>

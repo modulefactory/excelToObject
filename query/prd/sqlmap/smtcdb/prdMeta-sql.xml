@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.smtcdb.repository.prd.PrdMetaSqlMapRepository">
+	
+	<resultMap type="iceberg.capi.product.model.prd.add.PrdMeta" id="prdMetaMap">
+		<result property="prdCd"     				column="PRD_CD"/>
+		<result property="attrCharVal1"     		column="ATTR_CHAR_VAL_1"/>
+		<result property="attrCharVal2"     		column="ATTR_CHAR_VAL_2"/>
+		<result property="attrCharVal3"     		column="ATTR_CHAR_VAL_3"/>
+		<result property="attrCharVal4"     		column="ATTR_CHAR_VAL_4"/>
+		<result property="attrCharVal5"     		column="ATTR_CHAR_VAL_5"/>
+		<result property="attrCharVal6"     		column="ATTR_CHAR_VAL_6"/>
+		<result property="attrCharVal7"     		column="ATTR_CHAR_VAL_7"/>
+		<result property="attrCharVal8"     		column="ATTR_CHAR_VAL_8"/>
+	</resultMap>
+	
+	<select id="getPrdMetaMobile" resultMap="prdMetaMap" parameterType="criteria">
+		<!-- 
+		DBMS : SMTC
+		분야 : 단품  getPrdMetaDetail
+		API  : 상품 메타  정보 조회
+		설명 : 상품 메타  - 휴대폰 정보 조회
+		#{_c.prdCd[0].value} = 5165776,5242134
+		-->		
+	SELECT PRD_CD 			AS PRD_CD                   
+       	  ,ATTR_CHAR_VAL_1 	AS ATTR_CHAR_VAL_1    
+       	  ,ATTR_CHAR_VAL_3 	AS ATTR_CHAR_VAL_3 
+       	  ,ATTR_CHAR_VAL_4 	AS ATTR_CHAR_VAL_4        
+       	  ,ATTR_CHAR_VAL_5 	AS ATTR_CHAR_VAL_5          
+       	  ,ATTR_CHAR_VAL_6 	AS ATTR_CHAR_VAL_6           
+       	  ,ATTR_CHAR_VAL_7 	AS ATTR_CHAR_VAL_7            
+       	  ,ATTR_CHAR_VAL_8 	AS ATTR_CHAR_VAL_8                     
+  	  FROM PRD_META_D                        
+ 	 WHERE PRD_META_TYP_CD = '10'            
+   	   AND ATTR_CHAR_VAL_2 = 'Y'
+       AND PRD_CD IN 
+	<foreach collection="_c.prdCd[0].value" item="item" index="index" open="(" separator="," close=")">
+		#{item}
+	</foreach>  
+	</select>
+	
+	
+	
+</mapper>

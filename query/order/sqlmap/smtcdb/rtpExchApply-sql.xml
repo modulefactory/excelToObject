@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	<mapper namespace="iceberg.capi.order.smtcdb.repository.returnexchange.RtpExchApplySqlMapRepository">
+	               
+	<resultMap id="rtpExchPrdMap" type="iceberg.capi.order.model.returnexchange.RtpExchPrd">
+		<result property="ordNo"                  column="ORD_NO"/>
+		<result property="ordDtm"                 column="ORD_DTM"/>
+		<result property="ordItemNo"              column="ORD_ITEM_NO"/>
+		<result property="prdCd"                  column="PRD_CD"/>
+		<result property="exposPrdNm"             column="EXPOS_PRD_NM"/>
+		<result property="ordQty"                 column="ORD_QTY"/>
+		<result property="payPrc"                 column="PAY_PRC"/>
+		<result property="ordItemStCd"            column="ORD_ITEM_ST_CD"/>
+		<result property="rtpQty"                 column="RTP_QTY"/>
+		<result property="chanlCd"                column="CHANL_CD"/>
+		<result property="ordTypDtlCd"            column="ORD_TYP_DTL_CD"/>
+		<result property="rtpExchPsblFlg"         column="RTP_EXCH_PSBL_FLG"/>
+		<result property="supCd"                  column="SUP_CD"/>
+		<result property="dlvcStdAmt"             column="DLVC_STD_AMT"/>
+		<result property="dlvPickMthodCd"         column="DLV_PICK_MTHOD_CD"/>
+		<result property="mimTypCd"               column="MIM_TYP_CD"/>
+		<result property="supNm"                  column="SUP_NM"/>
+		<result property="asignrTelno"            column="ASIGNR_TELNO"/>
+		<result property="rfnTypCd"               column="RFN_TYP_CD"/>
+		<result property="arfnTimeCd"             column="ARFN_TIME_CD"/>
+		<result property="attrPrdCd"              column="ATTR_PRD_CD"/>
+		<result property="srAcpFlg"               column="SR_ACP_FLG"/>
+		<result property="rtpReReqPrevntCd"       column="RTP_RE_REQ_PREVNT_CD"/>
+		<result property="rtpPsblDt"              column="RTP_PSBL_DT"/>
+		<result property="oboxCd"                 column="OBOX_CD"/>
+		<result property="rtpCostAmt"             column="RTP_COST_AMT"/>
+		<result property="exchCostAmt"            column="EXCH_COST_AMT"/>
+		<result property="apntDlvsImplmFlg"       column="APNT_DLVS_IMPLM_FLG"/>
+		<result property="cvsDlvsRtpFlg"          column="CVS_DLVS_RTP_FLG"/>
+		<result property="ordItemId"              column="ORD_ITEM_ID"/>
+		<result property="optPrdTypCd"            column="OPT_PRD_TYP_CD"/>
+		<result property="ecAttrSeq"              column="EC_ATTR_SEQ"/>
+		<result property="dittoFlg"               column="DITTO_FLG"/>
+		<result property="chanlDtlCd"             column="CHANL_DTL_CD"/>
+		<result property="frmlesPrdTypCd"         column="FRMLES_PRD_TYP_CD"/>
+		<result property="charCpnRcvrTelno"       column="CHAR_CPN_RCVR_TELNO"/>
+		<result property="attrGftConctFlg"        column="ATTR_GFT_CONCT_FLG"/>
+		<result property="orgOrdNo"               column="ORG_ORD_NO"/>
+		<result property="orgOrdItemId"           column="ORG_ORD_ITEM_ID"/>
+		<result property="setPrdCd"               column="SET_PRD_CD"/>
+		<result property="setPrdOrdSeq"           column="SET_PRD_ORD_SEQ"/>
+		<result property="multiSimplGftFlg"       column="MULTI_SIMPL_GFT_FLG"/>
+		<result property="lineTypCd"              column="LINE_TYP_CD"/>
+		<result property="prdTypCd"               column="PRD_TYP_CD"/>
+		<result property="multiFlg"               column="MULTI_FLG"/>
+	</resultMap>
+	
+	<!--
+	   	내용 : 반품/교환 상품 목록 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 13
+	   
+	   	#{custNo} = 40766020
+	   	#{dtFlg} = '-3'
+	-->
+	
+	<select id="findRtpExchPrdList" parameterType="criteria" resultMap="rtpExchPrdMap">
+			SELECT ORD_NO
+			      ,ORD_DTM
+			      ,ORD_ITEM_NO
+			      ,PRD_CD
+			      ,EXPOS_PRD_NM
+			      ,ORD_QTY
+			      ,PAY_PRC
+			      ,ORD_ITEM_ST_CD
+			      ,RTP_QTY
+			      ,CHANL_CD
+			      ,ORD_TYP_DTL_CD
+			      ,RTP_EXCH_PSBL_FLG
+			      ,SUP_CD
+			      ,DLVC_STD_AMT
+			      ,DLV_PICK_MTHOD_CD
+			      ,MIM_TYP_CD
+			      ,SUP_NM
+			      ,ASIGNR_TELNO
+			      ,RFN_TYP_CD
+			      ,ARFN_TIME_CD
+			      ,ATTR_PRD_CD
+			      ,SR_ACP_FLG
+			      ,RTP_RE_REQ_PREVNT_CD
+			      ,RTP_PSBL_DT
+			      ,OBOX_CD
+			      ,CASE
+			         WHEN X.EXCH_RTP_CHR_YN = 'Y' AND X.RTP_DLVC_CD != '0'
+			         THEN(SELECT NVL(DLVC_AMT, 0) * X.RTP_ONEWY_RNDTRP_CD
+			                FROM SUP_DLVC_D
+			               WHERE DLVC_CD = X.RTP_DLVC_CD)
+			         WHEN X.EXCH_RTP_CHR_YN = 'Y' AND X.RTP_DLVC_CD = '0'
+			         THEN CASE
+			              WHEN X.APNT_DLVS_IMPLM_FLG = 'Y' AND X.APNT_DLVS_DLVC_CD != '0'
+			              THEN (SELECT NVL(DLVC_AMT, 0) * X.RTP_ONEWY_RNDTRP_CD
+			                      FROM SUP_DLVC_D
+			                     WHERE DLVC_CD = X.APNT_DLVS_DLVC_CD)
+			              WHEN X.APNT_DLVS_IMPLM_FLG = 'N' AND X.CHR_DLVC_CD != '0'
+			              THEN (SELECT NVL(SALE_PRC, 0) * X.RTP_ONEWY_RNDTRP_CD
+			                      FROM PRD_PRC_H
+			                     WHERE PRD_CD = X.CHR_DLVC_CD
+			                       AND PRD_ATTR_GBN_CD = 'P'
+			                       AND SYSDATE BETWEEN VALID_END_DTM AND VALID_STR_DTM)
+			              ELSE 0
+			               END
+			         ELSE 0
+			          END AS RTP_COST_AMT
+			      ,CASE
+			       WHEN X.EXCH_RTP_CHR_YN = 'Y' AND X.RTP_DLVC_CD != '0'
+			       THEN (SELECT NVL(DLVC_AMT, 0) * X.EXCH_ONEWY_RNDTRP_CD
+			               FROM SUP_DLVC_D
+			              WHERE DLVC_CD = X.RTP_DLVC_CD)
+			       WHEN X.EXCH_RTP_CHR_YN = 'Y' AND X.RTP_DLVC_CD = '0'
+			       THEN CASE
+			            WHEN X.APNT_DLVS_PICK_YN = 'B' AND X.APNT_DLVS_IMPLM_FLG = 'Y'
+			                                     AND X.APNT_DLVS_DLVC_CD != '0'
+			            THEN (SELECT NVL(DLVC_AMT, 0) * X.EXCH_ONEWY_RNDTRP_CD
+			                    FROM SUP_DLVC_D
+			                   WHERE DLVC_CD = X.APNT_DLVS_DLVC_CD)
+			            WHEN X.APNT_DLVS_PICK_YN != 'B' AND X.APNT_DLVS_IMPLM_FLG = 'N'
+			                                      AND X.CHR_DLVC_CD != '0'
+			            THEN (SELECT NVL(SALE_PRC, 0) * X.EXCH_ONEWY_RNDTRP_CD
+			                    FROM PRD_PRC_H
+			                   WHERE PRD_CD = X.CHR_DLVC_CD
+			                     AND PRD_ATTR_GBN_CD = 'P'
+			                     AND SYSDATE BETWEEN VALID_END_DTM AND VALID_STR_DTM)
+			            ELSE 0
+			             END
+			       ELSE 0
+			        END AS EXCH_COST_AMT
+			      ,APNT_DLVS_IMPLM_FLG
+			      ,CVS_DLVS_RTP_FLG
+			      ,ORD_ITEM_ID
+			      ,OPT_PRD_TYP_CD
+			      ,EC_ATTR_SEQ
+			      ,DITTO_FLG
+			      ,CHANL_DTL_CD
+			      ,FRMLES_PRD_TYP_CD
+			      ,CHAR_CPN_RCVR_TELNO
+			      ,ATTR_GFT_CONCT_FLG
+			      ,ORG_ORD_NO
+			      ,ORG_ORD_ITEM_ID
+			      ,SET_PRD_CD
+			      ,SET_PRD_ORD_SEQ
+			      ,MULTI_SIMPL_GFT_FLG
+			      ,LINE_TYP_CD
+			      ,PRD_TYP_CD
+			      ,MULTI_FLG
+			  FROM (SELECT OOM.ORD_NO
+			              ,OOM.ORD_DTM
+			              ,OID.ORD_ITEM_NO
+			              ,DECODE(OID.LINE_TYP_CD, '11', OID.REP_PRD_SUP_PRD_CD, PPM.PRD_CD) AS PRD_CD
+			              ,CASE
+			                    WHEN OID.CHANL_CD IN ('P', 'B') AND OID.LINE_TYP_CD NOT IN ('01', '02', '06')
+			                    THEN OID.EXPOS_PRD_NM
+			                    ELSE OID.PRD_NM
+			                END                   AS EXPOS_PRD_NM
+			              ,NVL(OID.ORD_QTY, 0)    AS ORD_QTY
+			              ,NVL(OID.LAST_UPRC, 0)  AS PAY_PRC
+			              ,OID.ST_CD              AS ORD_ITEM_ST_CD
+			              ,NVL(OID.RTP_QTY, 0)    AS RTP_QTY
+			              ,OID.CHANL_CD
+			              ,DECODE(OOM.ORD_TYP_DTL_CD, 'Sales Order',          'S'
+			                                      , 'Return Order',         'R'
+			                                      , 'Exchange Sales Order', 'E'
+			                                      , 'Exchange Return Order','R'
+			                                      , 'AS Remove',            'A'
+			                                      , 'AS Delivery',          'A'
+			                                      , 'AS Not Remove',        'A'
+			                                      , 'AS Not Delivery',      'A'
+			                                      , 'AS Visit',             'A'
+			                                      , 'Virtual Sales',        'S'
+			                                      , 'R')           AS ORD_TYP_DTL_CD
+			              ,CASE WHEN NVL(PPM.FRMLES_PRD_TYP_CD, 'N') = 'R'
+			                    THEN
+			                         CASE WHEN (OID.ST_CD = '22') AND SYSDATE <![CDATA[<]]> (OID.RELS_FSH_DT + 7)
+			                              THEN 'Y'
+			                              WHEN (OID.ST_CD = '31' OR OID.ST_CD = 'B1') AND SYSDATE <![CDATA[<]]> (OID.DLV_FSH_DT + 7)
+			                              THEN 'Y'
+			                              ELSE 'N'
+			                          END
+			                    WHEN NVL(PPM.FRMLES_PRD_TYP_CD, 'N') != 'R'
+			                    THEN
+			                         CASE WHEN (OID.ST_CD = '22' AND OID.SUP_CD = 1020882) AND SYSDATE <![CDATA[<]]> (OID.RELS_FSH_DT + 14)
+			                              THEN 'Y'
+			                              WHEN (OID.ST_CD = '31' OR OID.ST_CD = 'B1') AND OID.SUP_CD = 1020882 AND SYSDATE <![CDATA[<]]> (OID.DLV_FSH_DT + 8)
+			                              THEN 'Y'
+			                              WHEN (OID.ST_CD = '22' AND OID.SUP_CD != 1020882) AND SYSDATE <![CDATA[<]]> (OID.RELS_FSH_DT + NVL(PCSD.RTP_TERM_DDCNT, 30) + 7)
+			                              THEN 'Y'
+			                              WHEN (OID.ST_CD = '31' OR OID.ST_CD = 'B1') AND OID.SUP_CD != 1020882 AND SYSDATE <![CDATA[<]]> (OID.DLV_FSH_DT + NVL(PCSD.RTP_TERM_DDCNT, 30) + 1)
+			                              THEN 'Y'
+			                              ELSE 'N'
+			                          END
+			                    ELSE 'N'
+			                     END AS RTP_EXCH_PSBL_FLG
+			              ,OID.SUP_CD
+			              ,OID.DLVC_STD_AMT
+			              ,OID.DLV_PICK_MTHOD_CD
+			              ,NVL(SSM.MIM_TYP_CD, '') AS MIM_TYP_CD
+			              ,NVL(SSM.SUP_NM, '')     AS SUP_NM
+			              ,SSM.ASIGNR_TELNO_1      AS ASIGNR_TELNO
+			              ,OID.RFN_TYP_CD
+			              ,OID.ARFN_TIME_CD
+			              ,PAPM.ATTR_PRD_CD
+			              ,CASE
+			                    WHEN (SELECT COUNT(*)
+			                            FROM SRV_SR_M SSM, SRV_SR_CLS_C SSCC
+			                           WHERE SSM.SR_RSN_SML_CLS_CD = SSCC.SR_RSN_CLS_CD(+)
+			                             AND SSCC.SR_RSN_CLS_TYP_CD(+) = 'SR'
+			                             AND SSM.ORD_ITEM_ID = OID.ORD_ITEM_ID
+			                             AND NVL(SR_PROC_ST_CD, 'Closed') = 'Open'
+			                             AND SSM.CUST_NO = #{_c.custNo[0].value}
+			                             AND SSCC.OLD_CLS_CD = 'I04') > 0
+			                    THEN 'Y'
+			                    ELSE 'N'
+			                    END AS SR_ACP_FLG
+			              ,NVL(OID.RTP_RE_REQ_PREVNT_CD, 'N') AS RTP_RE_REQ_PREVNT_CD
+			              ,CASE
+			                    WHEN NVL(PPM.FRMLES_PRD_TYP_CD, 'N') = 'R'
+			                    THEN
+			                         CASE
+			                              WHEN (OID.ST_CD = '22')
+			                              THEN TO_CHAR(OID.RELS_FSH_DT + 7, 'YYYYMMDD')
+			                              WHEN (OID.ST_CD = '31' OR OID.ST_CD = 'B1')
+			                              THEN TO_CHAR(OID.DLV_FSH_DT + 7, 'YYYYMMDD')
+			                              ELSE '00000000'
+			                              END
+			                    WHEN NVL(PPM.FRMLES_PRD_TYP_CD, 'N') != 'R'
+			                    THEN
+			                         CASE
+			                              WHEN (OID.ST_CD = '22')
+			                              THEN TO_CHAR(OID.RELS_FSH_DT + NVL(PCSD.RTP_TERM_DDCNT, 30) + 7,'YYYYMMDD')
+			                              WHEN (OID.ST_CD = '31' OR OID.ST_CD = 'B1')
+			                              THEN TO_CHAR(OID.DLV_FSH_DT + NVL(PCSD.RTP_TERM_DDCNT, 30),'YYYYMMDD')
+			                              ELSE '00000000'
+			                              END
+			                    ELSE '00000000'
+			                    END                                      AS RTP_PSBL_DT
+			              ,NVL(OID.OBOX_CD, '0')                         AS OBOX_CD
+			              ,NVL(PPM.EXCH_RTP_CHR_YN, 'N')                 AS EXCH_RTP_CHR_YN
+			              ,NVL(PPM.RTP_DLVC_CD, '0')                     AS RTP_DLVC_CD
+			              ,TO_NUMBER(NVL(PPM.RTP_ONEWY_RNDTRP_CD, '0'))  AS RTP_ONEWY_RNDTRP_CD
+			              ,TO_NUMBER(NVL(PPM.EXCH_ONEWY_RNDTRP_CD, '0')) AS EXCH_ONEWY_RNDTRP_CD
+			              ,NVL(SSM.CHR_DLVC_CD, '0')                     AS CHR_DLVC_CD
+			              ,NVL(OID.APNT_DLVS_PICK_YN, 'N')               AS APNT_DLVS_PICK_YN
+			              ,NVL(SSM.APNT_DLVS_DLVC_CD, '0')               AS APNT_DLVS_DLVC_CD
+			              ,NVL(PPM.APNT_DLVS_IMPLM_YN, 'N')              AS APNT_DLVS_IMPLM_FLG
+			              ,NVL(PPM.CVS_DLVS_RTP_YN, 'N')                 AS CVS_DLVS_RTP_FLG
+			              ,OID.ORD_ITEM_ID
+			              ,TRIM(NVL(OID.OPT_PRD_TYP_CD, '0'))            AS OPT_PRD_TYP_CD
+			              ,TRIM(NVL(OID.EC_ATTR_SEQ, ''))                AS EC_ATTR_SEQ
+			              ,NVL(PPM.DITTO_YN, 'N')                        AS DITTO_FLG
+			              ,NVL(OID.CHANL_DTL_CD, '')                     AS CHANL_DTL_CD
+			              ,PPM.FRMLES_PRD_TYP_CD
+			              ,OID.CHAR_CPN_RCVR_TELNO
+			              ,NVL(OID.ATTR_GFT_CONCT_YN, 'N')               AS ATTR_GFT_CONCT_FLG
+			              ,DECODE(NVL(OOM.ORG_ORD_NO, ''), '', OOM.ORD_NO, OOM.ORG_ORD_NO)             AS ORG_ORD_NO
+			              ,DECODE(NVL(OID.ORG_ORD_ITEM_ID, ''),'',OID.ORD_ITEM_ID,OID.ORG_ORD_ITEM_ID) AS ORG_ORD_ITEM_ID
+			              ,OID.SET_PRD_CD
+			              ,CASE
+			               WHEN NVL(OID.SET_PRD_CD, 0) = 0 OR OID.LINE_TYP_CD IN ('01', '02', '06', '07')
+			               THEN 0
+			               ELSE NVL(OID.SET_PRD_ORD_SEQ, 0)
+			                END AS SET_PRD_ORD_SEQ
+			              ,CASE
+			               WHEN OID.MULTI_SIMPL_GBN_CD IS NOT NULL AND OID.LINE_TYP_CD IN ('01', '02', '06')
+			               THEN 'Y'
+			               ELSE 'N'
+			                END AS MULTI_SIMPL_GFT_FLG
+			              ,OID.LINE_TYP_CD
+			              ,PPM.PRD_TYP_CD
+                          ,CASE WHEN NVL(OID.RFN_TYP_CD, '0') <![CDATA[<>]]> '0' THEN
+                                CASE WHEN (COUNT(CASE WHEN OID.ST_CD IN ('22','31','B1') THEN 1 END) 
+                                            OVER (PARTITION BY CASE WHEN NVL(OID.OBOX_CD,'0') <![CDATA[<>]]> '0' THEN OID.RFN_TYP_CD ELSE OID.SUP_CD||OID.RFN_TYP_CD END ) >= 2 
+                                           OR NVL(OID.ORD_QTY,0) - NVL(OID.RTP_QTY,0) >= 2) THEN 'Y'
+                                     ELSE 'N'
+                                END
+                                ELSE 'N'
+                           END AS MULTI_FLG
+			          FROM ORD_ORD_M       OOM
+			              ,ORD_ITEM_D      OID
+			              ,ORD_ITEM_PRC_D  OIPD_A01
+			              ,ORD_ITEM_PRC_D  OIPD_A14
+			              ,PRD_PRD_M       PPM
+			              ,SUP_SUP_M       SSM
+			              ,PRD_CLS_M       PCM
+			              ,PRD_CLS_SET_D   PCSD
+			              ,PRD_ATTR_PRD_M  PAPM
+			              ,CMM_CMM_C       CCC
+			         WHERE OOM.CUST_NO = #{_c.custNo[0].value}
+			           AND OOM.ORD_DTM >= ADD_MONTHS(SYSDATE, #{_c.dtFlg[0].value})
+			           
+			           <if test="_c.ordNo != null and _c.ordNo[0].value != '' and _c.ordNo[0].value != '0'">
+			           AND OOM.ORD_NO = #{_c.ordNo[0].value}
+			           </if>
+			           
+			           AND OOM.ORD_NO = OID.ORD_NO
+			           
+			           <if test="_c.ordItemNo != null and _c.ordItemNo[0].value != '' and _c.ordItemNo[0].value > 0">
+			           AND OID.ORD_ITEM_NO = #{_c.ordItemNo[0].value}
+			           </if>
+			           <choose>
+			               <when test="_c.nomemOrd != null and _c.nomemOrd[0].value == 'Y'">
+			               AND OOM.EC_NOMEM_ORD_YN = 'Y'
+			               </when>
+			               <otherwise>
+			               AND NVL(OOM.EC_NOMEM_ORD_YN, 'N') != 'Y'
+			               </otherwise>
+			           </choose>
+			           AND OOM.ORD_TYP_DTL_CD IN ('Sales Order', 'Exchange Sales Order')
+			           AND NVL(OID.ORD_QTY, 0) - NVL(OID.RTP_QTY, 0) > 0
+			           AND NVL(OID.RTP_RE_REQ_PREVNT_CD, 'N') IN ('N', 'S')
+			           AND NVL(OID.EXCH_RTP_WORK_YN, '0') NOT IN ('Locked')
+			           AND OID.ORD_ITEM_ID = OIPD_A01.ORD_ITEM_ID(+)
+			           AND OID.ORD_ITEM_ID = OIPD_A14.ORD_ITEM_ID(+)
+			           AND OIPD_A01.ADJST_DTL_CD(+) = 'A01'
+			           AND OIPD_A14.ADJST_DTL_CD(+) = 'A14'
+			           AND OID.PRD_CD = PPM.PRD_CD
+			           AND CCC.CMM_GRP_CD(+) = 'PRD008'
+			           AND CCC.USE_YN(+) = 'Y'
+			           AND OID.DLVS_CO_CD = CCC.CMM_CD(+)
+			           AND OID.SUP_CD = SSM.SUP_CD(+)
+			           AND SSM.SUP_CD NOT IN ('1012691', '1012768', '1012769', '1012771')
+			           AND OID.LINE_TYP_CD = '00'
+			           AND PPM.PRD_CLS_CD = PCM.PRD_CLS_CD
+			           AND SUBSTR(PCM.PRD_CLS_CD, 1, 7) = PCSD.PRD_CLS_CD
+			           AND PCSD.CLS_SET_CD = 'R'
+			           AND NVL(OOM.CHANL_CD, 'P') != 'S'
+			           AND ((OOM.CHANL_CD = 'P' AND PCSD.CHANL_OR_GRP_CD =
+			                (SELECT CHANL_GRP_CD
+			                   FROM PRD_CHANL_MAPPN_D
+			                  WHERE CHANL_CD = 'P'
+			                    AND CHANL_GRP_TYP_CD = 'D'
+			                    AND ROWNUM = 1))
+			               OR (OOM.CHANL_CD != 'P' AND PCSD.CHANL_OR_GRP_CD !=
+			                (SELECT CHANL_GRP_CD
+			                   from PRD_CHANL_MAPPN_D
+			                  WHERE CHANL_CD = 'P'
+			                    AND CHANL_GRP_TYP_CD = 'D'
+			                    AND ROWNUM = 1)))
+			           AND OID.ATTR_PRD_CD = PAPM.ATTR_PRD_CD(+)
+			           AND NVL(OID.DM_PMO_1_APPLY_YN, 'N') != 'Y'
+			           AND NVL(OID.DM_PMO_2_APPLY_YN, 'N') != 'Y'
+			           AND NVL(OID.CHAR_CPN_TYP_CD, 'XXX') != 'SMS'
+			           AND NVL(OID.EC_EXPOS_EXCPT_YN, 'N') != 'Y'
+			         ORDER BY OOM.ORD_DTM DESC) X
+			 WHERE X.ORD_ITEM_ST_CD IN ('22', '31', 'B1')
+			   AND (RFN_TYP_CD != '50' OR RFN_TYP_CD IS NULL)
+			   AND X.RTP_EXCH_PSBL_FLG = 'Y'
+			   AND X.SR_ACP_FLG = 'N'
+			 ORDER BY ORD_NO           DESC
+			         ,ORD_DTM          DESC
+			         ,SET_PRD_CD
+			         ,SET_PRD_ORD_SEQ
+			         ,OPT_PRD_TYP_CD   DESC
+			         ,EC_ATTR_SEQ      DESC
+			         ,ORD_ITEM_NO      ASC
+	</select>
+
+</mapper>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prd.PrdExchRtpNoadmtAndMatrSqlMapRepository">
+	
+	<resultMap type="iceberg.capi.product.model.prd.add.PrdExchRtpInfo" id="prdExchRtpInfoResult">
+		<result column="UNUL_MATR_CNTNT_1"		property="prdRtpExchNoadmtRsn"/>
+		<result column="UNUL_MATR_CNTNT_2" 		property="prdRtpExchMatr"/>
+	</resultMap>
+	
+	<select id="getPrdExchRtpNoadmtAndMatrList" resultMap="prdExchRtpInfoResult">
+	<!-- 
+		내용		: 반품/교환불가사유 & 참고사항
+		작성자	: 박성하
+		작성일	: 2014.01.02
+		
+		#{productCode} = 10396092
+	-->
+		<![CDATA[
+		SELECT PCM.UNUL_MATR_CNTNT_1 AS UNUL_MATR_CNTNT_1      /*불가사유*/
+		      ,PCM.UNUL_MATR_CNTNT_2 AS UNUL_MATR_CNTNT_2      /*참고사항(MD내용 포함)*/
+		  FROM PRD_CLS_M PCM
+		 WHERE PCM.PRD_CLS_CD = 'AAA'
+		   AND PCM.CLS_LVL_NO = 1
+		   AND PCM.USE_YN = 'N'
+		
+		 UNION ALL
+		
+		SELECT PCM.UNUL_MATR_CNTNT_1 AS UNUL_MATR_CNTNT_1      /*불가사유*/
+		      ,PCM.UNUL_MATR_CNTNT_2 AS UNUL_MATR_CNTNT_2      /*참고사항(MD내용 포함)*/
+		  FROM PRD_PRD_M PPM
+		      ,PRD_CLS_M PCM
+		 WHERE SUBSTR(PPM.PRD_CLS_CD,1,5) = PCM.PRD_CLS_CD
+		   AND PCM.UNUL_MATR_CNTNT_1 IS NOT NULL
+		   AND PPM.PRD_CD = #{prdCd}
+		   AND PCM.USE_YN = 'Y'
+		
+		 UNION ALL
+		
+		SELECT PCM.UNUL_MATR_CNTNT_1 AS UNUL_MATR_CNTNT_1      /*불가사유*/
+		      ,PCM.UNUL_MATR_CNTNT_2 AS UNUL_MATR_CNTNT_2      /*참고사항(MD내용 포함)*/
+		  FROM PRD_PRD_M PPM
+		      ,PRD_CLS_M PCM
+		 WHERE SUBSTR(PPM.PRD_CLS_CD,1,3) = PCM.PRD_CLS_CD
+		   AND PCM.CLS_LVL_NO = 1
+		   AND PCM.UNUL_MATR_CNTNT_1 IS NOT NULL
+		   AND PPM.PRD_CD = #{prdCd}
+		   AND PCM.USE_YN = 'Y'		
+		]]>
+	</select>
+	
+	<select id="getPrdQualInspTyp" parameterType="criteria" resultType="String">
+	<!-- 
+		내용		: 상품 품질검사 정보 조회
+		작성자	: 박성하
+		작성일	: 2014.01.07
+		#{prdClsCd} = 'B45090513'
+	-->
+		
+		SELECT 
+				<choose>
+					<when test="_c.isOnairSalePsbl[0].value == 1">
+						NVL(QA_INFO_FILE_NM1,'') AS PRD_QUAL_INSP_TYP       /*QA정보파일명1*/	
+					</when>
+					<when test="_c.isOnairSalePsbl[0].value != 1">
+						NVL(QA_INFO_FILE_NM2,'') AS PRD_QUAL_INSP_TYP      /*QA정보파일명2*/
+					</when>
+				</choose>
+		  FROM PRD_CLS_M
+		 WHERE PRD_CLS_CD = #{_c.prdClsCd[0].value}
+		<choose>
+			<when test="_c.isOnairSalePsbl[0].value == 1">
+			AND QA_INFO_FILE_NM1 IS NOT NULL      /*QA정보파일명1*/	
+			</when>
+			<when test="_c.isOnairSalePsbl[0].value != 1">
+			AND QA_INFO_FILE_NM2 IS NOT NULL      /*QA정보파일명2*/
+			</when>
+		</choose>
+		   AND NVL(USE_YN,'Y')='Y'
+		   AND ROWNUM <![CDATA[<= 1	]]>
+		
+	</select>
+	
+</mapper>

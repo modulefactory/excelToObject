@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prd.PrdImgSqlMapRepository">
+
+	<resultMap type="iceberg.capi.product.model.prd.add.PrdImg" id="prdImgMap">
+		<result property="cntntTypCd" 		column="CNTNT_TYP_CD" />
+		<result property="cntntFileNm" 		column="CNTNT_FILE_NM" />
+		<result property="cntntExtnsNm" 	column="CNTNT_EXTNS_NM" />
+		<result property="imgNo" 			column="IMG_NO" />
+		<result property="no" 				column="NO" />
+		<result property="noSize" 			column="NO_SIZE" />
+	</resultMap>
+	
+	<select id="getPrdImgList" parameterType="long" resultMap="prdImgMap">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품  getPrdImgList
+		API  : 상품 이미지 정보 조회
+		설명 : 상품 이미지 정보 조회
+		
+		#{prdCd} = 6551806
+		-->
+			
+	<![CDATA[
+		SELECT CNTNT_TYP_CD          AS CNTNT_TYP_CD       /*컨텐츠유형코드*/
+	         ,CNTNT_FILE_NM         AS CNTNT_FILE_NM      /*컨텐츠파일명*/
+	         ,CNTNT_EXTNS_NM        AS CNTNT_EXTNS_NM     /*컨텐츠확장자명*/
+	         ,SUBSTR(NO, 2)         AS IMG_NO             /*이미지번호*/
+	         ,NO                    AS NO
+	         ,VSIZE(NO)             AS NO_SIZE
+	     FROM (SELECT NVL(CNTNT_TYP_CD, 'NONE')   AS CNTNT_TYP_CD
+	                 ,CNTNT_FILE_NM               AS CNTNT_FILE_NM
+	                 ,NVL(CNTNT_EXTNS_NM, 'NONE') AS CNTNT_EXTNS_NM
+	                 ,SUBSTR(CNTNT_FILE_NM,INSTR (CNTNT_FILE_NM, '_') + 1,INSTR (CNTNT_FILE_NM, '.') - INSTR (CNTNT_FILE_NM, '_') - 1) AS NO
+	             FROM PRD_CNTNT_D PCD
+	            WHERE PRD_CD             = #{prdCd}
+	              AND PRD_ATTR_GBN_CD    = 'P'    /*상품속성구분코드(P:상품, A:속성상품)*/
+	              AND USE_YN             = 'Y')
+
+	]]>
+</select>
+	
+	<resultMap type="iceberg.capi.product.model.prd.add.PrdVideoInfo" id="prdVideoMap">
+		<result property = "prdCd"				column = "PRD_CD"  		/>  <!--	상품코드	-->  
+		<result property = "mngSeq" 			column = "MNG_SEQ" /> 			<!-- 관리순번-->
+		<result property = "videoId"			column = "VIDEO_ID"  	/>	<!--	동영상ID	-->    
+		<result property = "videoGbnCd" 		column = "VIDEO_GBN_CD" /> 		<!-- 동영상 구분 코드-->
+		<result property = "videoGbnCdVal" 		column = "VIDEO_GBN_CD_VAL" /> 	<!-- 동영상구분코드값-->
+		<result property = "broadDt" 			column = "BROAD_DT" /> 			<!-- 방송일자-->
+		<result property = "videoFilePath" 		column = "VIDEO_FILE_PATH" /> 	<!-- 동영상파일경로-->
+		<result property = "videoTitle" 		column = "VIDEO_TITLE" /> 		<!-- 동영상제목-->
+		<result property = "videoRepImgPath" 	column = "VIDEO_REP_IMG_PATH" /> <!-- 동영상대표이미지경로-->
+		<result property = "exposFlg"			column = "EXPOS_FLG"  	/>  <!--	노출여부	-->      		
+		<result property = "indexFileNm" 		column = "INDEX_FILE_NM" /> 		<!-- 인덱스파일명-->
+		<result property = "captnFileNm" 		column = "CAPTN_FILE_NM" /> 		<!-- 자막파일명-->
+		<result property = "aprvSt" 			column = "APRV_ST" /> 			<!-- 결재상태-->
+		<result property = "aprvDt" 			column = "APRV_DT" /> 			<!-- 승인일자-->
+		<result property = "picqualInfo" 		column = "PICQUAL_INFO" /> 		<!-- 화질정보-->
+		<result property = "voiceSet" 			column = "VOICE_SET" /> 			<!-- 음성설정-->
+		<result property = "fileSize" 			column = "FILE_SIZE" /> 			<!-- 파일사이즈-->
+		<result property = "regDtm" 			column = "REG_DTM" /> 			<!-- 등록일시-->
+		<result property = "regrId" 			column = "REGR_ID" /> 			<!-- 등록자ID-->
+		<result property = "modDtm" 			column = "MOD_DTM" /> 			<!-- 수정일시-->
+		<result property = "modrId" 			column = "MODR_ID" /> 			<!-- 수정자ID-->
+		<result property = "note" 				column = "NOTE" /> 				<!-- 비고-->
+		<result property = "videoRepPath" 		column = "VIDEO_REP_PATH" /> 	<!-- 동영상대표경로-->
+		<result property = "videoRepTitle" 		column = "VIDEO_REP_TITLE" /> 	<!-- 동영상 대표 제목-->
+		<result property = "videoRepTime" 		column = "VIDEO_REP_TIME" /> 	<!-- 동영상 대표 시간-->    
+	</resultMap>
+	
+	<select id="getPrdVideoInfo" parameterType="long" resultMap="prdVideoMap">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품  getPrdVideoInfo
+		API  : 상품 동영상 정보 조회
+		설명 : 상품 동영상 정보 조회
+		
+		#{prdCd} = 6551806
+		-->
+	  SELECT 
+	  		 GBV.VIDEO_ID 				AS VIDEO_ID				/*	동영상ID	*/
+	  	    ,GBVF.VIDEO_PATH 			AS VIDEO_FILE_PATH		/*	파일경로	*/
+	  	    ,GBUP.PRD_ID 				AS PRD_CD				/*	상품코드	*/
+	  	    ,GBUP.EXPOS_YN 				AS EXPOS_FLG			/*	노출여부	*/
+		FROM GS_BT_CATEGORY GBC
+	  		,GS_BT_VIDEO GBV
+	  		,GS_BT_VIDEO_FILE GBVF
+	  		,GS_BT_USED_PRD GBUP
+	  		,PRD_PRD_M PPM
+	   WHERE GBC.USE_YN 		= 'Y'
+	  	 AND GBV.USE_YN 		= 'Y'
+	  	 AND GBUP.PRD_ID 		= PPM.PRD_CD
+	  	 AND GBC.CATEGORY_ID 	= GBV.CATEGORY_ID
+	  	 AND GBV.VIDEO_FILE_ID  = GBVF.VIDEO_FILE_ID
+	  	 AND GBV.VIDEO_ID 		= GBUP.VIDEO_ID
+	  	 AND GBC.CTGR_CHANL_VAL = 'VODSHOP'
+	  	 AND GBUP.PRD_ID 		= #{prdCd}
+
+	</select>
+	
+
+	
+	<select id="getPrdVideoList" parameterType="long" resultMap="prdVideoMap">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품  getPrdVideoList
+		API  : 단품별 보여지는 동영상 조회 리스트(방송동영상1+상품동영상1)
+		설명 : 단품별 보여지는 동영상 조회 (방송동영상1+상품동영상1)
+		
+		#{prdCd} = 6551806
+		-->
+		SELECT * 
+		  FROM
+  		(
+ 			SELECT /*+ ORDER USE_NL(LVP, LVM) */
+          		   LVM.SEQ					AS MNG_SEQ				/*	관리순번	*/
+          		  ,LVM.GUB_KEY				AS VIDEO_GBN_CD			/*	동영상 구분코드	*/ 
+          		  ,LVM.GUB_VALUE			AS VIDEO_GBN_CD_VAL 	/*	동영상구분코드값	*/		
+          		  ,LVM.BRD_DATE				AS BROAD_DT				/*	방송일자	*/				
+          		  ,LVM.VOD_FILE				AS VIDEO_FILE_PATH		/*	동영상파일경로*/		
+          		  ,LVM.VOD_TITLE			AS VIDEO_TITLE			/*	동영상제목	*/		
+          		  ,LVM.THUMBNAIL			AS VIDEO_REP_IMG_PATH	/*	동영상대표이미지경로*/		
+          		  ,LVM.INDEX_FILE			AS INDEX_FILE_NM		/*	인덱스파일명	*/		
+          		  ,LVM.TITLE_FILE			AS CAPTN_FILE_NM		/*	자막파일명	*/
+          		  ,LVM.SETTLE_INFO			AS APRV_ST				/*	결재상태	*/
+          		  ,LVM.CONF_DATE			AS APRV_DT				/*	승인일자	*/
+          		  ,LVM.PIXEL_INFO			AS PICQUAL_INFO			/*	화질정보	*/
+          		  ,LVM.VOICE_INFO			AS VOICE_SET			/*	음성설정 	*/
+          		  ,LVM.FILE_SIZE			AS FILE_SIZE 			/*	파일사이즈 	*/
+          		  ,LVM.CREDATE				AS REG_DTM				/*	등록일시	*/
+          		  ,LVM.CREUSER				AS REGR_ID				/*	등록자ID	*/
+          		  ,LVM.UPDDATE				AS MOD_DTM				/*	수정일시	*/
+          		  ,LVM.UPDUSER				AS MODR_ID				/*	수정자ID	*/
+          		  ,LVM.BIGO					AS NOTE					/*	비고		*/
+		  		  ,LVT.THUMB_FILE			AS VIDEO_REP_PATH		/*	동영상대표경로	*/
+		  		  ,DECODE(LVM.GUB_KEY,
+                  		  'PE', TRUNC(LVT.THUMB_TIME/60)||':'||MOD(LVT.THUMB_TIME, 60),
+                  		  LVT.THUMB_TITLE) VIDEO_REP_TITLE			/*	동영상 대표 제목	*/
+		  		  ,LVT.THUMB_TIME			AS VIDEO_REP_TIME		/*	동영상 대표 시간	*/
+	  		  FROM LGEC_VIDEO_PRD LVP
+	  		  	  ,LGEC_VIDEO_MGR LVM
+	  		  	  ,LGEC_VIDEO_THUMB LVT
+	 		 WHERE LVP.PRDID 		= #{prdCd}
+	   		   AND LVP.DBSTS 		= 'A'
+	   		   AND LVP.SEQ 			= LVM.SEQ
+	   		   AND LVM.SETTLE_INFO 	= '30'
+	   		   AND LVM.DBSTS 		= 'A'
+	   		   AND LVM.SEQ 			= LVT.SEQ
+	   		   AND LVM.GUB_KEY 		IN ('C','T')
+	   		   AND LVM.VOD_FILE IS NOT NULL	   
+	 		 ORDER BY LVM.BRD_DATE DESC, LVM.CREDATE DESC
+		)
+		WHERE ROWNUM=1
+		UNION ALL
+		SELECT * FROM
+		(
+ 			SELECT /*+ ORDER USE_NL(LVP, LVM) */
+          		   LVM.SEQ					AS MNG_SEQ				/*	관리순번	*/
+          		  ,LVM.GUB_KEY				AS VIDEO_GBN_CD			/*	동영상 구분코드	*/ 
+          		  ,LVM.GUB_VALUE			AS VIDEO_GBN_CD_VAL 	/*	동영상구분코드값	*/		
+          		  ,LVM.BRD_DATE				AS BROAD_DT				/*	방송일자	*/				
+          		  ,LVM.VOD_FILE				AS VIDEO_FILE_PATH		/*	동영상파일경로*/		
+          		  ,LVM.VOD_TITLE			AS VIDEO_TITLE			/*	동영상제목	*/		
+          		  ,LVM.THUMBNAIL			AS VIDEO_REP_IMG_PATH	/*	동영상대표이미지경로*/		
+          		  ,LVM.INDEX_FILE			AS INDEX_FILE_NM		/*	인덱스파일명	*/		
+          		  ,LVM.TITLE_FILE			AS CAPTN_FILE_NM		/*	자막파일명	*/
+          		  ,LVM.SETTLE_INFO			AS APRV_ST				/*	결재상태	*/
+          		  ,LVM.CONF_DATE			AS APRV_DT				/*	승인일자	*/
+          		  ,LVM.PIXEL_INFO			AS PICQUAL_INFO			/*	화질정보	*/
+          		  ,LVM.VOICE_INFO			AS VOICE_SET			/*	음성설정 	*/
+          		  ,LVM.FILE_SIZE			AS FILE_SIZE 			/*	파일사이즈 	*/
+          		  ,LVM.CREDATE				AS REG_DTM				/*	등록일시	*/
+          		  ,LVM.CREUSER				AS REGR_ID				/*	등록자ID	*/
+          		  ,LVM.UPDDATE				AS MOD_DTM				/*	수정일시	*/
+          		  ,LVM.UPDUSER				AS MODR_ID				/*	수정자ID	*/
+          		  ,LVM.BIGO					AS NOTE					/*	비고		*/
+		  		  ,LVT.THUMB_FILE			AS VIDEO_REP_PATH		/*	동영상대표경로	*/
+		  		  ,DECODE(LVM.GUB_KEY,
+                  		  'PE', TRUNC(LVT.THUMB_TIME/60)||':'||MOD(LVT.THUMB_TIME, 60),
+                  		  LVT.THUMB_TITLE) VIDEO_REP_TITLE			/*	동영상 대표 제목	*/
+		  		  ,LVT.THUMB_TIME			AS VIDEO_REP_TIME		/*	동영상 대표 시간	*/
+	  		  FROM LGEC_VIDEO_PRD LVP
+	  		  	  ,LGEC_VIDEO_MGR LVM
+	  		  	  ,LGEC_VIDEO_THUMB LVT
+	 		 WHERE LVP.PRDID 		= #{prdCd}
+	   		   AND LVP.DBSTS 		= 'A'
+	   		   AND LVP.SEQ 			= LVM.SEQ
+	   		   AND LVM.SETTLE_INFO 	= '30'
+	   		   AND LVM.DBSTS 		= 'A'
+	   		   AND LVM.SEQ 			= LVT.SEQ
+	   		   AND LVM.GUB_KEY 		IN ('P')
+	   		   AND LVM.VOD_FILE IS NOT NULL	   		   	    	   
+	 		 ORDER BY LVM.BRD_DATE DESC, LVM.CREDATE DESC
+ 		)
+		WHERE ROWNUM=1
+	
+	</select>
+
+	<select id="getPrdVideoListByCp" parameterType="long" resultMap="prdVideoMap"> 
+		<!-- 
+		DBMS : WEBDB
+		분야 : 단품  getPrdVideoList
+		API  : 동영상이 있는 상품에 대한  동영상 조회 리스트
+		설명 : 동영상이 있는 상품에 대한  동영상 조회 리스트
+		
+		#{prdCd} = 6551806
+		-->
+	     SELECT * 
+	       FROM (
+				SELECT  /*+ ORDER USE_NL(LVP, LVM) */
+	          		   LVM.SEQ					AS MNG_SEQ				/*	관리순번	*/
+	          		  ,LVM.GUB_KEY				AS VIDEO_GBN_CD			/*	동영상 구분코드	*/ 
+	          		  ,LVM.GUB_VALUE			AS VIDEO_GBN_CD_VAL 	/*	동영상구분코드값	*/	
+	          		  ,LVM.VOD_FILE				AS VIDEO_FILE_PATH		/*	동영상파일경로*/		
+	          		  ,LVM.VOD_TITLE			AS VIDEO_TITLE			/*	동영상제목	*/		
+	          		  ,LVM.THUMBNAIL			AS VIDEO_REP_IMG_PATH	/*	동영상대표이미지경로*/	
+				  FROM LGEC_VIDEO_PRD LVP 
+	         		  ,LGEC_VIDEO_MGR LVM 
+				 WHERE LVP.PRDID 		= #{prdCd}
+				   AND LVP.DBSTS 		= 'A'
+				   AND LVM.DBSTS 		= 'A'
+				   AND LVP.SEQ 			= LVM.SEQ
+				   AND LVM.SETTLE_INFO 	= '30'
+				   AND LVM.GUB_KEY IN ( 'C', 'P' )
+				   AND LVM.VOD_FILE IS NOT NULL
+				 ORDER BY LVM.GUB_KEY
+				)
+		  WHERE ROWNUM <![CDATA[ <= ]]> 100
+	  
+ 	</select>
+	
+	
+</mapper>

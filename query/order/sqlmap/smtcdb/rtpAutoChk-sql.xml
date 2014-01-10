@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.returnexchange.RtpAutoChkSqlMapRepository">
+	               
+	<resultMap id="rtpOrdTypMap" type="iceberg.capi.order.model.returnexchange.RtpOrdTyp">
+		<result property="ordItemStCd"        column="ORD_ITEM_ST_CD"       />
+		<result property="chanlCd"            column="CHANL_CD"             />
+		<result property="repPayMeanCd"       column="REP_PAY_MEAN_CD"      />
+		<result property="rfnTypCd"           column="RFN_TYP_CD"           />
+		<result property="mimTypCd"           column="MIM_TYP_CD"           />
+		<result property="rtpReReqPrevntCd"   column="RTP_RE_REQ_PREVNT_CD" />
+		<result property="prdCd"              column="PRD_CD"               />
+		<result property="ordItemNo"          column="ORD_ITEM_NO"          />
+		<result property="aliaPntRfnPsblAmt"  column="ALIA_PNT_RFN_PSBL_AMT"/>
+		<result property="ktCardRfnPsblAmt"   column="KT_CARD_RFN_PSBL_AMT" />
+		<result property="regrId"             column="REGR_ID"              />
+		<result property="ordMnfcFlg"         column="ORD_MNFC_FLG"         />
+		<result property="frmlesPrdTypCd"     column="FRMLES_PRD_TYP_CD"    />
+		<result property="ordItemId"          column="ORD_ITEM_ID"          />
+	</resultMap>
+
+	<!--
+	   	내용 : 주문 아이템 수량 및 사은품 갯수 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 13
+	   
+	   	#{ordNo} = 280068296
+	   	#{custNo} = 10753739
+	   	#{ordItemNo} = 1
+	-->
+		
+	<select id="findOrdItemQtyWithGftCnt" parameterType="criteria" resultType="Integer">
+		SELECT NVL(OID.ORD_QTY,0) - NVL(OID.RTP_QTY,0) AS ORD_QTY
+		  FROM ORD_ORD_M OOM
+		      ,ORD_ITEM_D OID
+		 WHERE OOM.ORD_NO         = OID.ORD_NO
+		   AND OOM.ORD_NO         = #{_c.ordNo[0].value}
+		   AND RTRIM(OOM.CUST_NO) = #{_c.custNo[0].value}
+		   AND OID.ORD_ITEM_NO    = #{_c.ordItemNo[0].value}
+		   AND OOM.ORD_TYP_DTL_CD IN ('Sales Order', 'Exchange Sales Order')
+		   AND NVL(OID.ORD_QTY,0) - NVL(OID.RTP_QTY,0) > 0
+		   AND EXISTS (
+		               SELECT 1
+		                 FROM ORD_ITEM_GFT_MAP_D OIGMD
+		                WHERE OIGMD.ORG_ORD_NO = OID.ORD_NO
+		                  AND OIGMD.ORG_ORD_ITEM_ID = OID.ORD_ITEM_ID
+		                  AND OIGMD.MULTI_SIMPL_GBN_CD = 'S'
+		                  AND OIGMD.WTHDRW_YN = 'Y'
+		              )
+	</select>
+	
+	<!--
+	   	내용 : 반품 주문 유형 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 13
+	   
+	   	#{ordNo} = 28414740
+	   	#{custNo} = 500000014
+	   	#{ordItemNo} = 1
+	-->
+	
+	<select id="findRtpOrdTyp" parameterType="criteria" resultMap="rtpOrdTypMap">
+		SELECT
+		   CASE
+		       WHEN (OID.ST_CD = '31' OR OID.ST_CD = 'B1') AND ( OID.DLVS_CO_CD IN ('HJ', 'DH', 'HD', 'HT', 'CJ', 'KG', 'EP', 'ER',
+		           'FA', 'AJ', 'KL', 'YC', 'KR', 'TR', 'KT', 'SD', 'SG', 'ND', 'IN', 'DS', 'CI') ) AND (SYSDATE - (
+		           OID.DLV_FSH_DT)) <![CDATA[<]]> 8
+		           AND OID.DLV_FSH_SUBJ_CD = 'V' AND (
+		           CASE
+		               WHEN (TO_NUMBER(TO_CHAR(OID.RELS_FSH_DT, 'YYYYMMDD')) <![CDATA[<]]> '20081211')
+		               THEN '3'
+		               ELSE SUBSTR(OID.DLV_PICK_MTHOD_CD, 0, 1)
+		           END) = '3'
+		       THEN '22'
+		       ELSE OID.ST_CD
+		   END                               AS ORD_ITEM_ST_CD
+		     , NVL(OID.CHANL_CD, '0')        AS CHANL_CD
+		     , NVL(OOM.REP_PAY_MEAN_CD, '0') AS REP_PAY_MEAN_CD
+		     , NVL(OID.RFN_TYP_CD, '0')      AS RFN_TYP_CD
+		     , NVL(SSM.MIM_TYP_CD, '')       AS MIM_TYP_CD
+		     , NVL(OID.RTP_RE_REQ_PREVNT_CD, 'N')                                AS RTP_RE_REQ_PREVNT_CD
+		     , DECODE(OID.LINE_TYP_CD, '11', OID.REP_PRD_SUP_PRD_CD, PPM.PRD_CD) AS PRD_CD
+		     , OID.ORD_ITEM_NO                                                   AS ORD_ITEM_NO
+		     , NVL(
+		       (SELECT SUM(POPD.RFN_PSBL_AMT)
+		          FROM ORD_ORD_M OOM
+		         , PAY_ORD_PAYMT_D POPD
+		         WHERE OOM.ORD_NO      = #{_c.ordNo[0].value}
+		           AND OOM.ORD_NO      = POPD.PAY_ORD_NO
+		           AND POPD.PAY_TYP_CD  = 'Point'
+		       ), 0)                                                       AS ALIA_PNT_RFN_PSBL_AMT
+		     , NVL(
+		       (SELECT SUM(POPD.RFN_PSBL_AMT)
+		          FROM ORD_ORD_M OOM
+		         , PAY_ORD_PAYMT_D POPD
+		         WHERE OOM.ORD_NO      = #{_c.ordNo[0].value}
+		           AND OOM.ORD_NO      = POPD.PAY_ORD_NO
+		           AND POPD.PAY_TYP_CD  = 'Prepaid Card'
+		       ), 0)                                                       AS KT_CARD_RFN_PSBL_AMT
+		     , OOM.REGR_ID                     AS REGR_ID
+		     , NVL(PPM.ORD_MNFC_YN, 'N')       AS ORD_MNFC_FLG
+		     , OID.DLV_PICK_MTHOD_CD           AS DLV_PICK_MTHOD_CD
+		     , NVL(PPM.FRMLES_PRD_TYP_CD, 'N') AS FRMLES_PRD_TYP_CD
+		     , OID.ORD_ITEM_ID                 AS ORD_ITEM_ID
+		  FROM ORD_ORD_M OOM
+		     , ORD_ITEM_D OID
+		     , PRD_PRD_M PPM
+		     , SUP_SUP_M SSM
+		 WHERE RTRIM(OOM.CUST_NO)                      = #{_c.custNo[0].value}
+		   AND OOM.ORD_NO                              = #{_c.ordNo[0].value}
+		   AND OOM.ORD_NO                              = OID.ORD_NO
+		   AND OID.ORD_ITEM_NO                        IN 
+		   <foreach collection="_c.ordItemNo[0].value" item="item" index="index" open="(" separator="," close=")">
+		   	#{item}
+		   </foreach>
+		   AND OOM.ORD_TYP_DTL_CD                     IN ('Sales Order', 'Exchange Sales Order')
+		   AND NVL(OID.ORD_QTY, 0) - NVL(OID.RTP_QTY, 0) > 0
+		   AND OID.PRD_CD                              = PPM.PRD_CD
+		   AND OID.SUP_CD                              = SSM.SUP_CD(+)
+		   AND OID.LINE_TYP_CD                         = '00'
+	</select>
+	
+	<!--
+	   	내용 : 사은품 주문상태 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 13
+	   
+	   	#{orgOrdItemId} = '1-29VG6BK'
+	   	#{reqOrdGbnVal} = 'CH'
+	-->
+
+	<select id="findFreeGiftOrdStatus" parameterType="criteria" resultType="Integer">
+		SELECT  COUNT(X2.GIFT_ITEM_ID)
+		  FROM  (SELECT  X1.*
+		           FROM  (SELECT  NVL(OIGMD.GFT_ORD_ITEM_ID,'0') AS GIFT_ITEM_ID
+		                         ,NVL(OIGMD.CNL_YN,'N') AS CNL_YN
+		                    FROM  ORD_ITEM_GFT_MAP_D OIGMD
+		                   WHERE  TYP_CD IN ('1', '2')
+		                     AND  ORG_ORD_ITEM_ID = #{_c.orgOrdItemId[0].value}
+		                 ) X1
+		          WHERE  X1.CNL_YN = 'N'
+		        ) X2
+		       ,ORD_ITEM_D OID
+		 WHERE  OID.ORD_ITEM_ID = X2.GIFT_ITEM_ID
+		 <choose>
+		 	<when test="_c.reqOrdGbnVal != null and _c.reqOrdGbnVal[0].value == 'CH'">
+		   AND  (OID.ST_CD IN ('11','12','21') OR OID.OPT_PRD_TYP_CD = 'S')
+		 	</when>
+		 	<otherwise>
+		   AND  OID.ST_CD IN ('11','12','21')
+		 	</otherwise>
+		 </choose>
+	</select>
+	
+	<!--
+	   	내용 : 배송비가 있는 상품 갯수 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 13
+	   
+	   	#{custNo} = 21065054
+	   	#{ordNo} = 191511866
+	   	#{prdCd} = 2155949,2219162,2482121
+	-->
+	
+	<select id="findDlvcCodeCnt" parameterType="criteria" resultType="Integer">
+	    SELECT COUNT(OOM.ORD_NO) AS CNT
+	      FROM ORD_ORD_M OOM
+	          ,ORD_ITEM_D OID
+	          ,SUP_DLVC_D SDD
+	     WHERE OOM.CUST_NO = #{_c.custNo[0].value}
+	       AND OOM.ORD_NO  = #{_c.ordNo[0].value}
+	       AND OOM.ORD_NO  = OID.ORD_NO
+	       AND OID.PRD_CD  = SDD.DLVC_CD
+	       AND OID.LINE_TYP_CD = '07'
+	       AND SDD.DLVC_CD  IN (SELECT PPM.CHR_DLVC_CD
+	                              FROM PRD_PRD_M PPM
+	                             WHERE PRD_CD IN
+	                            <foreach collection="_c.prdCd[0].value" item="item" index="index" open="(" separator="," close=")">
+	                             #{item}
+	                            </foreach>
+	                           )
+	</select>
+	
+</mapper>

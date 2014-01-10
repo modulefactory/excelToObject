@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.member.smtcdb.repository.DiscountCouponSqlMapRepository">
+
+
+	<resultMap type="iceberg.capi.member.model.DiscountCoupon" id="discountCouponMap" >
+		<result property="discountCouponAmount" column="DCCPN_AMT"/> 
+	</resultMap>
+
+	<select id="findDiscountCouponAmount" parameterType="long" resultMap="discountCouponMap">
+		SELECT DCCPN_AMT
+		  FROM CST_DCCPN_M
+		 WHERE CUST_NO = #{customerNumber}
+		   AND DCCPN_TYP_CD = 'ECY'
+	</select>
+
+ 
+
+</mapper>

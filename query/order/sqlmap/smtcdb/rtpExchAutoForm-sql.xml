@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	<mapper namespace="iceberg.capi.order.smtcdb.repository.returnexchange.RtpExchAutoFormSqlMapRepository">
+
+	<resultMap id="dlvcInfoMap" type="iceberg.capi.order.model.returnexchange.RtpExchPrd">
+		<result property="ordItemNo"       column="ORD_ITEM_NO"/>
+		<result property="ordItemId"       column="ORD_ITEM_ID"/>
+		<result property="orgOrdNo"        column="ORG_ORD_NO"/>
+		<result property="orgOrdItemId"    column="ORG_ORD_ITEM_ID"/>
+		<result property="prdCd"           column="PRD_CD"/>
+		<result property="exposPrdNm"      column="EXPOS_PRD_NM"/>
+		<result property="ordQty"          column="ORD_QTY"/>
+		<result property="payPrc"          column="PAY_PRC"/>
+		<result property="oboxCd"          column="OBOX_CD"/>
+	</resultMap>
+
+	<resultMap id="addrInfoMap" type="iceberg.capi.order.model.returnexchange.RtpAddrInfo">
+		<result property="rcvrNm"           column="RCVR_NM" />
+		<result property="zipcd"            column="ZIPCD" />
+		<result property="baseAddr"         column="BASE_ADDR" />
+		<result property="dtlAddr"          column="DTL_ADDR" />
+		<result property="dlvpTelno"        column="DLVP_TELNO" />
+		<result property="dlvpCelphnTelno"  column="DLVP_CELPHN_TELNO" />
+		<result property="eastnChkRsltCd"   column="EASTN_CHK_RSLT_CD" />
+		<result property="addrCntcNo"       column="ADDR_CNTC_NO" />
+		<result property="oboxCd"           column="OBOX_CD" />
+	</resultMap>
+	
+	<!--
+	   	내용 : 부분 반품/교환 여부 체크
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 21
+	   
+	   	#{custNo} = 40766020
+	   	#{ordNo} = 599917557
+	-->
+		
+	<select id="findPartialRetFlgList" parameterType="criteria" resultType="HashMap">
+		SELECT OID.ORD_ITEM_NO
+		      ,NVL(OID.ORD_QTY, 0) AS ORD_QTY
+		  FROM ORD_ORD_M OOM
+		      ,ORD_ITEM_D OID
+		 WHERE OOM.CUST_NO     = #{_c.custNo[0].value}
+		   AND OOM.ORD_NO      = #{_c.ordNo[0].value}
+		   AND OOM.ORD_NO      = OID.ORD_NO
+		   AND OID.LINE_TYP_CD = '00'
+	</select>
+	
+	<!--
+	   	내용 : 반품 상품별 반품비 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 21
+	   
+	   	#{custNo} = 40766020
+	   	#{ordNo} = 599987302
+	   	#{ordItemIdOrdQty} = '5629758860', 2
+	-->
+
+	<select id="findDlvcInfo" parameterType="criteria" resultMap="dlvcInfoMap">
+		SELECT ORD_ITEM_NO
+		      ,ORD_ITEM_ID
+		      ,ORG_ORD_NO
+		      ,ORG_ORD_ITEM_ID
+		      ,PRD_CD
+		      ,EXPOS_PRD_NM
+		      ,NVL(ORD_QTY, 0) AS ORD_QTY
+		      ,NVL(LAST_UPRC, 0) AS PAY_PRC
+		      ,NVL(OBOX_CD,'0') AS OBOX_CD
+		  FROM ORD_ITEM_D
+		 WHERE ORD_ITEM_ID IN (SELECT OIDMD.DLVC_ORD_ITEM_ID AS ORD_ITEM_ID
+		                         FROM ORD_ITEM_DLVC_MAP_D OIDMD
+		                             ,ORD_ITEM_D OID
+		                             ,(SELECT MAX(ORD_NO) AS ORG_ORD_NO
+		                                     ,DLVC_ORD_ITEM_ID
+		                                     ,COUNT(DISTINCT ORD_ITEM_ID) AS ITEM_CNT
+		                                     ,SUM(REMAIN_QTY) AS REMAIN_QTY
+		                                 FROM (SELECT OOM.ORD_NO, OID.ORD_ITEM_ID, OID.ORD_QTY - NVL(OID.RTP_QTY,0) AS REMAIN_QTY
+		                                             ,(SELECT DLVC_ORD_ITEM_ID
+		                                                 FROM ORD_ITEM_DLVC_MAP_D OIDMD
+		                                                WHERE OID.ORD_ITEM_ID = OIDMD.ORG_ORD_ITEM_ID
+		                                                  AND OIDMD.CNL_YN = 'N'
+		                                                  AND ROWNUM = 1 ) AS DLVC_ORD_ITEM_ID
+		                                         FROM ORD_ORD_M OOM
+		                                             ,ORD_ITEM_D OID
+		                                        WHERE OOM.CUST_NO = #{_c.custNo[0].value}
+		                                          AND OOM.ORD_NO  = #{_c.ordNo[0].value}
+		                                          AND OOM.ORD_NO  = OID.ORD_NO
+		                                          AND (OID.ORD_ITEM_ID, OID.ORD_QTY - NVL(OID.RTP_QTY,0)) IN 
+									               <foreach collection="_c.ordItemIdOrdQty[0].value" item="item" index="index" open="(" separator="," close=")">
+									                (#{item.ordItemId}, #{item.ordQty})
+									               </foreach>
+		                                      ) T1
+		                                WHERE DLVC_ORD_ITEM_ID IS NOT NULL
+		                                GROUP BY DLVC_ORD_ITEM_ID ) T1
+		                        WHERE OIDMD.ORG_ORD_NO = T1.ORG_ORD_NO
+		                          AND OIDMD.DLVC_ORD_ITEM_ID = T1.DLVC_ORD_ITEM_ID
+		                          AND OID.ORD_ITEM_ID = OIDMD.ORG_ORD_ITEM_ID
+		                          AND OIDMD.CNL_YN = 'N'
+		                        GROUP BY OIDMD.DLVC_ORD_ITEM_ID
+		                       HAVING COUNT(DISTINCT OIDMD.ORG_ORD_ITEM_ID) = MAX(ITEM_CNT)) /* 동일배송비코드에 남아있는 아이템수 = 취소요청 아이템수 */
+	</select>
+	
+	<!--
+	   	내용 : 배송지 정보 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 25
+	   
+	   	#{custNo} = 40766020
+	   	#{ordNo} = 599917557
+	-->
+	
+	<select id="findAddrInfo" parameterType="criteria" resultMap="addrInfoMap">
+		SELECT CCAD.RCVR_NM
+		     , CCAD.ZIPCD
+		     , CCAD.BASE_ADDR
+		     , CCAD.DTL_ADDR
+		     , CCAD.DLVP_TELNO
+		     , CCAD.DLVP_CELPHN_TELNO
+		     , CCAD.EASTN_CHK_RSLT_CD
+		     , CCAD.ADDR_CNTC_NO
+		     , OID.OBOX_CD
+		  FROM ORD_ORD_M OOM
+		     , ORD_ITEM_D OID
+		     , CST_CUST_ADDR_D CCAD
+		 WHERE OOM.ORD_NO        = #{_c.ordNo[0].value}
+		   AND OOM.CUST_NO       = #{_c.custNo[0].value}
+		   AND OOM.ORD_NO        = OID.ORD_NO
+		   AND OID.DLVP_ADDR_NO  = CCAD.ADDR_CNTC_NO
+	</select>
+	
+</mapper>

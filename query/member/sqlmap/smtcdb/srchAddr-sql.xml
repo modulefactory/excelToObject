@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.member.smtcdb.repository.addr.SrchAddrSqlMapRepository">
+
+    <resultMap type="iceberg.capi.member.model.addr.Addr" id="addrMap" >
+		<result property="zipcd" column="zipcd"/>
+		<result property="whlAddr" column="whlAddr"/>
+		<result property="dtlAddr" column="dtlAddr"/>
+	</resultMap>
+
+	<select id="findAddr" parameterType="criteria" resultMap="addrMap">
+	<!-- 
+		API  : 주소 찾기
+		설명 : 동이름으로 주소정보를 조회한다.
+		
+		#{_c.dong[0].value} = 문래동
+	-->
+        <![CDATA[
+            SELECT ZIPCD      AS ZIPCD,                                 /* 우편번호 */
+                   WHL_ADDR   AS WHLADDR,                               /* 전체주소 */
+                   BASE_ADDR  AS BASEADDR,                              /* 기본주소 */
+                   DTL_ADDR   AS DTLADDR                                /* 상세주소 */
+              FROM CMM_ZIPCD_C
+             WHERE EBMYNDN_NM LIKE '%' || #{_c.dong[0].value} || '%'    /* 읍면동명 */
+        ]]>
+    </select>
+</mapper>

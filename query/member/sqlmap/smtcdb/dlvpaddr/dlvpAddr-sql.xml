@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.cust.smtcdb.repository.dlvpaddr.DlvpAddrSqlMapRepository">
+
+    <resultMap id="preDlvpMap" type="iceberg.capi.cust.model.dlvpaddr.PreDlvp">
+        <result property="addrCntcNo"       column="ADDR_CNTC_NO"/>
+        <result property="addrGbnCd"        column="ADDR_GBN_CD"/>
+        <result property="rcvrNm"           column="RCVR_NM"/>
+        <result property="dlvpTelno"        column="DLVP_TELNO"/>
+        <result property="zipcd"            column="ZIPCD"/>
+        <result property="baseAddr"         column="BASE_ADDR"/>
+        <result property="dtlAddr"          column="DTL_ADDR"/>
+        <result property="eastnChkRsltCd"   column="EASTN_CHK_RSLT_CD"/>
+        <result property="dlvpCelphnTelno"  column="DLVP_CELPHN_TELNO"/>
+        <result property="modDtm"           column="MOD_DTM"/>
+        <result property="rcvrEngNm"        column="RCVR_ENG_NM"/>
+        <result property="dlvUnulMatrCntnt" column="DLV_UNUL_MATR_CNTNT"/>
+    </resultMap>
+
+    <!--
+        내용 : 이전 배송지 총 Count 조회
+        작성자 : 박세종
+        작성일 : 2013.12.19 박노정 신규작성
+                 2014.01.06 박세종 주문에서 회원으로 이동
+        #{custNo} = 40766028;
+    -->
+    <select id="findPreDlvpTotCnt" parameterType="long" resultType="Integer">
+        <![CDATA[
+            SELECT COUNT (*) AS CNT
+              FROM CST_CUST_ADDR_D CCAD
+             WHERE CCAD.CUST_NO = #{custNo}
+               AND NVL (CCAD.ADDR_USE_YN, 'Y') != 'N'
+               AND CCAD.MOD_DTM                >  (SYSDATE - (3 * 365))
+               AND CCAD.ADDR_GBN_CD            =  '03'
+        ]]>
+    </select>
+
+    <!--    
+        내용 : 이전 배송지 목록 조회
+        작성자 : 박노정
+        작성일 : 2013.12.19 박노정 신규작성
+                 2014.01.06 박세종 주문에서 회원으로 이동
+        #{_c.custNo[0].value} = 40766028;
+        #{_c.startRow[0].value} = 1;
+        #{_c.endRow[0].value} = 10;
+    -->
+    <select id="findPreDlvpList" parameterType="criteria" resultMap="preDlvpMap">
+       
+        <![CDATA[
+            SELECT XX.*
+              FROM (SELECT X.*
+                          ,ROWNUM AS RN
+                      FROM (  SELECT CCAD.ADDR_CNTC_NO        AS ADDR_CNTC_NO
+                                    ,CCAD.ADDR_GBN_CD         AS ADDR_GBN_CD
+                                    ,CCAD.RCVR_NM             AS RCVR_NM
+                                    ,CCAD.DLVP_TELNO          AS DLVP_TELNO
+                                    ,CCAD.ZIPCD               AS ZIPCD
+                                    ,CCAD.BASE_ADDR           AS BASE_ADDR
+                                    ,CCAD.DTL_ADDR            AS DTL_ADDR
+                                    ,CCAD.EASTN_CHK_RSLT_CD   AS EASTN_CHK_RSLT_CD
+                                    ,CCAD.DLVP_CELPHN_TELNO   AS DLVP_CELPHN_TELNO
+                                    ,CCAD.MOD_DTM             AS MOD_DTM
+                                    ,CCAD.RCVR_ENG_NM         AS RCVR_ENG_NM
+                                    ,CCAD.DLV_UNUL_MATR_CNTNT AS DLV_UNUL_MATR_CNTNT
+                                FROM CST_CUST_ADDR_D CCAD
+                               WHERE CCAD.CUST_NO                 = #{_c.custNo[0].value}
+                                 AND NVL (CCAD.ADDR_USE_YN, 'Y') != 'N'
+                                 AND CCAD.MOD_DTM                 > (SYSDATE - (3 * 365))
+                                 AND CCAD.ADDR_GBN_CD             = '03'
+                            ORDER BY MOD_DTM DESC) X
+                    ) XX
+             WHERE RN BETWEEN #{_c.startRow[0].value} AND #{_c.endRow[0].value}
+        ]]>
+    </select>
+
+
+</mapper>

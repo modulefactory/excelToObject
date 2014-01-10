@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.orderdetail.DiscountInfoSqlMapRepository">
+
+	<resultMap type="iceberg.capi.order.model.orderdetail.discount.DiscountInfoRaw" id="discountInfoRaw" >
+		<result property="totPrdAmt" column="TOT_PRD_AMT"/>
+		<result property="lastPayAmt" column="LAST_PAY_AMT"/>
+		<result property="cpnDcAmt" column="CPN_DC_AMT"/> 
+		<result property="cpnAccmAmt" column="CPN_ACCM_AMT"/>
+		<result property="ivrDcAmt" column="IVR_DC_AMT"/>
+		<result property="sgpayDcAmt" column="SGPAY_DC_AMT"/>
+		<result property="tmDcAmt" column="TM_DC_AMT"/>
+		<result property="familyDcAmt" column="FAMILY_DC_AMT"/>
+		<result property="empDcAmt" column="EMP_DC_AMT"/>
+		<result property="dccpnDcAmt" column="DCCPN_DC_AMT"/>
+		<result property="immAccmDcAmt" column="IMM_ACCM_DC_AMT"/>
+	</resultMap>
+	
+	<!--
+		API : 주문상세정보 - 할인정보 조회
+		설명 : 주문에 해당하는 할인정보 조회
+		작성자 : 손영훈
+		작성일 : 2013-12-20
+		#{_c.ordNo[0].value} = "599943143"
+	-->
+	<select id="findDiscountInfo" parameterType="criteria" resultMap="discountInfoRaw">
+	<![CDATA[
+	SELECT SUM(NVL(OID.STD_UPRC, 0) * NVL(OID.ORD_QTY, 0))           AS TOT_PRD_AMT      -- 총상품금액
+	      ,SUM(NVL(OID.LAST_UPRC, 0) * NVL(OID.ORD_QTY, 0))          AS LAST_PAY_AMT     -- 최종결제금액
+	      ,SUM(((NVL(OIPD_A06.GSHS_GIV_AMT, 0) + NVL(OIPD_A06.SUP_GIV_AMT, 0)) * NVL(OID.ORD_QTY, 0)) 
+	       +((NVL(OIPD_A07.GSHS_GIV_AMT, 0) + NVL(OIPD_A07.SUP_GIV_AMT, 0)) * NVL(OID.ORD_QTY, 0))
+	       + (NVL(OIPD_A08.GSHS_GIV_AMT, 0) * NVL(OID.ORD_QTY, 0)))  AS CPN_DC_AMT       -- 쿠폰할인금액
+		   ,SUM(CASE WHEN CCM.CPN_TYP_CD IN ('4', '5') 
+		             THEN (((NVL(OIPD_A06.GSHS_GIV_AMT, 0)+NVL(OIPD_A06.SUP_GIV_AMT, 0))*NVL(OID.ORD_QTY, 0))
+		                     +((NVL(OIPD_A07.GSHS_GIV_AMT, 0)+NVL(OIPD_A07.SUP_GIV_AMT, 0))*NVL(OID.ORD_QTY, 0)) 
+		                     +(NVL(OIPD_A08.GSHS_GIV_AMT, 0)*NVL(OID.ORD_QTY, 0)))
+		             ELSE 0 END)                                      AS CPN_ACCM_AMT    -- 쿠폰적립금액
+	      ,SUM((NVL(OIPD_A05.GSHS_GIV_AMT, 0) + NVL(OIPD_A05.SUP_GIV_AMT, 0)) * NVL(OID.ORD_QTY, 0)) AS IVR_DC_AMT      -- 자동주문할인금액
+	      ,SUM(DECODE(OIPD_A04.ADJST_DTL_REP_VAL, 'Y', NVL(OIPD_A04.GSHS_GIV_AMT, 0) + NVL(OIPD_A04.SUP_GIV_AMT, 0), 0) *NVL(OID.ORD_QTY,0)) AS SGPAY_DC_AMT    -- 일시불할인금액
+	      ,SUM(NVL(OIPD_A12.GSHS_GIV_AMT, 0) * NVL(OID.ORD_QTY, 0))  AS TM_DC_AMT       -- TM할인금액
+	      ,SUM(NVL(OIPD_A03.GSHS_GIV_AMT, 0) * NVL(OID.ORD_QTY, 0))  AS FAMILY_DC_AMT   -- 그룹사할인금액
+	      ,SUM(NVL(OIPD_A02.GSHS_GIV_AMT, 0) * NVL(OID.ORD_QTY, 0))  AS EMP_DC_AMT      -- 임직원할인금액
+	      ,SUM(NVL(OIPD_A11.GSHS_GIV_AMT, 0) * NVL(OID.ORD_QTY, 0))  AS DCCPN_DC_AMT    -- 연간할인권할인금액
+	      ,SUM((NVL(OIPD_A10.GSHS_GIV_AMT, 0) * NVL(OID.ORD_QTY, 0)) + (NVL(OIPD_A10.SUP_GIV_AMT,0)*NVL(OID.ORD_QTY, 0))) AS IMM_ACCM_DC_AMT -- 즉시적립금할인금액 
+	  FROM ORD_ITEM_D     OID
+	      ,ORD_ITEM_PRC_D OIPD_A02
+	      ,ORD_ITEM_PRC_D OIPD_A03
+	      ,ORD_ITEM_PRC_D OIPD_A04
+	      ,ORD_ITEM_PRC_D OIPD_A05
+	      ,ORD_ITEM_PRC_D OIPD_A06
+	      ,ORD_ITEM_PRC_D OIPD_A07
+	      ,ORD_ITEM_PRC_D OIPD_A08
+	      ,ORD_ITEM_PRC_D OIPD_A10
+	      ,ORD_ITEM_PRC_D OIPD_A11
+	      ,ORD_ITEM_PRC_D OIPD_A12
+		   ,CPN_CPN_M      CCM
+	 WHERE OID.ORD_NO = #{_c.ordNo[0].value}
+	   AND OIPD_A02.ADJST_DTL_CD(+) = 'A02'
+	   AND OIPD_A03.ADJST_DTL_CD(+) = 'A03'
+	   AND OIPD_A04.ADJST_DTL_CD(+) = 'A04'
+	   AND OIPD_A05.ADJST_DTL_CD(+) = 'A05'
+	   AND OIPD_A06.ADJST_DTL_CD(+) = 'A06'
+	   AND OIPD_A07.ADJST_DTL_CD(+) = 'A07'
+	   AND OIPD_A08.ADJST_DTL_CD(+) = 'A08'
+	   AND OIPD_A10.ADJST_DTL_CD(+) = 'A10'
+	   AND OIPD_A11.ADJST_DTL_CD(+) = 'A11'
+	   AND OIPD_A12.ADJST_DTL_CD(+) = 'A12'
+	   AND OID.ORD_ITEM_ID = OIPD_A02.ORD_ITEM_ID(+)
+	   AND OID.ORD_ITEM_ID = OIPD_A03.ORD_ITEM_ID(+)
+	   AND OID.ORD_ITEM_ID = OIPD_A04.ORD_ITEM_ID(+)
+	   AND OID.ORD_ITEM_ID = OIPD_A05.ORD_ITEM_ID(+)
+	   AND OID.ORD_ITEM_ID = OIPD_A06.ORD_ITEM_ID(+)
+	   AND OID.ORD_ITEM_ID = OIPD_A07.ORD_ITEM_ID(+)
+	   AND OID.ORD_ITEM_ID = OIPD_A08.ORD_ITEM_ID(+)
+	   AND OID.ORD_ITEM_ID = OIPD_A10.ORD_ITEM_ID(+)
+	   AND OID.ORD_ITEM_ID = OIPD_A11.ORD_ITEM_ID(+)
+	   AND OID.ORD_ITEM_ID = OIPD_A12.ORD_ITEM_ID(+)
+	   AND OIPD_A06.CPN_NO = CCM.CPN_NO(+)
+	]]>  
+	</select>
+	
+</mapper>

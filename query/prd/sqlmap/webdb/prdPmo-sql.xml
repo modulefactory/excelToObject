@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prd.PrdSimplePmoSqlMapRepository">
+
+	<resultMap type="iceberg.capi.product.model.prd.add.PrdSimplePmo" id="prdSimplePmo">
+		<result property="gftPrdAvailFlg" 	column="GFT_PRD_AVAIL_FLG"/>
+		<result property="tempoutFlg" 		column="TEMPOUT_FLG"/>
+		<result property="prdCd" 			column="PRD_CD"/>								<!-- 상품코드 -->
+		<result property="prdNm" 			column="PRD_NM"/>								<!-- 노출상품명(송장명으로 노출) -->
+		<result property="gftTypCd" 		column="GFT_TYP_CD"/>
+		<result property="gftPrdNm" 		column="GFT_PRD_NM"/>
+		<result property="gftEcAttrPrdCd" 	column="GFT_EC_ATTR_PRD_CD"/>			<!-- EC속성상품코드 -->
+		<result property="ecAttrPrdCd" 		column="EC_ATTR_PRD_CD"/>					<!-- EC속성상품코드 -->
+		<result property="exposEcPrdNm" 	column="EXPOS_EC_PRD_NM"/>
+		<result property="pmoNo" 			column="PMO_NO"/>									<!-- 프로모션번호 -->
+		<result property="prdPmoSeq" 		column="PRD_PMO_SEQ"/>						<!-- 프로모션순번 -->
+		<result property="attrPrdCd" 		column="ATTR_PRD_CD"/>							<!-- 대표상품코드 -->
+		<result property="gftSelQty" 		column="GFT_SEL_QTY"/>
+		<result property="mandFlg" 			column="MAND_FLG"/>
+		<result property="gftPrdCd" 		column="GFT_PRD_CD"/>
+		<result property="addCmposGbnCd" 	column="ADD_CMPOS_GBN_CD"/>			 <!-- G:사은품,D:배송품 -->
+		<result property="gftGbnCd" 		column="GFT_GBN_CD"/>
+		<result property="gftSeq" 			column="GFT_SEQ"/>
+	</resultMap>
+	
+	<select id="getAttrPrdPromotionGiftList" parameterType="criteria" resultMap="prdSimplePmo" >
+	<!-- 
+		DBMS : WEBDB
+		분야 : 프로모션 getAttrPrdPmotionGiftList
+		API  : 상품 프로모션 사은품 정보 조회
+		설명 : 상품 프로모션 사은품 정보 조회
+		
+		#{_c.prdCd[0].value} = 10840099
+	-->		
+	
+	<![CDATA[
+	SELECT PSD.PMO_NO                      AS PMO_NO
+		  ,PSD.PRD_PMO_SEQ                 AS PRD_PMO_SEQ
+		  ,PAPM.ATTR_PRD_CD                AS ATTR_PRD_CD
+		  ,PAPM.EC_ATTR_PRD_CD             AS EC_ATTR_PRD_CD
+		  ,NVL(PSD.GFT_SEL_QTY, 0)         AS GFT_SEL_QTY
+		  ,PSGD.MAND_YN                    AS MAND_FLG
+		  ,PSGD.GFT_PRD_CD                 AS GFT_PRD_CD
+		  ,CASE WHEN SYSDATE BETWEEN PPM.SALE_STR_DTM AND PPM.SALE_END_DTM
+				     AND PPM.USE_YN = 'Y'
+				     AND (PPM.SALE_END_YN IS NULL OR PPM.SALE_END_YN = 'N')
+				     AND PPM.SALE_PSBL_APRV_YN = 'Y'
+				     AND PPM.PRD_APRV_ST_CD = '30'
+				     AND (PPM.TEMPOUT_YN IS NULL OR PPM.TEMPOUT_YN = 'N')
+			    THEN 'Y'
+			    ELSE 'N'
+			END                            AS GFT_PRD_AVAIL_FLG
+		  ,NVL(PPM.PRD_NM, '')             AS GFT_PRD_NM 		  /*노출상품명(사은품은 송장명으로 노출함)*/
+		  ,PPM.GFT_TYP_CD                  AS GFT_TYP_CD
+		  ,PAPM1.EC_ATTR_PRD_CD            AS GFT_EC_ATTR_PRD_CD
+		  ,NVL(PNCH.EXPOS_PRD_NM, '')      AS EXPOS_EC_PRD_NM     /*EC노출상품명(단품노출시 사은품명 EC노출명으로 노출함)*/
+		  ,'ATTR'                          AS GFT_GBN_CD          /* 사은품 구분코드 */
+	  FROM PRD_ATTR_PRD_M		PAPM
+		  ,PMO_SIMPL_D			PSD
+		  ,PMO_SIMPL_GFT_D		PSGD
+		  ,PRD_PRD_M			PPM
+		  ,PRD_CHANL_D			PCD
+		  ,PRD_ATTR_PRD_M		PAPM1
+		  ,PRD_NM_CHG_H         PNCH
+	 WHERE PAPM.PRD_CD = #{_c.prdCd[0].value}
+	   AND PAPM.ATTR_PRD_CD = PSD.PRD_CD
+	   AND SYSDATE BETWEEN PSD.VALID_STR_DTM AND PSD.VALID_END_DTM
+	   AND PSD.APPLY_PRIOR_RANK = PG_PMO_PRD_PMO.FN_PRD_APPLY_PRIOR_RANK(PAPM.PRD_CD, 'P', SYSDATE)
+	   AND PSD.OFFER_TYP_CD = '13'
+	   AND PSD.TGT_GBN_CD = 'A'
+	   AND PSD.APRV_ST_CD = '30'
+	   AND PSD.CHANL_CD IN ('A', 'P')
+	   AND PSD.PMO_NO = PSGD.PMO_NO
+	   AND PSD.PRD_PMO_SEQ = PSGD.PRD_PMO_SEQ
+	   AND PSGD.USE_YN = 'Y'
+	   AND PSGD.ADD_CMPOS_GBN_CD IN ('G', 'D')
+	   AND PSGD.GFT_PRD_CD = PPM.PRD_CD
+	   AND PPM.PRD_CD = PCD.PRD_CD
+	   AND PCD.CHANL_CD = #{_c.cmmCurrChanl[0].value}	/* 채널코드 (현재:모바일B,EC:P,OAHU:S) */ 
+	   AND PPM.PRD_CD = PAPM1.PRD_CD
+	   AND PSGD.GFT_PRD_CD = PNCH.PRD_CD
+	   AND SYSDATE BETWEEN NVL(PNCH.VALID_STR_DTM, SYSDATE) AND NVL(PNCH.VALID_END_DTM, SYSDATE)
+	   AND PNCH.CHANL_CD = #{_c.cmmBaseChanl[0].value}	 /* 채널코드 (현재:모바일B,EC:P,OAHU:S) */
+	 ORDER BY PAPM.ATTR_PRD_CD,
+		      PSGD.MAND_YN DESC,
+		      PSGD.GFT_SEQ ASC
+	]]>
+	</select>
+	
+	<select id="getPrdSimplePromotionList" parameterType="criteria" resultMap="prdSimplePmo" >
+	<![CDATA[
+	   SELECT CASE WHEN SYSDATE BETWEEN PPM.SALE_STR_DTM AND PPM.SALE_END_DTM
+	                AND PPM.USE_YN = 'Y'
+	                AND (PPM.SALE_END_YN IS NULL OR PPM.SALE_END_YN = 'N')
+	                AND PPM.SALE_PSBL_APRV_YN = 'Y'
+	                AND PPM.PRD_APRV_ST_CD = '30'
+	                AND (PPM.TEMPOUT_YN IS NULL OR PPM.TEMPOUT_YN = 'N')
+	               THEN 'Y'
+	               ELSE 'N'
+	           END                         AS GFT_PRD_AVAIL_FLG
+	         ,CASE WHEN PPM.SALE_END_DTM < SYSDATE THEN 'Y' 
+	               ELSE NVL(PPM.TEMPOUT_YN, 'N') 
+	           END                         AS TEMPOUT_FLG         /*일시품절여부*/
+	         ,NVL(PPM.PRD_NM, '')          AS PRD_NM              /*노출상품명(사은품은 송장명으로 노출함)*/
+	         ,PPM.GFT_TYP_CD               AS GFT_TYP_CD
+	         ,PAPM.EC_ATTR_PRD_CD          AS GFT_EC_ATTR_PRD_CD 
+	         ,NVL(PNCH.EXPOS_PRD_NM, '')   AS EXPOS_EC_PRD_NM   /*EC노출상품명(단품노출시 사은품명 EC노출명으로 노출함)*/
+	         ,PAPM.ATTR_PRD_REP_CD         AS ATTR_PRD_CD       /*속성대표코드*/   
+	         ,PPM.PRD_CD                   AS PRD_CD         
+	    FROM  PRD_PRD_M        PPM
+	         ,PRD_CHANL_D      PCD
+	         ,PRD_ATTR_PRD_M   PAPM
+	         ,PRD_NM_CHG_H     PNCH   
+	   WHERE PPM.PRD_CD    IN 
+	   ]]>
+	    <foreach collection="_c.prdCdArray[0].value" item="item" index="index" open="(" separator="," close=")">
+			#{item}
+		</foreach>  
+		<![CDATA[
+	     AND PPM.PRD_CD    = PCD.PRD_CD
+	     AND PCD.CHANL_CD  = #{_c.cmmCurrChanl[0].value}  -- 채널코드-(현재:모바일B,EC:P,OAHU:S)
+	     AND PPM.PRD_CD    = PAPM.PRD_CD
+	     AND PPM.PRD_CD    = PNCH.PRD_CD
+	     AND SYSDATE BETWEEN NVL(PNCH.VALID_STR_DTM, SYSDATE) AND NVL(PNCH.VALID_END_DTM, SYSDATE)
+	     AND PNCH.CHANL_CD = #{_c.cmmBaseChanl[0].value} -- 채널코드-(현재:모바일B,EC:P,OAHU:S)
+	   ]]>
+	</select>
+</mapper>

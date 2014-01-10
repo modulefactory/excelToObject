@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.ordersheet.Smart4cOrderSheetPaySqlMapRepository">
+	       
+	       
+	<resultMap id="cardListMap" type="iceberg.capi.order.model.ordersheet.OrderCard">
+		<result property="ansimCls" column="ANSIM_CLASS"/>
+		<result property="aliaCardFlg" column="AFFL_FLAG"/>
+		<result property="cardNm" column="CARD_NAME"/>
+		<result property="repCardNm" column="REP_CARD_NUM"/>
+	</resultMap>	       
+
+	<!-- 
+		내용	: 카드종류 조회 (안심클릭 카드결제) - 임직원일 경우
+		작성자	: 윤병찬
+		작성일	: 2013.11.25 신규작성
+	-->
+	<select id="findFamilyCardList" resultMap="cardListMap">
+		<![CDATA[
+			SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			     , ALIA_CARD_YN    AS AFFL_FLAG
+			     , CARD_NM         AS CARD_NAME
+			     , REP_CARD_NO     AS REP_CARD_NUM
+			  FROM ORD_EC_CARD_BY_VAN_D
+			 WHERE ST_CD              = 'A'
+			   AND CRDIT_CARD_KIND_CD = 'LG'
+			   AND ISSUE_CO_CD        = 'LG'
+			   AND ISP_PAY_GBN_CD     = 'ANSIM'
+			 ORDER BY EXPOS_NO
+		]]>	 	
+	</select>
+	
+	
+	<!-- 
+		내용	: 카드종류 조회 (안심클릭 카드결제) - 아이폰/아이패드
+		작성자	: 윤병찬
+		작성일	: 2013.11.25 신규작성
+	-->
+	<select id="findIosCardList" resultMap="cardListMap">
+		<![CDATA[
+			SELECT ANSIM_CLASS,
+			       AFFL_FLAG,
+			       CARD_NAME,
+			       REP_CARD_NUM
+			FROM (
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM IN ('신한카드','삼성카드','현대(다이너스)카드','롯데(아멕스)카드','광주VISA카드',
+			      		'하나SK카드','국민카드','BC카드','씨티은행카드','제주VISA카드','KDB산업은행카드',
+			      		'농협NH카드','외환은행카드')
+			   UNION ALL
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM||'-간편결제'         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM IN ('삼성카드','현대(다이너스)카드')
+			)
+			ORDER BY DISPLAY_SEQ ASC, CARD_NAME ASC			
+		]]>	 	
+	</select>	
+	
+	
+	<!-- 
+		내용	: 카드종류 조회 (안심클릭 카드결제) - 안드로이드/갤탭
+		작성자	: 윤병찬
+		작성일	: 2013.11.25 신규작성
+	-->
+	<select id="findAndroidCardList" resultMap="cardListMap">
+		<![CDATA[
+			SELECT ANSIM_CLASS, 
+			       AFFL_FLAG, 
+			       CARD_NAME, 
+			       REP_CARD_NUM
+			FROM (
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM IN ('신한카드','삼성카드','현대(다이너스)카드','롯데(아멕스)카드','하나SK카드',
+			      '국민카드','BC카드','씨티은행카드','제주VISA카드','KDB산업은행카드','신협체크카드','광주VISA카드',
+			      '농협NH카드','외환은행카드')
+			   UNION ALL
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM||'-간편결제'         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM IN ('삼성카드','현대(다이너스)카드')
+			   UNION ALL
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM||'-모바일카드'         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM IN ('하나SK카드')
+			)
+			ORDER BY DISPLAY_SEQ ASC, CARD_NAME ASC			
+		]]>	 	
+	</select>	
+	
+	
+	<!-- 
+		내용	: 카드종류 조회 (안심클릭 카드결제) - 신한카드
+		작성자	: 윤병찬
+		작성일	: 2013.11.25 신규작성
+	-->
+	<select id="findShinHanCardList" resultMap="cardListMap">
+		<![CDATA[
+			SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			     , ALIA_CARD_YN    AS AFFL_FLAG
+			     , CARD_NM         AS CARD_NAME
+			     , REP_CARD_NO     AS REP_CARD_NUM
+			     , EXPOS_NO        AS DISPLAY_SEQ
+			  FROM ORD_EC_CARD_BY_VAN_D
+			 WHERE ST_CD               = 'A'
+			   AND CARD_NM = '신한카드'			
+		]]>	 	
+	</select>	
+	
+	
+	
+	<!-- 
+		내용	: 카드종류 조회 (안심클릭 카드결제) - 삼성카드
+		작성자	: 윤병찬
+		작성일	: 2013.11.25 신규작성
+	-->
+	<select id="findSamSungCardList" resultMap="cardListMap">
+		<![CDATA[
+			SELECT ANSIM_CLASS, 
+			       AFFL_FLAG, 
+			       CARD_NAME, 
+			       REP_CARD_NUM
+			FROM (
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM = '삼성카드'
+			   UNION ALL
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM||'-간편결제'         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM = '삼성카드'
+			)
+			ORDER BY DISPLAY_SEQ ASC, CARD_NAME ASC			
+		]]>	 	
+	</select>	
+	
+			
+	
+	<!-- 
+		내용	: 카드종류 조회 (안심클릭 카드결제) - 비씨카드
+		작성자	: 윤병찬
+		작성일	: 2013.11.25 신규작성
+	-->
+	<select id="findBCCardList" resultMap="cardListMap">
+		<![CDATA[
+			SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			     , ALIA_CARD_YN    AS AFFL_FLAG
+			     , CARD_NM         AS CARD_NAME
+			     , REP_CARD_NO     AS REP_CARD_NUM
+			     , EXPOS_NO        AS DISPLAY_SEQ
+			  FROM ORD_EC_CARD_BY_VAN_D a
+			 WHERE ST_CD               = 'A'
+			   AND CARD_NM = 'BC카드'			
+		]]>	 	
+	</select>	
+	
+	
+	<!-- 
+		내용	: 카드종류 조회 (안심클릭 카드결제) - 현대카드
+		작성자	: 윤병찬
+		작성일	: 2013.11.25 신규작성
+	-->
+	<select id="findHyunDaiCardList" resultMap="cardListMap">
+		<![CDATA[
+			SELECT ANSIM_CLASS, 
+			       AFFL_FLAG, 
+			       CARD_NAME, 
+			       REP_CARD_NUM
+			FROM (
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM = '현대(다이너스)카드'
+			   UNION ALL
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM||'-간편결제'         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM = '현대(다이너스)카드'
+			)
+			ORDER BY DISPLAY_SEQ ASC, CARD_NAME ASC			
+		]]>	 	
+	</select>	
+			
+	
+	<!-- 
+		내용	: 카드종류 조회 (안심클릭 카드결제) - 국민카드
+		작성자	: 윤병찬
+		작성일	: 2013.11.25 신규작성
+	-->
+	<select id="findKBCardList" resultMap="cardListMap">
+		<![CDATA[
+			SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			     , ALIA_CARD_YN    AS AFFL_FLAG
+			     , CARD_NM         AS CARD_NAME
+			     , REP_CARD_NO     AS REP_CARD_NUM
+			     , EXPOS_NO        AS DISPLAY_SEQ
+			  FROM ORD_EC_CARD_BY_VAN_D
+			 WHERE ST_CD               = 'A'
+			   AND CARD_NM = '국민카드'			
+		]]>	 	
+	</select>	
+	
+	
+	<!-- 
+		내용	: 카드종류 조회 (안심클릭 카드결제) - 하나SK카드
+		작성자	: 윤병찬
+		작성일	: 2013.11.25 신규작성
+	-->
+	<select id="findHanaSKCardList" resultMap="cardListMap">
+		<![CDATA[
+			SELECT ANSIM_CLASS, 
+			       AFFL_FLAG, 
+			       CARD_NAME, 
+			       REP_CARD_NUM
+			FROM (
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM = 'BC카드'
+			   UNION ALL
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM = '하나SK카드'
+			   UNION ALL
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM||'-모바일카드'         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM = '하나SK카드'
+			)
+			ORDER BY DISPLAY_SEQ ASC, CARD_NAME ASC			
+		]]>	 	
+	</select>	
+			
+	
+	<!-- 
+		내용	: 카드종류 조회 (안심클릭 카드결제) - 농협카드
+		작성자	: 윤병찬
+		작성일	: 2013.11.25 신규작성
+	-->
+	<select id="findNonghyupmCardList" resultMap="cardListMap">
+		<![CDATA[
+			SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			     , ALIA_CARD_YN    AS AFFL_FLAG
+			     , CARD_NM         AS CARD_NAME
+			     , REP_CARD_NO     AS REP_CARD_NUM
+			     , EXPOS_NO        AS DISPLAY_SEQ
+			FROM ORD_EC_CARD_BY_VAN_D
+			WHERE ST_CD               = 'A'
+			AND CARD_NM = '농협NH카드'			
+		]]>	 	
+	</select>		
+	
+	<!-- 
+		내용	: 카드종류 조회 (안심클릭 카드결제) - 씨티카드
+		작성자	: 윤병찬
+		작성일	: 2013.11.25 신규작성
+	-->
+	<select id="findCitiBankCardList" resultMap="cardListMap">
+		<![CDATA[
+SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+     , ALIA_CARD_YN    AS AFFL_FLAG
+     , CARD_NM         AS CARD_NAME
+     , REP_CARD_NO     AS REP_CARD_NUM
+     , EXPOS_NO        AS DISPLAY_SEQ
+  FROM ORD_EC_CARD_BY_VAN_D
+ WHERE ST_CD               = 'A'
+   AND CARD_NM = '씨티은행카드'			
+		]]>	 	
+	</select>	
+	
+	
+	<!-- 
+		내용	: 카드종류 조회 (안심클릭 카드결제) - 롯데카드
+		작성자	: 윤병찬
+		작성일	: 2013.11.25 신규작성
+	-->
+	<select id="findLotteCardList" resultMap="cardListMap">
+		<![CDATA[
+			SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			     , ALIA_CARD_YN    AS AFFL_FLAG
+			     , CARD_NM         AS CARD_NAME
+			     , REP_CARD_NO     AS REP_CARD_NUM
+			     , EXPOS_NO        AS DISPLAY_SEQ
+			  FROM ORD_EC_CARD_BY_VAN_D
+			 WHERE ST_CD               = 'A'
+			   AND CARD_NM = '롯데(아멕스)카드'			
+		]]>	 	
+	</select>	
+			
+	
+	<!-- 
+		내용	: 카드종류 조회 (안심클릭 카드결제) - 하나SK카드이면서 아이폰계열인 경우
+		작성자	: 윤병찬
+		작성일	: 2013.11.25 신규작성
+	-->
+	<select id="findIosHanaSKCardList" resultMap="cardListMap">
+		<![CDATA[
+			SELECT ANSIM_CLASS,
+			       AFFL_FLAG,
+			       CARD_NAME,
+			       REP_CARD_NUM
+			FROM (
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM IN ('하나SK카드','BC카드')
+			   UNION ALL
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM||'-모바일카드'         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM IN ('하나SK카드')
+			)
+			ORDER BY DISPLAY_SEQ ASC, CARD_NAME ASC			
+		]]>	 	
+	</select>	
+	
+	
+	<!-- 
+		내용	: 카드종류 조회 (안심클릭 카드결제) - 그외
+		작성자	: 윤병찬
+		작성일	: 2013.11.25 신규작성
+	-->
+	<select id="findEtcCardList" resultMap="cardListMap">
+		<![CDATA[
+			SELECT ANSIM_CLASS,
+			       AFFL_FLAG,
+			       CARD_NAME,
+			       REP_CARD_NUM
+			FROM (
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM IN ('신한카드','삼성카드','현대(다이너스)카드','롯데(아멕스)카드','하나SK카드',
+			      '광주VISA카드','농협NH카드','외환은행카드')
+			   UNION ALL
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM||'-간편결제'         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM IN ('삼성카드','현대(다이너스)카드')
+			   UNION ALL
+			   SELECT ANSIM_CLS_NM    AS ANSIM_CLASS
+			        , ALIA_CARD_YN    AS AFFL_FLAG
+			        , CARD_NM||'-모바일카드'         AS CARD_NAME
+			        , REP_CARD_NO     AS REP_CARD_NUM
+			        , EXPOS_NO        AS DISPLAY_SEQ
+			     FROM ORD_EC_CARD_BY_VAN_D
+			    WHERE ST_CD               = 'A'
+			      AND CARD_NM IN ('하나SK카드')
+			)
+			ORDER BY DISPLAY_SEQ ASC, CARD_NAME ASC			
+		]]>	 	
+	</select>		
+	
+
+	<!-- 
+		내용	: 홈쇼핑 고객 가상계좌를 조회한다.
+		작성자	: 윤병찬
+		작성일	: 2013.11.25 신규작성
+		
+		#{custNo} = 9806081;
+	-->
+	<resultMap id="bankListBaseMap" type="iceberg.capi.order.model.ordersheet.OrderBank">
+		<result property="bankCd" column="BANK_CODE"/>
+		<result property="bankNm" column="BANK_NAME"/>
+		<result property="accntNo" column="ACCOUNT"/>
+	</resultMap>	
+	<select id="findAccountInfo" parameterType="long" resultMap="bankListBaseMap">
+		<![CDATA[
+			SELECT  /*+ INDEX (B S_CONTACT_U1) */                                             
+			        PVAG.BANK_CD AS BANK_CODE                                                    
+			       ,CCC.CD_VAL AS BANK_NAME                                                     
+			       ,PVAG.VR_ACCNT_NO AS ACCOUNT                                                  
+			  FROM  PAY_VR_ACCNT_GRANT_D PVAG
+			       ,CST_CUST_M CCM                                                              
+			       ,CMM_CMM_C CCC                                                               
+			 WHERE  PVAG.CUST_NO = CCM.CUST_NO                                                     
+			   AND  CCC.CMM_GRP_CD = 'PAY001'                                                   
+			   AND  PVAG.BANK_CD = CCC.CMM_CD                                                      
+			   AND  CCM.CUST_NO = #{custNo}                                                             
+			   AND  PVAG.BANK_CD IN ('N1', 'N2', 'N3', 'N4', 'N5', 'HV', 'PV', 'HK', 'HS', 'HP')  /* 이숍 전용 가상계좌만 가져오기. */   
+		]]>	 	
+	</select>
+	
+	
+
+
+	
+</mapper>

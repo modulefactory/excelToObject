@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.orderdelivery.CstAssetTxnSqlMapRepository">
+
+	<!--
+		API : 주문별 적립금 합계를 조회
+		설명 : 문별 적립금 합계를 조회
+		작성자 : 유영모
+		작성일 : 2013-11-28
+		#{_c.ordNo[0].value} = "599882195"
+		#{_c.custNo[0].value} = "30481119"
+	-->
+    <select id="findAssetAmtSumByOrderNum" parameterType="criteria" resultType="Long">
+    	<![CDATA[
+	       SELECT NVL(SUM(DECODE(CATD.TXN_TYP_CD, 'R08', CATD.RET_PSBL_AMT, 0)),0) + 
+	              NVL(SUM(DECODE(CATD.TXN_TYP_CD, 'P08', CATD.RET_PSBL_AMT, 0)),0)    AS ASSET_SUM
+	         FROM ORD_ORD_M       OOM
+	             ,CST_ASSET_TXN_D CATD
+	        WHERE OOM.ORD_NO     = #{_c.ordNo[0].value}
+	          AND OOM.CUST_NO    = #{_c.custNo[0].value}
+	          AND OOM.PAY_ORD_NO = CATD.PAY_ORD_NO(+)
+	          AND RTRIM(CATD.TXN_TYP_CD) IN ('R08', 'P08')
+		]]> 
+	</select>
+</mapper>

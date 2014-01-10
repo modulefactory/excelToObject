@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.coupon.Smart4cCouponSqlMapRepository">
+	               
+	<!--
+	   	내용 : 상품 쿠폰제한여부를 조회한다.
+	   	작성자 : 신슬기
+	   	작성일 : 2013. 11. 29
+	   
+	   	#{prdCd} = 11111622
+	-->
+	<select id = "findPrdCouponLimit" parameterType="long" resultType="String">
+	<![CDATA[
+       SELECT CASE 
+                 WHEN CPN_APPLY_TYP_CD = '09' 
+                    THEN 'Y'	
+                 ELSE 'N'					
+              END 						
+         FROM PRD_PRD_M 
+        WHERE PRD_CD = #{prdCd}
+	]]>
+	</select>
+	
+	
+	
+	<!--
+	   	내용 : 고객이 보유하고 있는 쿠폰 정보 조회 - 고객번호 + 쿠폰번호로 조회
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 11
+	   
+	   	#{_c.custNo[0].value} = 37687333
+	   	#{_c.cpnNo[0].value} = '288873'
+	-->
+	<select id="findCouponListCouponNum" parameterType="criteria" resultType="HashMap">
+	<![CDATA[
+			SELECT
+			        CCM.CPN_NO AS CPN_NO								/*쿠폰번호			[LGEC_COUPON.COUPON_NUM]*/
+			        ,CCM.CPN_TYP_CD                                               			/*쿠폰유형코드			[LGEC_COUPON.COUPON_TYPE]*/
+			        ,CCM.CPN_TGT_TYP_CD                                          		/*쿠폰대상유형코드		[LGEC_COUPON.PRD_APPLY_TYPE]*/
+			        ,(NVL(CCM.GSHS_DC_RTAMT,0) 										/*당사할인율/액		[LGEC_COUPON.COUPON_CLASS]*/
+			            + TO_NUMBER(NVL(CCM.SUP_DC_RTAMT,'0'))) AS COUPON_CLASS  /*업체할인율/액		[LGEC_COUPON.SUP_DC_RTAMT]*/
+			        ,CCD.ISSUE_STR_DTM AS START_DATE                              /*고객 쿠폰 유효시작*/
+			        ,CCD.ISSUE_END_DTM AS END_DATE                                /*고객 쿠폰 유효종료*/				
+			        ,CCM.PRD_MIN_SALE_PRC                                         		/*상품최소판매금액		[LGEC_COUPON.PRICE_LIMIT]*/
+			        ,CCM.MAX_DC_AMT                                               		/*최대할인금액			[LGEC_COUPON.DISCOUNT_LIMIT]*/
+			        ,CCM.CHANL_LIMIT_TYP_CD                                       	/*채널제한유형코드		[LGEC_COUPON.MEDIA_LIMIT_TYPE]*/
+			        ,CCM.ACC_TYP_CD                                              			/*적립유형코드			[LGEC_COUPON.JUKLIB_TYPE]*/
+			        ,CCM.VALID_DT_CHK_YN                                          		/*유효일자체크여부		[LGEC_COUPON.VALID_DAYS_FLAG]*/
+			        ,CCM.VALID_DDCNT                                              		/*유효일수			[LGEC_COUPON.VALID_DAYS]*/
+			        ,CCM.CUST_CHK_YN														/*고객체크여부			[LGEC_COUPON.CUS_CHK_FLAG]*/
+			        ,CCM.CPN_SNTNC_CNTNT                                          	/*쿠폰문구내용			[LGEC_COUPON.DESC_TEXT]*/
+			        ,CCM.CPN_GBN_CD                                               			/*쿠폰구분코드			[LGEC_COUPON.COUPON_FLAG]*/
+			        ,NVL(CCM.UNLMT_USE_YN, 'N') UNLMT_USE_YN            		/*무제한사용여부		[LGEC_COUPON.REUSE_TYPE]*/
+			        ,NVL(CCM.CPN_EVENT_KIND_CD,'') AS COUPON_KIND          /*쿠폰이벤트종류코드	[LGEC_COUPON.COUPON_KIND]*/
+			        ,NVL(CCM.GSHS_DC_RTAMT,0) AS COUPON_CLASS_IN        /*당사할인율/액		[LGEC_COUPON.COUPON_CLASS]*/
+			        ,TO_NUMBER(NVL(CCM.SUP_DC_RTAMT,'0')) AS COUPON_CLASS_EX      /*협력사할인율/액		[LGEC_COUPON.COUPON_CLASS_EX]*/
+			        ,NVL(CCM.WEKDY_CPN_YN,'N') AS WEEK_FLAG                   /*요일쿠폰 여부 Y/N		[LGEC_COUPON.WEEK_FLAG]*/
+			        ,NVL(CCM.WEKDY_APPLY_STR_TIME,'000000') AS WEEK_START_TIME    /*요일적용시작시간		[LGEC_COUPON.WEEK_START_TIME]*/
+			        ,NVL(CCM.WEKDY_APPLY_END_TIME,'000000') AS WEEK_END_TIME      /*요일적용종료시간		[LGEC_COUPON.WEEK_END_TIME]*/
+			        ,NVL(CCM.WEKDY_APPLY_CD,'NNNNNNN') AS WEEK_CODE               /*요일적용코드			[LGEC_COUPON.WEEK_CODE]*/
+			        ,CCD.ISSUE_STR_DTM                                             		/*발행시작일시			[GS_COUPON_USER.CREATED]*/
+			FROM 	CPN_CUST_D 	CCD														/*쿠폰고객정보			[GS_COUPON_USER]*/
+			       ,CPN_CPN_M   CCM														/*쿠폰기본			[LGEC_COUPON]*/
+			       ,CPN_CHANL_D CCHD														/*쿠폰채널정보			[LGEC_COUPON_XM] [CPN_CHANL_D : 쿠폰채널정보,CPN_TGT_D: 쿠폰대상정보]*/
+			WHERE 	CCD.CUST_NO 			= #{_c.custNo[0].value}
+			AND 	CCM.CPN_APRV_ST_CD 	= '03' 										/*쿠폰결재상태코드		[LGEC_COUPON.SETTLE_INFO]*/
+			AND 	CCM.CPN_NO  			= CCD.CPN_NO
+			AND 	CCM.CPN_NO  			= CCHD.CPN_NO(+)
+			AND 	SYSDATE BETWEEN CCD.ISSUE_STR_DTM AND CCD.ISSUE_END_DTM           /*유효기간 체크(쿠폰 발급시 쿠폰의 유효기간과 유효일수를 해당 컬럼에 반영함)*/
+			AND	 	CCM.CPN_NO = #{_c.cpnNo[0].value}
+	]]>
+	</select>	
+	
+	
+	
+	<!--
+	   	내용 : 고객이 보유하고 있는 쿠폰 정보 조회 - 고객번호로 조회
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 11
+	   
+	   	#{custNo} = '37687333'
+	   
+	-->
+	<select id="findCouponList" parameterType="long" resultType="HashMap">
+	<![CDATA[
+		SELECT  
+		         CCM.CPN_NO AS CPN_NO                    			/*쿠폰번호            		[LGEC_COUPON.COUPON_NUM]*/
+		        ,CCM.CPN_TYP_CD                                               /*쿠폰유형코드            	[LGEC_COUPON.COUPON_TYPE]*/
+		        ,CCM.CPN_TGT_TYP_CD                                           /*쿠폰대상유형코드        	[LGEC_COUPON.PRD_APPLY_TYPE]*/
+		        ,(NVL(CCM.GSHS_DC_RTAMT,0)                                     /*당사할인율/액        	[LGEC_COUPON.COUPON_CLASS]*/
+		            + TO_NUMBER(NVL(CCM.SUP_DC_RTAMT,'0'))) AS COUPON_CLASS  /*업체할인율/액        	[LGEC_COUPON.SUP_DC_RTAMT]*/
+		        ,CCD.ISSUE_STR_DTM AS START_DATE                              /*고객 쿠폰 유효시작*/
+		        ,CCD.ISSUE_END_DTM AS END_DATE                                /*고객 쿠폰 유효종료*/
+		        ,CCM.PRD_MIN_SALE_PRC                                         /*상품최소판매금액        	[LGEC_COUPON.PRICE_LIMIT]*/
+		        ,CCM.MAX_DC_AMT                                               /*최대할인금액            	[LGEC_COUPON.DISCOUNT_LIMIT]*/
+		        ,CCM.CHANL_LIMIT_TYP_CD                                       /*채널제한유형코드        	[LGEC_COUPON.MEDIA_LIMIT_TYPE]*/
+		        ,CCM.ACC_TYP_CD                                               /*적립유형코드            	[LGEC_COUPON.JUKLIB_TYPE]*/
+		        ,CCM.VALID_DT_CHK_YN                                          /*유효일자체크여부        	[LGEC_COUPON.VALID_DAYS_FLAG]*/
+		        ,CCM.VALID_DDCNT                                              /*유효일수            		[LGEC_COUPON.VALID_DAYS]*/
+		        ,CCM.CUST_CHK_YN                                              /*고객체크여부            	[LGEC_COUPON.CUS_CHK_FLAG]*/
+		        ,CCM.CPN_SNTNC_CNTNT                                          /*쿠폰문구내용            	[LGEC_COUPON.DESC_TEXT]*/
+		        ,CCM.CPN_GBN_CD                                               /*쿠폰구분코드            	[LGEC_COUPON.COUPON_FLAG]*/
+		        ,CCM.UNLMT_USE_YN                                             /*무제한사용여부        	[LGEC_COUPON.REUSE_TYPE]*/
+		        ,NVL(CCM.ADD_RTAMT,0) AS ADD_COUPON_CLASS                     /*추가할인율/액		[LGEC_COUPON.ADD_COUPON_CLASS]*/
+		        ,NVL(CCM.IMM_VISIT_EXCLU_YN, 'N') AS DIRECT_VISIT_FLAG        /*즉시방문전용여부(Y/N)[LGEC_COUPON.DIRECT_VISIT_FLAG]*/
+		        ,NVL(CCM.CPN_EVENT_KIND_CD,'') AS COUPON_KIND                 /*쿠폰이벤트종류코드    	[LGEC_COUPON.COUPON_KIND]*/
+		        ,NVL(CCM.GSHS_DC_RTAMT,0) AS COUPON_CLASS_IN                  /*당사할인율/액        	[LGEC_COUPON.COUPON_CLASS]*/
+		        ,TO_NUMBER(NVL(CCM.SUP_DC_RTAMT,'0')) AS COUPON_CLASS_EX      /*협력사할인율/액        	[LGEC_COUPON.COUPON_CLASS_EX]*/
+		        ,NVL(CCM.WEKDY_CPN_YN,'N') AS WEEK_FLAG                       /*요일쿠폰 여부 Y/N    [LGEC_COUPON.WEEK_FLAG]*/
+		        ,NVL(CCM.WEKDY_APPLY_STR_TIME,'000000') AS WEEK_START_TIME    /*요일적용시작시간        	[LGEC_COUPON.WEEK_START_TIME]*/
+		        ,NVL(CCM.WEKDY_APPLY_END_TIME,'000000') AS WEEK_END_TIME      /*요일적용종료시간        	[LGEC_COUPON.WEEK_END_TIME]*/
+		        ,NVL(CCM.WEKDY_APPLY_CD,'NNNNNNN') AS WEEK_CODE               /*요일적용코드            	[LGEC_COUPON.WEEK_CODE]*/
+		        ,CCD.ISSUE_STR_DTM                                             /*발행시작일시            	[GS_COUPON_USER.CREATED]*/
+		FROM 	CPN_CUST_D     CCD                                           /*쿠폰고객정보            	[GS_COUPON_USER]*/
+		       ,CPN_CPN_M   CCM                                               /*쿠폰기본            		[LGEC_COUPON]*/
+		WHERE	CCD.CUST_NO		= #{custNo}
+		AND 	( NVL(CCD.USE_PSBL_YN,'Y') = 'Y' OR NVL(CCM.UNLMT_USE_YN,'N') = 'Y')
+		AND 	CCM.CPN_APRV_ST_CD = '03'                                  /*쿠폰결재상태코드*/
+		AND 	SYSDATE BETWEEN CCD.ISSUE_STR_DTM AND CCD.ISSUE_END_DTM           /*유효기간 체크(쿠폰 발급시 쿠폰의 유효기간과 유효일수를 해당 컬럼에 반영함)*/
+		AND 	CCM.CPN_NO		= CCD.CPN_NO
+		AND 	DECODE(CCD.ORD_ITEM_ID,NULL,'Y',RTRIM(CCM.UNLMT_USE_YN)) = 'Y'  /*무제한사용여부*/
+		ORDER BY CCM.CPN_NO
+	]]>
+	</select>		
+	
+	
+	<!--
+	   	내용 : 고객의 매체타입값으로 쿠폰에 걸려있는 사용가능 또는 사용금지 매체 조회
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 11
+	   
+	   	#{_c.cpnNo[0].value} = '288873'
+	   	#{_c.mediaType[0].value} = 'HE'
+	-->
+	<select id="findAvailMediaCnt" parameterType="criteria" resultType="int">
+	<![CDATA[
+			 SELECT COUNT(*) CPN_CNT			
+			  FROM CPN_CPN_M CCM
+			      ,CPN_CHANL_D CCD
+			WHERE CCM.CPN_NO = CCD.CPN_NO(+)
+			    AND CCM.CPN_NO = #{_c.cpnNo[0].value}
+			    AND (  CCM.CHANL_LIMIT_TYP_CD = 'Y' 
+			           OR (
+			                  NVL(CCD.CHANL_CD, 'P') IN ('P' , 'B')
+			                  AND CCM.CHANL_LIMIT_TYP_CD = 'Y' 
+			                  AND ( NVL(CCD.CHANL_DTL_CD, '0') = '0' 
+			                        OR NVL(CCD.CHANL_DTL_CD, '0') = #{_c.mediaType[0].value} )
+			               )
+			           OR (
+			                  NVL(CCD.CHANL_CD, 'P') IN ('P' , 'B')
+			                  AND CCM.CHANL_LIMIT_TYP_CD = 'N'
+			                  AND ( NVL(CCD.CHANL_DTL_CD, '0') = '0' 
+			                        OR NVL(CCD.CHANL_DTL_CD, '0') = #{_c.mediaType[0].value} )
+			               )
+			          )
+	]]>
+	</select>		
+	
+	
+	<!--
+	   	내용 : 쿠폰의 상품적용타입이 사용가능상품코드(YC)일 경우 해당상품의
+	           상품코드, 상품명을 조회한다. 결과값이 1개이면 상품명을 표출
+	           EC DB를 조회한다.
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 11
+	   
+	   	#{cpnNo} = '110712108'
+	-->
+	<resultMap id="prdCdCntMap" type="com.lgeshop.ec.wm.cbeans.CouponProduct">
+		<result property="number" column="PRD_CD"/>
+		<result property="name" column="PRD_NM"/>
+	</resultMap>
+	<select id="findPrdCdCnt" parameterType="String" resultMap="prdCdCntMap">
+	<![CDATA[
+			SELECT	/*+ leading(A)  		 
+						index(A PK_CPN_CPN_M) 	 
+						index(B PK_CPN_TGT_D) */ 
+						CTD.PRD_CD		
+					   ,PPM.PRD_NM		
+				FROM	CPN_CPN_M CCM
+					   ,CPN_TGT_D CTD
+					   ,PRD_PRD_M PPM	
+				WHERE CCM.CPN_NO = #{cpnNo}	
+			   	  AND CCM.CPN_NO = CTD.CPN_NO	
+				  AND CTD.PRD_CD = PPM.PRD_CD	
+			   	  AND CCM.CPN_TGT_TYP_CD IN ('YC') 
+			 	  AND NVL(PPM.BUNDL_PRD_GBN_CD,'X') <> '20'
+				  AND ROWNUM <= 2	
+	]]>
+	</select>		
+	
+
+	<!--
+	   	내용 : 해당 상품에 걸려있는 상품 최대할인금액 관련 정보 조회
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 11
+	   
+	   	#{prdCd} = 1234567
+	-->
+	<select id="findIsPrdCouponLimit" parameterType="long" resultType="HashMap">
+	<![CDATA[
+			SELECT   DECODE(CPN_APPLY_TYP_CD,'09','Y','N') AS COUPON_LIMIT 	/*쿠폰적용유형코드[EC_PRD.COUPON_LIMIT]*/
+			        ,'N' AS THANKYOU_COUPON_FLAG                   /*THANKS 쿠폰 삭제 [beanKnight : 20110621]*/
+			        ,NVL(A.CPN_APPLY_TYP_CD, '00') AS COUPON_APPLY_TYPE /*선택적 쿠폰적용 코드값[LGEC_PRD_DTL.COUPON_APPLY_TYPE]*/
+			        ,NVL(A.CPN_MAX_DC_AMT, 0) AS COUPON_DIS_LIMIT	/*쿠폰최대할인금액[LGEC_PRD_DTL.COUPON_DIS_LIMIT]*/
+			        ,NVL(A.REP_PRD_YN , 'N') AS REP_FLAG 			/*대표상품FLAG[LGEC_PRD_DTL.REP_FLAG]*/
+			FROM	PRD_PRD_M A 									/*EC동기화대상*/
+			WHERE	A.PRD_CD   = #{prdCd}  
+	]]>
+	</select>	
+
+
+
+
+
+
+
+
+
+	<!--
+	   	내용 : 슈퍼[VIP]쿠폰 제한 상품 코드 조회
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 11
+	   
+	   	#{prdCd} = 1234567
+	-->
+	<select id="findCheckPrdCdLimit" parameterType="long" resultType="int">
+	<![CDATA[
+			SELECT COUNT(*)
+			  FROM CPN_LIMIT_PRD_D
+			 WHERE PRD_CD = #{prdCd}
+			   AND USE_YN = 'Y'
+			   AND VALID_STR_DTM <= SYSDATE
+			   AND VALID_END_DTM >= SYSDATE
+			   AND ROWNUM = 1    
+	]]>
+	</select>	
+	
+	
+	<!--
+	   	내용 : 해당 상품에 걸려있는 상품 최대할인금액 관련 정보 조회
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 11
+	   
+	   	#{_c.cpnNo[0].value} = '92907'
+	   	#{_c.paramVal[0].value} = 645729
+	   	#{_c.columGbn[0].value} = 'PRD_CD'
+	-->
+	<select id="findHashPrdYN" parameterType="criteria" resultType="int">
+			SELECT  COUNT(*) CNT		
+			  FROM	CPN_CPN_M CCM			
+			       ,CPN_TGT_D CTD
+			 WHERE CCM.CPN_NO = CTD.CPN_NO	
+			   AND CCM.CPN_NO = #{_c.cpnNo[0].value}
+			   AND CCM.CPN_APRV_ST_CD = '03'
+		   <if test="_c.columGbn[0].value == 'PRD_CD' ">
+			   AND CTD.PRD_CD = #{_c.paramVal[0].value}
+		   </if>	   
+		   <if test="_c.columGbn[0].value == 'PRD_CLS_CD' ">
+			   AND CTD.PRD_CLS_CD = #{_c.paramVal[0].value}
+		   </if>	   
+		   <if test="_c.columGbn[0].value == 'EC_SHOP_NO' ">
+			   AND CTD.EC_SHOP_NO = #{_c.paramVal[0].value}
+		   </if>	   
+		   <if test="_c.columGbn[0].value == 'SUP_CD' ">
+			   AND CTD.SUP_CD = #{_c.paramVal[0].value}
+		   </if> 	   
+			   AND ROWNUM = 1 	 
+	</select>		
+	
+	
+	
+	<!--
+	   	내용 :  쿠폰 적용시 : 해당 상품 분류[대/중/소/세] 조회
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 11
+	   
+	   	#{prdCd} = 1234567
+	-->
+	<select id="findClassCode" parameterType="long" resultType="String">
+			SELECT  SUBSTR(PRD_CLS_CD,1,5) AS CLASS_CODE
+			FROM	PRD_PRD_M
+			WHERE	PRD_CD = #{prdCd}
+	</select>	
+	
+	
+	<!--
+	   	내용 :  쿠폰 적용시 : 해당 상품에 걸려 있는 쿠폰 최대할인금액 조회
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 11
+	   
+	   	#{prdCd} = 1234567
+	-->
+	<select id="findPrdCouponLimitAmt" parameterType="long" resultType="int">
+			SELECT  NVL(CPN_MAX_DC_AMT, 0) AS CPN_MAX_DC_AMT	        /*쿠폰최대할인금액*/
+		  	  FROM	PRD_PRD_M				        /*상품기본*/
+		 	 WHERE	PRD_CD = #{prdCd}				/*상품코드*/
+	</select>		
+	
+	
+	<!--
+	   	내용 :  매장쿠폰에 걸려있는 매장 정보 조회
+	   	작성자 : 윤병찬
+	   	작성일 : 2013. 12. 11
+	   
+	   	#{cpnNo} = '141043'
+	-->
+	<select id="findEcShopNoList" parameterType="String" resultType="Long">
+			SELECT	EC_SHOP_NO
+			FROM	CPN_TGT_D
+			WHERE	CPN_NO = #{cpnNo}
+			  AND   EC_SHOP_NO IS NOT NULL
+	</select>		
+	
+	
+	<!--
+	   	내용 : 쿠폰번호와 고객번호로 쿠폰정보를 조회한다.
+	   	       유효기간 체크(쿠폰 발급시 쿠폰의 유효기간과 유효일수를 해당 컬럼에 반영함:주문서시간고려10분추가)
+	   	작성자 : 윤병찬
+	   	작성일 : 2013.12.16
+	   
+	   	#{_c.couponNum[0].value} = 121230491
+	   	#{_c.custNo[0].value} = 9806081
+	-->
+	<select id="findCouponInfoCouponNum" parameterType="criteria" resultType="HashMap">
+	<![CDATA[
+			 SELECT DISTINCT 
+		            CCM.CPN_NO AS CPN_NO,
+					CCM.CPN_TYP_CD AS COUPON_TYPE,
+			    	CCM.CPN_TGT_TYP_CD,
+			    	(NVL(CCM.GSHS_DC_RTAMT,0) + TO_NUMBER(NVL(CCM.SUP_DC_RTAMT,'0'))) AS COUPON_CLASS,
+					CCM.PRD_MIN_SALE_PRC,
+					CCM.MAX_DC_AMT,
+					CCM.CHANL_LIMIT_TYP_CD,
+					CCM.ACC_TYP_CD AS JUKLIB_TYPE,
+					CCM.VALID_DT_CHK_YN,
+					CCM.VALID_DDCNT,
+					CCM.CUST_CHK_YN,
+					CCM.CPN_SNTNC_CNTNT,
+					CCM.CPN_GBN_CD,
+					NVL(CCM.UNLMT_USE_YN, 'N') UNLMT_USE_YN,
+					NVL(CCM.ADD_RTAMT,0) AS ADD_COUPON_CLASS,
+					NVL(CCM.CPN_EVENT_KIND_CD,'') AS COUPON_KIND,
+					NVL(CCM.GSHS_DC_RTAMT,0) AS COUPON_CLASS_IN,
+					TO_NUMBER(NVL(CCM.SUP_DC_RTAMT,'0')) AS COUPON_CLASS_EX,
+					NVL(CCM.WEKDY_CPN_YN,'N') AS WEEK_FLAG,
+					NVL(CCM.WEKDY_APPLY_STR_TIME,'000000') AS WEEK_START_TIME,
+					NVL(CCM.WEKDY_APPLY_END_TIME,'000000') AS WEEK_END_TIME,
+					NVL(CCM.WEKDY_APPLY_CD,'NNNNNNN') AS WEEK_CODE,
+					CCD.ISSUE_STR_DTM
+			  FROM 	CPN_CPN_M CCM,
+			        CPN_CUST_D CCD
+			  WHERE CCM.CPN_NO = #{_c.couponNum[0].value}
+		    	AND CCM.CPN_NO = CCD.CPN_NO
+			    AND CCD.CUST_NO = #{_c.custNo[0].value}
+		  		AND CCM.CPN_APRV_ST_CD = '03'
+		  		AND SYSDATE BETWEEN CCD.ISSUE_STR_DTM 
+		                        AND CCD.ISSUE_END_DTM+30/60/24       
+		        AND ROWNUM = 1
+	]]>
+	</select>		
+	
+	
+	<!--
+	   	내용 :  매장쿠폰에 걸려있는 매장 정보 조회
+	   	작성자 : 윤병찬
+	   	작성일 : 2013.12.16
+	   
+	   	#{cpnNo} = '141043'
+	-->
+	<select id="findCatvid" parameterType="long" resultType="Long">
+		SELECT  CCAM.CUST_NO 
+		  FROM  CST_CUST_ACCNT_M CCAM 
+		       ,CST_CUST_M CCM 
+		 WHERE  CCAM.CUST_NO = CCM.CUST_NO 
+		   AND  CCAM.EC_CUST_NO = #{ecuserId} 
+		   AND  CCAM.CUST_ACCNT_GBN_CD = 'GSEC' 
+		   AND  CCAM.CUST_ACCNT_ST_CD = 'A' 
+		   AND  CCM.CUST_ST_CD = 'Y'
+	</select>		
+	
+	
+	<!--
+	   	내용 :  쿠폰마스터 조회
+	   	작성자 : 윤병찬
+	   	작성일 : 2013.12.16
+	   
+	   	#{cpnNo} = '141043'
+	-->
+	<select id="findCpnCpnM" parameterType="String" resultType="HashMap">
+			SELECT  CPN_TYP_CD  AS COUPON_TYPE  
+			       ,NVL (GSHS_DC_RTAMT, 0) + NVL (SUP_DC_RTAMT, 0) AS COUPON_CLASS   
+			       ,MAX_DC_AMT AS DISCOUNT_LIMIT         
+			       ,CHANL_LIMIT_TYP_CD AS MEDIA_LIMIT_TYPE  
+			       ,CPN_TGT_TYP_CD AS PRD_APPLY_TYPE     
+			       ,CPN_GBN_CD AS COUPON_FLAG         
+			       ,NVL(ADD_RTAMT, 0) AS ADD_COUPON_CLASS    
+			       ,NVL(IMM_VISIT_EXCLU_YN, 'N') AS DIRECT_VISIT_FLAG	   
+			       ,NVL(PRD_MIN_SALE_PRC, 0) AS PRD_MIN_SLAE_PRC	   
+			  FROM CPN_CPN_M    
+			 WHERE CPN_NO = #{cpnNo}   
+	</select>		
+	
+	
+	<!--
+	   	내용 :  매체별추가할인 매체 검증
+	   	작성자 : 윤병찬
+	   	작성일 : 2013.12.16
+	   
+	   	#{_c.psCouponNum[0].value} = '141043'
+	   	#{_c.psMediaType[0].value} = '0'
+	-->
+	<select id="findMediaCnt" parameterType="criteria" resultType="int">
+			SELECT COUNT(CCD.CHANL_DTL_CD) AS MEDIACOUNT
+			  FROM  CPN_CPN_M CCM
+			       ,CPN_CHANL_D CCD                 
+			 WHERE CCM.CPN_APRV_ST_CD = '03' 
+			   AND CCM.CPN_NO  = CCD.CPN_NO(+)   
+			   AND CCM.CPN_NO = #{_c.psCouponNum[0].value}          
+			   AND CCD.CHANL_DTL_CD = #{_c.psMediaType[0].value}  
+	</select>		
+	
+	
+	
+	
+	
+</mapper>

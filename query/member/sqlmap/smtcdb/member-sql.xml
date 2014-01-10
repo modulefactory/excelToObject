@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.member.smtcdb.repository.MemberSqlMapRepository">
+
+	<resultMap type="iceberg.capi.member.model.Member" id="memberMap">
+		<result property="customerNumber" column="CUST_NO"/>
+		<result property="loginId" column="LOGIN_ID"/>
+		<result property="password" column="PASSWD"/>
+		<result property="eshopCustomerNumber" column="EC_CUST_NO"/>
+		<result property="customerName" column="CUST_NM"/>
+		<result property="customerEmailAddress" column="CUST_EMAIL_ADDR"/>
+		<result property="socialSecurityNumberPre7" column="SSNO_PRE7"/>
+		<result property="socialSecurityNumberEncryptionValue" column="SSNO_ECP"/>
+		<result property="eshopMemberTypeCode" column="EC_MEM_TYP_CD"/>
+		<result property="customerClassCode" column="CUST_CLS_CD"/>
+		<result property="realNameCertificationYesOrNo" column="RLNM_CERT_YN"/>
+		<result property="ipinCustomerYesOrNo" column="IPIN_CUST_YN"/>
+		<result property="shoppingBasketNumber" column="BASKT_NO"/>
+		<result property="registrationDayAndTime" column="REG_DTM"/>
+		<result property="gsnpointCustomerNumber" column="GSNPNT_CUST_NO"/>
+		<result property="insideTheCompanyEmployeeSaleTargetYesOrNo" column="EMP_SALE_TGT_YN"/>
+		<result property="countryNumberCodeHome" column="CNTRY_NO_CD_HOME"/>
+		<result property="regionTelephoneNumberHome" column="REGON_TELNO_HOME"/>
+		<result property="aTelephoneExchangeNumberTelephoneNumberHome" column="TXNO_TELNO_HOME"/>
+		<result property="detailTelephoneNumberHome" column="DTL_TELNO_HOME"/>
+		<result property="cellularPhoneAdmissionCommunicationCompanyCode" column="CELPHN_ADM_COM_CO_CD"/>
+		<result property="regionTelephoneNumberCellularPhone" column="REGON_TELNO_CELPHN"/>
+		<result property="aTelephoneExchangeNumberTelephoneNumberCellularPhone" column="TXNO_TELNO_CELPHN"/>
+		<result property="detailTelephoneNumberCellularPhone" column="DTL_TELNO_CELPHN"/>
+		<result property="receiverFullNameHome" column="RCVR_NM_HOME"/>
+		<result property="zipCodeHome" column="ZIPCD_HOME"/>
+		<result property="baseAddressHome" column="BASE_ADDR_HOME"/>
+		<result property="detailAddressHome" column="DTL_ADDR_HOME"/>
+		<result property="easternCheckResultCodeHome" column="EASTN_CHK_RSLT_CD_HOME"/>
+		<result property="directMailSendPlaceGubunCodeHome" column="DM_SNDP_GBN_CD_HOME"/>
+		<result property="receiverFullNameOffice" column="RCVR_NM_OFC"/>
+		<result property="zipCodeOffice" column="ZIPCD_OFC"/>
+		<result property="baseAddressOffice" column="BASE_ADDR_OFC"/>
+		<result property="detailAddressOffice" column="DTL_ADDR_OFC"/>
+		<result property="easternCheckResultCodeOffice" column="EASTN_CHK_RSLT_CD_OFC"/>
+		<result property="directMailSendPlaceGubunCodeOffice" column="DM_SNDP_GBN_CD_OFC"/>
+		<result property="ipinCiNumber" column="IPIN_CI_NO"/>
+		<result property="eshopForeignShoppingTermsAndConditionAgreeYesOrNo" column="EC_FORGN_SHOP_TRMS_AGREE_YN"/>
+		<result property="customerEnglishWritingName" column="CUST_ENG_NM"/>
+		<result property="addressContactNumberHome" column="ADDR_CNTC_NO_HOME"/>
+		<result property="discountRate" column="DC_RT"/>
+		<result property="ipinDiNumber" column="IPIN_DI_NO"/>
+		<result property="thirdPartyInformationAgreeYesOrNo" column="THDPRT_INFO_AGREE_YN"/>
+		<result property="selfCertificationYesOrNo" column="SLF_CERT_YN"/> 
+	</resultMap>
+
+	<select id="findMember" parameterType="criteria" resultMap="memberMap">
+        SELECT /* /smtcdb/member-sql.xml. 2013.10.18 by 김경아 */
+                CCM.CUST_NO                                   AS CUST_NO
+               ,CCTM.LOGIN_ID                                 AS LOGIN_ID
+               ,CCTM.PASSWD                                   AS PASSWD
+               ,CCTM.EC_CUST_NO                               AS EC_CUST_NO
+               ,CCM.CUST_NM                                   AS CUST_NM
+               ,CCM.CUST_EMAIL_ADDR                           AS CUST_EMAIL_ADDR
+               ,CCM.SSNO_PRE7                                 AS SSNO_PRE7
+               ,CCM.SSNO_ECP                                  AS SSNO_ECP
+               ,CCM.EC_MEM_TYP_CD                             AS EC_MEM_TYP_CD
+               ,CCM.CUST_CLS_CD                               AS CUST_CLS_CD
+               ,NVL(CCM.RLNM_CERT_YN, 'N')                    AS RLNM_CERT_YN    
+               ,NVL(CCM.IPIN_CUST_YN, 'N')                    AS IPIN_CUST_YN        
+               ,CCM.BASKT_NO                                  AS BASKT_NO
+               ,TO_CHAR(CCM.REG_DTM, 'yyyymmdd')              AS REG_DTM        
+               ,CGCM.GSNPNT_CUST_NO                           AS GSNPNT_CUST_NO
+               ,NVL(CCCDRD.EMP_SALE_TGT_YN, 'N')              AS EMP_SALE_TGT_YN        
+               ,CCTD1.CNTRY_NO_CD                             AS CNTRY_NO_CD_HOME       
+               ,CCTD1.REGON_TELNO                             AS REGON_TELNO_HOME           
+               ,CCTD1.TXNO_TELNO                              AS TXNO_TELNO_HOME           
+               ,CCTD1.DTL_TELNO                               AS DTL_TELNO_HOME            
+               ,CCTD2.CELPHN_ADM_COM_CO_CD                    AS CELPHN_ADM_COM_CO_CD        
+               ,CCTD2.REGON_TELNO                             AS REGON_TELNO_CELPHN       
+               ,CCTD2.TXNO_TELNO                              AS TXNO_TELNO_CELPHN        
+               ,CCTD2.DTL_TELNO                               AS DTL_TELNO_CELPHN        
+               ,CCAD1.RCVR_NM                                 AS RCVR_NM_HOME        
+               ,CCAD1.ZIPCD                                   AS ZIPCD_HOME        
+               ,CCAD1.BASE_ADDR                               AS BASE_ADDR_HOME        
+               ,CCAD1.DTL_ADDR                                AS DTL_ADDR_HOME       
+               ,CCAD1.EASTN_CHK_RSLT_CD                       AS EASTN_CHK_RSLT_CD_HOME        
+               ,DECODE(CCM.DM_SNDP_GBN_CD, '1', 'Y', 'N')     AS DM_SNDP_GBN_CD_HOME        
+               ,CCAD2.RCVR_NM                                 AS RCVR_NM_OFC 
+               ,CCAD2.ZIPCD                                   AS ZIPCD_OFC        
+               ,CCAD2.BASE_ADDR                               AS BASE_ADDR_OFC        
+               ,CCAD2.DTL_ADDR                                AS DTL_ADDR_OFC        
+               ,CCAD2.EASTN_CHK_RSLT_CD                       AS EASTN_CHK_RSLT_CD_OFC        
+               ,DECODE(CCM.DM_SNDP_GBN_CD, '2', 'Y', 'N')     AS DM_SNDP_GBN_CD_OFC        
+               ,CCM.IPIN_CI_NO                                AS IPIN_CI_NO
+               ,NVL(CCTM.EC_FORGN_SHOP_TRMS_AGREE_YN, 'N')    AS EC_FORGN_SHOP_TRMS_AGREE_YN        
+               ,CCM.CUST_ENG_NM                               AS CUST_ENG_NM
+               ,CCAD1.ADDR_CNTC_NO                            AS ADDR_CNTC_NO_HOME
+               ,NVL(CCCDRD.DC_RT,0)                           AS DC_RT        
+               ,CCM.IPIN_DI_NO                                AS IPIN_DI_NO
+               ,NVL(CGCM.THDPRT_INFO_AGREE_YN, 'N')           AS THDPRT_INFO_AGREE_YN        
+               ,NVL(CCM.SLF_CERT_YN, 'N')                     AS SLF_CERT_YN        
+         FROM  CST_CUST_M             CCM                     
+              ,CST_CUST_ACCNT_M       CCTM
+              ,CST_GSNPNT_CUST_M      CGCM
+              ,CST_CUST_CLS_DC_RT_D   CCCDRD
+              ,CST_CUST_TELNO_D       CCTD1
+              ,CST_CUST_TELNO_D       CCTD2
+              ,CST_CUST_ADDR_D        CCAD1
+              ,CST_CUST_ADDR_D        CCAD2
+        WHERE  CCM.CUST_NO                 = CCTM.CUST_NO         
+          AND  CCM.CUST_NO                 = CGCM.CUST_NO(+)
+          AND  CCM.CUST_CLS_CD             = CCCDRD.CUST_CLS_CD(+)
+          AND  CCM.CUST_NO                 = CCTD1.CUST_NO(+)
+          AND  CCM.CUST_NO                 = CCTD2.CUST_NO(+)
+          AND  CCM.CUST_NO                 = CCAD1.CUST_NO(+)
+          AND  CCM.CUST_NO                 = CCAD2.CUST_NO(+)
+          <if test="_c.customerNumber !=null and _c.customerNumber[0].value != null and  _c.customerNumber[0].value > 0 " >
+          AND  CCM.CUST_NO                 = #{_c.customerNumber[0].value}
+          </if>
+          <if test="_c.ipinDiNumber !=null and _c.ipinDiNumber[0].value != null and !''.equals(_c.ipinDiNumber[0].value) " >
+          AND  CCM.IPIN_DI_NO              = #{_c.ipinDiNumber[0].value} 
+          </if> 
+          <if test="_c.loginId !=null and _c.loginId[0].value != null and !''.equals(_c.loginId[0].value) " >
+          AND  CCTM.LOGIN_ID               = #{_c.loginId[0].value} 
+          </if> 
+          AND  CCM.CUST_ST_CD              = 'Y'
+          AND  CCTM.CUST_ACCNT_GBN_CD      = 'GSEC'
+          AND  CCTM.CUST_ACCNT_ST_CD       = 'A'          
+          AND  CGCM.GSNPNT_CUST_ST_CD(+)   = '01'          
+          AND  SYSDATE BETWEEN CCCDRD.VALID_STR_DTM(+) 
+                           AND CCCDRD.VALID_END_DTM(+)         
+          AND  CCTD1.TELNO_TYP_CD(+)       = 'HP'
+          AND  CCTD1.USE_YN(+)             = 'Y'          
+          AND  CCTD2.TELNO_TYP_CD(+)       = 'CP'
+          AND  CCTD2.USE_YN(+)             = 'Y'          
+          AND  CCAD1.ADDR_USE_YN(+)        = 'Y'
+          AND  CCAD1.ADDR_GBN_CD(+)        = '01'          
+          AND  CCAD2.ADDR_USE_YN(+)        = 'Y'
+          AND  CCAD2.ADDR_GBN_CD(+)        = '02' 
+	</select>
+
+</mapper>

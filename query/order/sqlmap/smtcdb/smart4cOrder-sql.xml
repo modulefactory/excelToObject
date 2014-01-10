@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.common.Smart4cOrderSqlMapRepository">
+	               
+	<!-- 
+		내용	: SMTC 주문내역이 있는지 조회
+		작성자	: 윤병찬
+		작성일	: 2013.10.29 신규작성
+	
+		#{_c.custNo[0].value} = 9806081
+		#{_c.strDt[0].value} = 2013-07-13 15:36:18.804
+		#{_c.endDt[0].value} = 2013-11-13 15:36:18.809
+		#{_c.prdCd[0].value} = 11742229
+	-->
+	
+	<select id="findIsSmtcOrderExist" parameterType="criteria"  resultType="int">
+		<![CDATA[
+		SELECT COUNT(OOM.ORD_NO) AS CNT 																	 
+		  FROM ORD_ORD_M  OOM	 				
+		      ,ORD_ITEM_D OID	 													 
+		 WHERE OOM.ORD_NO = OID.ORD_NO	 									 
+		   AND OOM.CUST_NO = #{_c.custNo[0].value} 													 
+		   AND OOM.ORD_DTM BETWEEN #{_c.strDt[0].value} 
+		                       AND #{_c.endDt[0].value} 								 
+		   AND OID.PRD_CD = #{_c.prdCd[0].value}												 
+		   AND OOM.CHANL_CD IN ('P', 'B') 										 
+		   AND RTRIM(OOM.ORD_TYP_DTL_CD) = 'Sales Order' 				 
+		   AND RTRIM(OID.ST_CD) IN ('11', '12', '21', '22', '31', 'B1', 'Z1') 
+		   AND OID.ORD_QTY - NVL(OID.RTP_QTY, 0) > 0  					 
+		   AND ROWNUM = 1
+		]]>	 	
+	</select>
+	
+	
+	
+	<!-- 
+		내용	: 상품별 주문가능수량 조회.속성상품코드로 조회(제한일수로 조회).	
+		          (수입대행 관련 다이나믹 쿼리는 제거-윤병찬)
+		작성자	: 윤병찬
+		작성일	: 2013.10.29 신규작성
+		
+		#{_c.custNo[0].value}	 = 9806081;
+		#{_c.ordLimitDdcnt[0].value} = 30;
+		#{_c.prdCd[0].value} = 11731301;		
+		
+	-->
+	
+	<select id="findPreOrdQtyOfOrdQtyLimitPrd" parameterType="criteria"  resultType="Long">
+		<![CDATA[
+			SELECT SUM(OID.ORD_QTY) - NVL(SUM(OID.RTP_QTY),0) AS ORD_QTY	
+			  FROM ORD_ORD_M  OOM
+			      ,ORD_ITEM_D OID
+			 WHERE OOM.CUST_NO = #{_c.custNo[0].value}	
+			   AND OOM.ORD_DTM BETWEEN SYSDATE-#{_c.ordLimitDdcnt[0].value} 
+			                       AND SYSDATE  
+			   AND OOM.ORD_TYP_DTL_CD = 'Sales Order' 
+			   AND OOM.ORD_NO = OID.ORD_NO	
+			   AND OID.PRD_CD = #{_c.prdCd[0].value}
+			   AND OID.ST_CD IN ('11', '12', '21', '22', '31', 'B1', 'Z1')	
+			  GROUP BY OID.PRD_CD
+		]]>
+	</select>
+	
+	
+	<!-- 
+		내용	: 상품별 주문가능수량 조회.속성상품코드로 조회(날짜로 조회).	 
+		          (수입대행 관련 다이나믹 쿼리는 제거-윤병찬)
+		작성자	: 윤병찬
+		작성일	: 2013.10.29 신규작성
+		
+		#{_c.custNo[0].value} = 9806081;
+		#{_c.strDt[0].value} = '20130701';
+		#{_c.endDt[0].value} = '20131010';
+		#{_c.prdCd[0].value} = 11742229;
+		
+	-->
+	
+	<select id="findPreOrdQtyOfOrdQtyLimitPrdDureDate" parameterType="criteria"  resultType="long">
+		<![CDATA[
+			SELECT SUM(OID.ORD_QTY) - NVL(SUM(OID.RTP_QTY), 0) AS ORD_QTY	
+			  FROM ORD_ORD_M OOM
+			      ,ORD_ITEM_D OID
+			  WHERE OOM.CUST_NO = #{_c.custNo[0].value}	
+			    AND OOM.ORD_DTM BETWEEN TO_DATE(#{_c.strDt[0].value}, 'YYYY-MM-DD HH24:MI:SS') AND TO_DATE(#{_c.endDt[0].value}, 'YYYY-MM-DD HH24:MI:SS') 
+			    AND OOM.ORD_TYP_DTL_CD = 'Sales Order' 
+			    AND OOM.ORD_NO = OID.ORD_NO	
+			    AND OID.PRD_CD = #{_c.prdCd[0].value}
+			    AND OID.ST_CD IN ('11', '12', '21', '22', '31', 'B1', 'Z1')	
+			  GROUP BY OID.PRD_CD
+		]]>
+	</select>
+	
+	<!-- 
+		내용	: 쇼핑지원금 사용주문을 조회한다.
+		작성자 : 박노정
+		작성일 : 2013.11.20
+		
+		#{_c.custNo[0].value} = 10008184
+		#{_c.ordNo[0].value} = 511625510
+		
+	-->
+	
+	<select id="findShopSpptCnt" parameterType="criteria" resultType="Integer">
+	 SELECT COUNT(*) AS CNT
+	   FROM ORD_ORD_M A
+	      , CST_ASSET_TXN_D B
+	  WHERE A.ORD_NO = #{_c.ordNo[0].value}
+	    AND A.CUST_NO = #{_c.custNo[0].value}
+	    AND A.ORD_NO = B.ORD_NO
+	    AND B.TXN_RSN_CD = 'B14'
+	</select>
+	
+	
+	<!-- 
+		내용	: EC카드별VAN정보
+		작성자	: 윤병찬
+		작성일	: 2013.11.22 신규작성
+		
+		파라메터 없음
+	-->
+    <resultMap id="ordEcCardByVanDListMap" type="iceberg.capi.order.model.ordersheet.OrdEcCardByVanD">
+		<result property="ansimClsNm"       column="ANSIM_CLS_NM"/>
+		<result property="aliaCardYn"       column="ALIA_CARD_YN"/>
+		<result property="cardNm"           column="CARD_NM"/>
+		<result property="exposNo"          column="EXPOS_NO"/>
+		<result property="repCardNo"        column="REP_CARD_NO"/>
+    </resultMap>
+	<select id="findOrdEcCardByVanDListActiveOrderByExposNo" resultMap="ordEcCardByVanDListMap">
+		<![CDATA[
+			 SELECT   ANSIM_CLS_NM
+			         ,ALIA_CARD_YN
+			         ,CARD_NM
+			         ,EXPOS_NO
+			         ,REP_CARD_NO
+			 FROM (
+				   SELECT DISTINCT ANSIM_CLS_NM
+				         ,ALIA_CARD_YN
+				         ,CARD_NM
+				         ,EXPOS_NO
+				         ,REP_CARD_NO
+				     FROM ORD_EC_CARD_BY_VAN_D
+				    WHERE ST_CD = 'A'
+				 )
+			 ORDER BY EXPOS_NO
+		]]>	 	
+	</select>	
+	
+	<!-- 
+		내용	: 안심카드중 신한 카드 리스트를 가져온다.
+		작성자	: 윤병찬
+		작성일	: 2013.11.22 신규작성
+		
+		파라메터 없음
+	-->
+	<select id="findOrdEcCardByVanDListShinhanCard" resultMap="ordEcCardByVanDListMap">
+		<![CDATA[
+			SELECT ANSIM_CLS_NM
+			       ,ALIA_CARD_YN
+			       ,CARD_NM
+			       ,EXPOS_NO
+			       ,REP_CARD_NO 
+			 FROM (                                                      
+			 SELECT ANSIM_CLS_NM                
+			       ,ALIA_CARD_YN          
+			       ,CARD_NM                
+			       ,EXPOS_NO                
+			       ,REP_CARD_NO          
+			   FROM ORD_EC_CARD_BY_VAN_D                          
+			  WHERE ST_CD               = 'A'                      
+			    AND CRDIT_CARD_KIND_CD  = 'LG'                     
+			    AND ISSUE_CO_CD         = 'LG'                     
+			    AND ISP_PAY_GBN_CD      = 'ANSIM'                  
+			 UNION ALL                                            
+			 SELECT ANSIM_CLS_NM                
+			       ,ALIA_CARD_YN          
+			       ,CARD_NM                   
+			       ,EXPOS_NO                
+			       ,REP_CARD_NO          
+			   FROM ORD_EC_CARD_BY_VAN_D
+			  WHERE ST_CD = 'A'
+			    AND CRDIT_CARD_KIND_CD = 'BC'
+			    AND ISSUE_CO_CD = 'BC'
+			    AND ISP_PAY_GBN_CD = 'ISP'
+			 ) 
+			 ORDER BY EXPOS_NO
+		]]>	 	
+	</select>	
+	
+	
+
+	<!-- 
+		내용	: 안심카드중 하나은행 카드 리스트를 가져온다.
+		작성자	: 윤병찬
+		작성일	: 2013.11.22 신규작성
+		
+		파라메터 없음
+	-->
+	<select id="findOrdEcCardByVanDListHanabank" resultMap="ordEcCardByVanDListMap">
+		<![CDATA[
+			  SELECT ANSIM_CLS_NM
+			       ,ALIA_CARD_YN
+			       ,CARD_NM
+			       ,EXPOS_NO
+			       ,REP_CARD_NO 
+			 FROM (
+			 SELECT ANSIM_CLS_NM
+			       ,ALIA_CARD_YN
+			       ,CARD_NM
+			       ,EXPOS_NO
+			       ,REP_CARD_NO
+			   FROM ORD_EC_CARD_BY_VAN_D
+			  WHERE ST_CD               = 'A'
+			    AND CRDIT_CARD_KIND_CD  = 'WH'
+			    AND ISSUE_CO_CD         = '81'
+			    AND ISP_PAY_GBN_CD      = 'ANSIM'
+			 UNION ALL
+			 SELECT ANSIM_CLS_NM
+			       ,ALIA_CARD_YN
+			       ,CARD_NM
+			       ,EXPOS_NO
+			       ,REP_CARD_NO
+			   FROM ORD_EC_CARD_BY_VAN_D
+			  WHERE ST_CD = 'A'
+			    AND CRDIT_CARD_KIND_CD = 'BC'
+			    AND ISSUE_CO_CD = 'BC'
+			    AND ISP_PAY_GBN_CD = 'ISP'
+			 ) 
+			 ORDER BY EXPOS_NO
+		]]>	 	
+	</select>		
+	
+	<!-- 
+		내용	: 채널상세코드가 mF(하나SK카드몰)일때 리스트
+		작성자	: 윤병찬
+		작성일	: 2013.11.22 신규작성
+		
+		파라메터 없음
+	-->
+	<select id="findOrdEcCardByVanDListChanlDtlCdmF" resultMap="ordEcCardByVanDListMap">
+		<![CDATA[
+	      SELECT ANSIM_CLS_NM
+		        ,ALIA_CARD_YN
+		        ,CARD_NM
+		        ,EXPOS_NO
+		        ,REP_CARD_NO
+		   FROM ORD_EC_CARD_BY_VAN_D 
+		  WHERE ST_CD = 'A'  
+		    AND ( (CRDIT_CARD_KIND_CD = 'WH' AND ISSUE_CO_CD = '81')    
+		         OR (CRDIT_CARD_KIND_CD = 'BC' AND ISSUE_CO_CD = 'BC') )  
+		  ORDER BY EXPOS_NO DESC
+		]]>	 	
+	</select>			
+	
+
+	
+	<!-- 
+		내용	: EC카드 VAN사 목록 조회한다.(노출순서)
+		작성자	: 윤병찬
+		작성일	: 2013.11.22 신규작성
+		
+		#{_c.crditCardKindCd[0].value} = 'BC'
+		#{_c.issueCoCd[0].value} = 'BC'
+		#{_c.ispPayGbnCd[0].value} = 'ISP'
+	-->
+	<select id="findOrdEcCardByVanDListOrderByExposNo" parameterType="criteria" resultMap="ordEcCardByVanDListMap">
+		<![CDATA[
+			  SELECT ANSIM_CLS_NM
+			        ,ALIA_CARD_YN
+			        ,CARD_NM
+			        ,EXPOS_NO
+			        ,REP_CARD_NO
+			   FROM ORD_EC_CARD_BY_VAN_D
+			  WHERE ST_CD = 'A'
+			    AND CRDIT_CARD_KIND_CD = #{_c.crditCardKindCd[0].value}
+			    AND ISSUE_CO_CD = #{_c.issueCoCd[0].value}
+			    AND ISP_PAY_GBN_CD = #{_c.ispPayGbnCd[0].value}
+			  ORDER BY EXPOS_NO
+		]]>	 	
+	</select>		
+	
+
+	<!-- 
+		내용	: 안심카드중 신한 카드 리스트를 가져온다.
+		작성자	: 윤병찬
+		작성일	: 2013.11.22 신규작성
+		
+		#{_c.crditCardKindCd[0].value} = 'AX'
+		#{_c.issueCoCd[0].value} = 'AX'
+		#{_c.ispPayGbnCd[0].value} = 'ANSIM'
+	-->
+	<select id="findOrdEcCardByVanDList" parameterType="criteria" resultMap="ordEcCardByVanDListMap">
+		<![CDATA[
+			  SELECT ANSIM_CLS_NM
+			        ,ALIA_CARD_YN
+			        ,CARD_NM
+			        ,EXPOS_NO
+			        ,REP_CARD_NO
+			   FROM ORD_EC_CARD_BY_VAN_D
+			  WHERE ST_CD = 'A'
+			    AND CRDIT_CARD_KIND_CD = #{_c.crditCardKindCd[0].value}
+			    AND ISSUE_CO_CD = #{_c.issueCoCd[0].value}
+			    AND ISP_PAY_GBN_CD = #{_c.ispPayGbnCd[0].value}
+		]]>	 	
+	</select>		
+
+
+
+	<!-- 
+		내용	: 모바일 문자쿠폰 상품 월 총합 조회.
+		작성자	: 윤병찬
+		작성일	: 2013.11.22 신규작성
+		
+		#{custNo} = 9806081;
+	-->
+	<select id="findSumMobilPrdCardPayment" parameterType="long"  resultType="long">
+		<![CDATA[
+			SELECT 
+			      NVL(SUM(CASE WHEN POPD.CNL_ST_CD = 'C25' THEN POPD.PAY_AMT ELSE POPD.RFN_PSBL_AMT END),0) AS CARD_AMT
+			FROM PAY_ORD_PAYMT_D POPD
+			WHERE POPD.CUST_NO               = #{custNo}  /* 고객번호 */
+			  AND POPD.META_ATTR12+0 BETWEEN TRUNC(SYSDATE,'MONTH') AND SYSDATE /* 승인일자(현재월1일 ~ 현재일시) */
+			  AND POPD.PAY_TYP_CD||''        = 'Credit Card' /* 카드결제 */
+			  AND POPD.META_ATTR30           = 'P12'         /* 모바일상품권 결제 */
+			  AND NVL(POPD.META_ATTR10,'N') <> 'Y'           /* 체크카드 제외 */
+			  AND NVL(POPD.CNL_ST_CD,'N/A') IN ('C25','N/A') /* 취소제외, 환불은 포함 */
+			  AND POPD.PAY_ST_CD        NOT IN ('C31','C00','C01','C11') /* 청구전취소, 승인전 결제 제외 */
+		]]>	 	
+	</select>		
+
+
+
+	<!-- 
+		내용	: 특정 매체타입이 직접방문 매체타입인지 확인(리턴값이 0보다 크면 직방매체)
+		작성자	: 윤병찬
+		작성일	: 2013.11.20 신규작성
+	
+		#{chanlDtlCd} = 'qP'
+	-->
+	<select id="findIsBaroOnMediaTypeCount" parameterType="String" resultType="int">
+			SELECT COUNT(*)
+			  FROM CMM_CMM_C
+			 WHERE CMM_GRP_CD = 'CMM002'
+			   AND USE_YN = 'Y'
+			   AND CD_REF_VAL_2 = '10'
+			   AND CMM_CD = #{chanlDtlCd}
+	</select>
+	
+	
+	<!-- 
+		내용	: 무형상품의 serial key의 사용안한 상품코드 조회
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+	
+		#{prdCd} = 1169414
+	-->
+	<select id="findOrdSerialKeyByPrdcd" parameterType="long" resultType="Long">
+			 SELECT PRD_CD
+			 FROM   ORD_SERIAL_KEY_MNG_D
+			 WHERE  PRD_CD = #{prdCd}
+			   AND  EMAIL_YN IS NOT NULL
+			   AND  ROWNUM = 1
+	</select>	
+	
+	
+	<!-- 
+		내용	: 주문상태를 조회한다.
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+	
+		#{ordNo} = 50594359
+	-->
+	<resultMap id="orderStatusMap" type="iceberg.capi.order.model.ordermodify.OrderItemInfo">
+		<result property="stCd"       		column="ST_CD"/>
+		<result property="ordItemNo"        column="ORD_ITEM_NO"/>
+		<result property="ordItemId"        column="ORD_ITEM_ID"/>
+    </resultMap>	
+	<select id="findOrderStatus" parameterType="long" resultMap="orderStatusMap">
+			 SELECT  OID.ST_CD AS ST_CD  
+			        ,OID.ORD_ITEM_NO AS ORD_ITEM_NO  
+			        ,OID.ORD_ITEM_ID AS ORD_ITEM_ID  
+			  FROM   ORD_ORD_M OOM
+			        ,ORD_ITEM_D OID
+			 WHERE  OOM.ORD_NO = OID.ORD_NO
+			   AND  OOM.ORD_NO = #{ordNo}
+	</select>		
+
+
+	<!-- 
+		내용	: [문자쿠폰]주문아이템 번호에 대한 supp_prdid를 조회한다.
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+	
+		#{_c.ordNo[0].value} = 257236410
+		#{_c.ordItemNo[0].value} = 1
+	-->
+	<select id="findOrderItemSupCd" parameterType="criteria" resultType="String">
+			SELECT  NVL(REP_PRD_SUP_PRD_CD, '') REP_PRD_SUP_PRD_CD
+			  FROM  ORD_ITEM_D
+			 WHERE  ORD_NO = #{_c.ordNo[0].value}
+			   AND  ORD_ITEM_NO = #{_c.ordItemNo[0].value}
+			   AND	ROWNUM = 1
+	</select>	
+
+
+
+	
+</mapper>

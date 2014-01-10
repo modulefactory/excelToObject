@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.member.GsCustMobilCertDSqlMapRepository">
+	               
+	<!-- 
+		내용	: (주문전) 주문 마스터 정보 조회
+		작성자	: 윤병찬
+		작성일	: 2013.1.29 신규작성
+		
+		#{_c.chanlCd[0].value} = '1770_6280ada4-d8e1-4d30-9';
+		#{_c.custNo[0].value} = 12820238;
+
+	-->
+	<resultMap id="mobileCertKeyInfoMap" type="iceberg.capi.order.model.member.GsCustMobilCertD">
+		<result property="certKey" column="CERT_KEY"/>
+		<result property="certDtm" column="CERT_DTM"/>
+		<result property="custNo" column="CUST_NO"/>
+		<result property="celphnNo" column="CELPHN_NO"/>
+	</resultMap>
+	<select id="findMobileCertKeyInfo" parameterType="criteria"  resultMap="mobileCertKeyInfoMap">
+			SELECT GCMCD.CERT_KEY AS CERT_KEY
+			      ,GCMCD.CERT_DTM AS CERT_DTM
+			      ,GCMCD.CUST_NO AS CUST_NO
+			      ,GCMCD.CELPHN_NO AS CELPHN_NO
+			FROM   GS_CUST_MOBIL_CERT_D GCMCD
+			      ,CST_CUST_M CCM
+			WHERE  GCMCD.CERT_KEY =  #{_c.chanlCd[0].value}
+		   <if test="_c.custNo[0].value > 0">
+        	  AND  GCMCD.CUST_NO = #{_c.custNo[0].value} 
+           </if>
+			  AND  GCMCD.USE_YN = 'Y'
+			  AND  GCMCD.CUST_NO = CCM.CUST_NO
+			  AND  CCM.CUST_ST_CD = 'Y'
+			  AND  ROWNUM = 1
+	</select>
+	
+	
+	
+	
+	
+</mapper>

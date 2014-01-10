@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.orderdelivery.OrdDlvAreaLeadTimeSqlMapRepository">
+	<!--
+		설명 : 지연 리드 타임
+		작성자 : 유영모
+		작성일 : 2013-11-22
+	-->
+	<resultMap id="areaLeadTime" type="iceberg.capi.order.model.orderdelivery.AreaLeadTime">
+		<result property="date"               column="DT"/>
+		<result property="day"                column="DAY"/>
+		<result property="holyDayFlg"         column="HOLDY_FLG"/>
+	</resultMap>
+	
+	<!--                                                               
+		내용	: 출고완료 + 지역별 리드타임일을 조회                            
+		작성자	: 유영모                                               
+		작성일	: 2013.11.28
+		#{_c.shipDate[0].value} = '20131118'
+	-->
+	<select id="findAreaLeadTime" parameterType="criteria" resultMap="areaLeadTime">
+		<![CDATA[
+		  SELECT TO_CHAR(DT, 'yyyy/mm/dd') AS DT           
+		      ,WEKDY_NM                  AS DAY
+		      ,HOLDY_YN                  AS HOLDY_FLG
+		  FROM CMM_CALND_C
+		 ]]>
+  		 <choose>
+		  	<when test='_c.testToShipDate != null and _c.testToShipDate[0].value != "" '>
+        		<![CDATA[
+          		  WHERE DT BETWEEN  TO_DATE(#{_c.shipDate[0].value}, 'YYYYMMDD') AND TO_DATE(#{_c.testToShipDate[0].value}, 'YYYYMMDD')             
+		 		]]>
+          	</when>
+		  	<otherwise>
+		  		<![CDATA[
+          		  WHERE DT > TO_DATE(#{_c.shipDate[0].value}, 'YYYYMMDD')                  
+		 		]]>
+          	</otherwise>
+		  </choose>	  
+		 ORDER BY DT
+	</select>
+</mapper>

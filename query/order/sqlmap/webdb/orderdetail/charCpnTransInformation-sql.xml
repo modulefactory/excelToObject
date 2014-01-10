@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.orderdetail.CharCpnTransInformationSqlMapRepository">
+
+	<resultMap type="iceberg.capi.order.model.orderdetail.common.CharCpnTransInformation" id="charCpnTransInformation" >
+		<result property="ordItemNo" column="ORD_ITEM_NO"/> 
+		<result property="rPhNum" column="RCVR_CELPHN_NO"/> 
+		<result property="smsType" column="CHAR_CPN_WRIT_TYP_CD"/> 
+		<result property="rName" column="RCVR_NM"/> 
+	</resultMap>
+
+	<select id="findCharCpnTransInfo" parameterType="criteria" resultMap="charCpnTransInformation">
+      SELECT ORD_ITEM_NO AS ORD_ITEM_NO 
+            ,R_PH_NUM    AS RCVR_CELPHN_NO
+            ,SMS_TYPE    AS CHAR_CPN_WRIT_TYP_CD
+            ,R_NAME      AS RCVR_NM
+        FROM GS_ORD_LOG_GIFT
+       WHERE ORD_NO = #{_c.ordNo[0].value}
+       <if test="_c.ordItmId != null">
+         AND ORDITMID = #{_c.ordItmId[0].value}
+       </if>
+       ORDER BY ORD_ITEM_NO
+	</select>
+
+</mapper>

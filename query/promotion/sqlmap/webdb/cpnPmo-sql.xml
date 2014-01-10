@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.promotion.webdb.repository.cpn.CpnPmoSqlMapRepository">
+
+	<resultMap type="iceberg.capi.promotion.model.cpn.CpnPmoBase" id="resultCpnPmoBase"  >
+		<result property = "gubun" 					column = "GBN"/>
+		<result property = "supDcRtamt" 			column = "SUP_DC_RTAMT"/>
+		<result property = "cpnNo" 					column = "CPN_NO"/>
+		<result property = "cpnTypCd" 				column = "CPN_TYP_CD"/>
+		<result property = "unlmtUseFlg" 			column = "UNLMT_USE_FLG"/>
+		<result property = "gshsSupDcRtamt" 		column = "GSHS_SUP_DC_RTAMT"/>
+		<result property = "chanlCd" 					column = "CHANL_CD"/>
+		<result property = "chanlLimitTypCd" 		column = "CHANL_LIMIT_TYP_CD"/>
+		<result property = "chanlDtlCd" 				column = "CHANL_DTL_CD"/>
+		<result property = "maxDcAmt" 				column = "MAX_DC_AMT"/>
+		<result property = "cpnGbnCd" 				column = "CPN_GBN_CD"/>
+		<result property = "cpnExposFlg" 			column = "CPN_EXPOS_FLG"/>
+		<result property = "dcRtamt" 				column = "DC_RTAMT"/>
+		<result property = "prdMinSalePrc" 			column = "PRD_MIN_SALE_PRC"/>
+		<result property = "validStrDtm" 			column = "VALID_STR_DTM"/>
+		<result property = "validEndDtm" 			column = "VALID_END_DTM"/>
+		<result property = "cpnTgtTypCd" 			column = "CPN_TGT_TYP_CD"/>
+		<result property = "cpnSntncCntnt"			column = "CPN_SNTNC_CNTNT"/>
+					         		
+	</resultMap>
+	<select id="findOnePrcCpnInfo" parameterType="iceberg.capi.promotion.model.cpn.CpnPmoBase" resultMap="resultCpnPmoBase">
+	<!-- 
+	DBMS : WEBDB
+	분야 : 단품  findOnePrcCpnInfo
+	API  : 상품  정보 조회
+	설명 : 가격 쿠폰 정보 조회 
+	
+	#{prdCd} = 6551806
+	#{commonChannelModel.cmmBaseChanl} = 'P'
+	#{chanlCd} = 'P'
+	#{CpnTypCd} = '03'
+	#{PrdMinSalePrc} = 1000
+	-->	
+	SELECT X.*
+     FROM (SELECT X1.*
+             FROM (SELECT /*+ LEADING(CTD) INDEX(CCM PK_CPN_CPN_M) */
+                          'prd'                          AS GBN                                                 
+                         ,CCM.SUP_DC_RTAMT               AS SUP_DC_RTAMT                 /*협력사할인율/액*/    
+                         ,CCM.CPN_NO                     AS CPN_NO                       /*쿠폰번호*/
+                         ,CCM.CPN_TYP_CD                 AS CPN_TYP_CD                   /*쿠폰유형코드*/
+                         ,CCM.UNLMT_USE_YN               AS UNLMT_USE_FLG                /*무제한사용여부*/
+                         ,(NVL (CCM.GSHS_DC_RTAMT, 0) + NVL (CCM.SUP_DC_RTAMT, 0))  AS GSHS_SUP_DC_RTAMT        /*당사+협력사할인율/액*/
+                         ,CCD.CHANL_CD                   AS CHANL_CD                     /*채널코드*/
+                         ,CCM.CHANL_LIMIT_TYP_CD         AS CHANL_LIMIT_TYP_CD           /*채널제한유형코드*/
+                         ,DECODE(CCD.CHANL_DTL_CD,'0','PA',CCD.CHANL_DTL_CD)      AS CHANL_DTL_CD             /*채널상세코드*/
+                         ,CCM.MAX_DC_AMT                 AS MAX_DC_AMT                   /*최대할인금액*/
+                         ,CCM.CPN_GBN_CD                 AS CPN_GBN_CD                   /*쿠폰구분코드*/
+                         ,CCM.CPN_EXPOS_YN               AS CPN_EXPOS_FLG                /*쿠폰노출여부*/
+                         ,(CASE WHEN CCM.CPN_TYP_CD = '1' THEN #{prdMinSalePrc}*((NVL ( CCM.GSHS_DC_RTAMT, 0) + NVL (CCM.SUP_DC_RTAMT, 0))/100)
+                                WHEN CCM.CPN_TYP_CD = '2' THEN TO_NUMBER((NVL ( CCM.GSHS_DC_RTAMT, 0) + NVL (CCM.SUP_DC_RTAMT, 0))) END) AS DC_RTAMT
+                         ,NVL(CCM.PRD_MIN_SALE_PRC, 0)   AS PRD_MIN_SALE_PRC             /*상품최소판매가격*/
+                         ,CCM.VALID_STR_DTM              AS VALID_STR_DTM                /*유효시작일시*/
+                         ,CCM.VALID_END_DTM              AS VALID_END_DTM                /*유효종료일시*/
+                         ,CCM.CPN_TGT_TYP_CD             AS CPN_TGT_TYP_CD               /*쿠폰대상유형코드*/
+                         ,CCM.CPN_SNTNC_CNTNT            AS CPN_SNTNC_CNTNT              /*쿠폰문구내용*/                             
+                     FROM (SELECT DISTINCT CTD.CPN_NO
+                             FROM CPN_TGT_D CTD
+                            WHERE CTD.PRD_CD = #{prdCd} ) CTD   /*쿠폰대상TABLE*/
+                         ,CPN_CPN_M   CCM  /*쿠폰기본TABLE*/
+                         ,CPN_CHANL_D CCD  /*쿠폰채널TABLE*/
+                    WHERE CCM.CPN_NO = CTD.CPN_NO
+                      AND CCM.CPN_NO = CCD.CPN_NO
+                      AND SYSDATE BETWEEN CCM.VALID_STR_DTM 
+                                      AND CCM.VALID_END_DTM
+                      AND CCM.CPN_TYP_CD IN ('1','2')                       /*쿠폰유형코드(정률할인-1, 정액할인-2)*/
+                      AND CCM.CHANL_LIMIT_TYP_CD = 'Y'                      /*채널제한유형코드*/
+                      <if test="cpnApplyTypCd   != null and '03'.equals(cpnApplyTypCd)"> 
+                      AND CCM.CPN_TGT_TYP_CD     = 'YC'                     /*쿠폰대상유형코드(전체상품-YY, 사용가능상품코드-YC 등)*/
+                      </if>
+                      <if test="cpnApplyTypCd  == null or !'03'.equals(cpnApplyTypCd)">
+                      AND CCM.CPN_TGT_TYP_CD IN ('YC', 'YY')                /*쿠폰대상유형코드(전체상품-YY, 사용가능상품코드-YC 등)*/
+                      </if>
+                      AND CCD.CHANL_CD       = #{commonChannelModel.cmmBaseChanl}              /*채널코드-기본:P*/
+                      AND ((CCD.CHANL_DTL_CD = #{chanlCd}) OR (CCD.CHANL_DTL_CD = '0'))        /*미디어타입*/
+                      AND CCM.CPN_APRV_ST_CD = '03'                         /*쿠폰결재상태코드(승인-03)*/
+                      AND CCM.DOWN_PSBL_YN   = 'Y'                          /*다운로드가능여부*/
+                      AND CCM.CPN_EXPOS_YN   = 'Y'                          /*쿠폰노출여부*/
+                      AND CCM.CPN_EVENT_KIND_CD != 'CC01'                   /*쿠폰이벤트종류코드(CRM-CC01)*/
+                      AND DECODE(CCM.EXPOS_USE_YN, 'Y',TO_CHAR(SYSDATE,'hh24miss'),'1')
+                          BETWEEN DECODE(CCM.EXPOS_USE_YN, 'Y', TO_CHAR(CCM.EXPOS_STR_DTM,'hh24miss'), '1')
+                              AND DECODE(CCM.EXPOS_USE_YN, 'Y', TO_CHAR(CCM.EXPOS_END_DTM,'hh24miss'), '1' )
+                      AND NVL(CCM.PRD_MIN_SALE_PRC, 0) <![CDATA[<= ]]> #{prdMinSalePrc} 		/*판매가격이 쿠폰최소판매가격보다 크거나 같은 쿠폰*/
+                    UNION ALL
+                   SELECT /*+ LEADING(CTD) INDEX(CCM PK_CPN_CPN_M) */
+                          'prd'                          AS GBN
+                         ,CCM.SUP_DC_RTAMT               AS SUP_DC_RTAMT            /*협력사할인율/액*/
+                         ,CCM.CPN_NO                     AS CPN_NO                  /*쿠폰번호*/
+                         ,CCM.CPN_TYP_CD                 AS CPN_TYP_CD              /*쿠폰유형코드*/
+                         ,CCM.UNLMT_USE_YN               AS UNLMT_USE_FLG           /*무제한사용여부*/
+                         ,(NVL (CCM.GSHS_DC_RTAMT, 0) + NVL (CCM.SUP_DC_RTAMT, 0))  AS GSHS_SUP_DC_RTAMT       /*당사+협력사할인율/액*/
+                         ,CCD.CHANL_CD                   AS CHANL_CD                /*채널코드*/
+                         ,CCM.CHANL_LIMIT_TYP_CD         AS CHANL_LIMIT_TYP_CD      /*채널제한유형코드*/
+                         ,DECODE(CCD.CHANL_DTL_CD,'0','PA',CCD.CHANL_DTL_CD)   AS CHANL_DTL_CD             /*채널상세코드*/
+                         ,CCM.MAX_DC_AMT                 AS MAX_DC_AMT              /*최대할인금액*/
+                         ,CCM.CPN_GBN_CD                 AS CPN_GBN_CD              /*쿠폰구분코드*/
+                         ,CCM.CPN_EXPOS_YN               AS CPN_EXPOS_FLG           /*쿠폰노출여부*/
+                         ,(CASE WHEN CCM.CPN_TYP_CD = '1' THEN #{prdMinSalePrc} * ((NVL ( CCM.GSHS_DC_RTAMT, 0) + NVL (CCM.SUP_DC_RTAMT, 0))/100)
+                                WHEN CCM.CPN_TYP_CD = '2' THEN TO_NUMBER((NVL ( CCM.GSHS_DC_RTAMT, 0) + NVL (CCM.SUP_DC_RTAMT, 0))) END) AS DC_RTAMT
+                         ,NVL(CCM.PRD_MIN_SALE_PRC, 0)   AS PRD_MIN_SALE_PRC        /*상품최소판매가격*/
+                         ,CCM.VALID_STR_DTM              AS VALID_STR_DTM           /*유효시작일시*/
+                         ,CCM.VALID_END_DTM              AS VALID_END_DTM           /*유효종료일시*/
+                         ,CCM.CPN_TGT_TYP_CD             AS CPN_TGT_TYP_CD          /*쿠폰대상유형코드*/
+                         ,CCM.CPN_SNTNC_CNTNT            AS CPN_SNTNC_CNTNT         /*쿠폰문구내용*/  
+                     FROM (SELECT DISTINCT CTD.CPN_NO
+                             FROM CPN_TGT_D CTD
+                            WHERE CTD.SUP_CD = #{supCd} ) CTD                       /*쿠폰대상TABLE*/
+                         ,CPN_CPN_M    CCM                                          /*쿠폰기본TABLE*/
+                         ,CPN_CHANL_D  CCD                                          /*쿠폰채널TABLE*/
+                    WHERE CCM.CPN_NO = CTD.CPN_NO
+                      AND CCM.CPN_NO = CCD.CPN_NO
+                      AND CCM.CPN_TYP_CD IN ('1','2')                    /*쿠폰유형코드(정률할인-1, 정액할인-2)*/
+                      AND CCM.CHANL_LIMIT_TYP_CD = 'Y'                   /*채널제한유형코드*/
+                      AND CCM.CPN_TGT_TYP_CD ='YS'                       /*쿠폰대상유형코드(사용가능거래처-YS)*/
+                      AND CCD.CHANL_CD = #{commonChannelModel.cmmBaseChanl}        /*채널코드-기본:P*/
+                      AND ((CCD.CHANL_DTL_CD = #{chanlCd}) OR (CCD.CHANL_DTL_CD = '0'))  /*미디어타입*/
+                      AND SYSDATE BETWEEN CCM.VALID_STR_DTM 
+                                      AND CCM.VALID_END_DTM
+                      AND CCM.CPN_APRV_ST_CD = '03'                                /*쿠폰결재상태코드(승인-03)*/
+                      AND CCM.DOWN_PSBL_YN = 'Y'                                   /*다운로드가능여부*/
+                      AND CCM.CPN_EXPOS_YN = 'Y'                                   /*쿠폰노출여부*/
+                      AND CCM.CPN_EVENT_KIND_CD != 'CC01'                          /*쿠폰이벤트종류코드(CRM-CC01)*/
+                      AND DECODE(CCM.EXPOS_USE_YN, 'Y',TO_CHAR(SYSDATE,'hh24miss'),'1')
+                          BETWEEN DECODE(CCM.EXPOS_USE_YN, 'Y', TO_CHAR(CCM.EXPOS_STR_DTM,'hh24miss'), '1')
+                              AND DECODE(CCM.EXPOS_USE_YN, 'Y', TO_CHAR(CCM.EXPOS_END_DTM,'hh24miss'), '1') 
+                      AND NVL(CCM.PRD_MIN_SALE_PRC, 0) <![CDATA[<= ]]> #{prdMinSalePrc} /*판매가격이 쿠폰최소판매가격보다 크거나 같은 쿠폰*/
+                      ) X1            
+            ORDER BY DC_RTAMT DESC ) X
+    WHERE ROWNUM = 1
+	</select>
+	
+	<select id="findOneMedCpnInfo" parameterType="iceberg.capi.promotion.model.cpn.CpnPmoBase" resultMap="resultCpnPmoBase">
+	<!-- 
+	설명 : 매체 쿠폰 정보 조회 
+	작성자 : 김현철 
+	작성일  : 2013.12.01
+	
+	#{prdCd} = 6551806
+	#{commonChannelModel.cmmBaseChanl} = 'P'
+	#{chanlCd} = '0'
+	#{cpnApplyTypCd} = '03'
+	#{supCd} = ''
+	-->		
+	
+	SELECT X.GBN        
+           ,X.CPN_NO
+           ,X.CPN_TYP_CD
+           ,X.GSHS_SUP_DC_RTAMT
+           ,X.CHANL_CD
+           ,X.CHANL_LIMIT_TYP_CD
+           ,X.CHANL_DTL_CD
+           ,X.MAX_DC_AMT
+           ,X.CPN_GBN_CD
+           ,X.CPN_EXPOS_FLG
+           ,X.UNLMT_USE_FLG
+           ,X.VALID_STR_DTM
+           ,X.VALID_END_DTM
+           ,X.CPN_TGT_TYP_CD
+           ,X.CPN_SNTNC_CNTNT
+       FROM(SELECT 'prd'                    AS GBN
+                  ,CCM.CPN_NO               AS CPN_NO                 /*쿠폰번호*/
+                  ,CCM.CPN_TYP_CD           AS CPN_TYP_CD             /*쿠폰유형코드*/
+                  ,NVL (CCM.GSHS_DC_RTAMT,0) + NVL (CCM.SUP_DC_RTAMT,0) AS GSHS_SUP_DC_RTAMT   /*쿠폰할인율액(당사+협력사)*/
+                  ,CCD.CHANL_CD             AS CHANL_CD               /*채널코드*/
+                  ,CCM.CHANL_LIMIT_TYP_CD   AS CHANL_LIMIT_TYP_CD     /*채널제한유형코드*/
+                  ,DECODE(CCD.CHANL_DTL_CD,'0','PA',CCD.CHANL_DTL_CD) AS CHANL_DTL_CD          /*채널상세코드*/
+                  ,CCM.MAX_DC_AMT           AS MAX_DC_AMT             /*최대할인금액*/
+                  ,CCM.CPN_GBN_CD           AS CPN_GBN_CD             /*쿠폰구분코드*/
+                  ,CCM.CPN_EXPOS_YN         AS CPN_EXPOS_FLG          /*쿠폰노출여부*/
+                  ,CCM.UNLMT_USE_YN         AS UNLMT_USE_FLG          /*무제한사용여부*/
+                  ,CCM.VALID_STR_DTM        AS VALID_STR_DTM          /*유효시작일시*/
+                  ,CCM.VALID_END_DTM        AS VALID_END_DTM          /*유효종료일시*/
+                  ,CCM.CPN_TGT_TYP_CD       AS CPN_TGT_TYP_CD         /*쿠폰대상유형코드*/
+                  ,CCM.CPN_SNTNC_CNTNT      AS CPN_SNTNC_CNTNT        /*쿠폰문구내용*/     
+              FROM CPN_CPN_M    CCM
+                  ,CPN_CHANL_D  CCD
+                  ,CPN_TGT_D    CTD
+             WHERE CTD.PRD_CD = #{prdCd}
+               AND CCM.CPN_NO = CCD.CPN_NO
+               AND CCM.CPN_NO = CTD.CPN_NO
+               AND CCD.CHANL_CD     = #{commonChannelModel.cmmBaseChanl}     /*채널코드-기본:P*/
+               AND CCD.CHANL_DTL_CD = #{chanlCd}                       /*채널상세코드-미디어타입*/
+               AND SYSDATE BETWEEN CCM.VALID_STR_DTM 
+                               AND CCM.VALID_END_DTM
+               AND CCM.CPN_TYP_CD IN ('1', '2')                              /*쿠폰유형코드*/
+               AND TRIM (CCM.CHANL_LIMIT_TYP_CD) = 'Y'                       /*채널제한유형코드*/
+              <if test="cpnApplyTypCd  != null and '03'.equals(cpnApplyTypCd)">
+               AND CCM.CPN_TGT_TYP_CD   = 'YC'                               /*쿠폰대상유형코드*/
+              </if>
+              <if test="cpnApplyTypCd  == null or !'03'.equals(cpnApplyTypCd)">
+               AND CCM.CPN_TGT_TYP_CD IN ('YC', 'YY')                        /*쿠폰대상유형코드*/
+              </if>
+               AND CCM.DOWN_PSBL_YN       = 'Y'                              /*다운로드가능여부*/
+               AND CCM.CPN_EVENT_KIND_CD != 'CC01'                           /*쿠폰이벤트종류코드*/
+               AND CCM.CPN_APRV_ST_CD     = '03'                             /*쿠폰결재상태코드(승인-03)*/
+               AND DECODE(CCM.EXPOS_USE_YN, 'Y',TO_CHAR(SYSDATE,'hh24miss'),'1') 
+                   BETWEEN DECODE(CCM.EXPOS_USE_YN, 'Y', TO_CHAR(CCM.EXPOS_STR_DTM,'hh24miss'), '1')
+                       AND DECODE(CCM.EXPOS_USE_YN, 'Y', TO_CHAR(CCM.EXPOS_END_DTM,'hh24miss'), '1' )
+               AND ROWNUM = 1
+             UNION ALL
+            SELECT 'prd'                    AS GBN
+                  ,CCM.CPN_NO               AS CPN_NO                        /*쿠폰번호*/
+                  ,CCM.CPN_TYP_CD           AS CPN_TYP_CD                    /*쿠폰유형코드*/
+                  ,NVL (CCM.GSHS_DC_RTAMT,0) + NVL (CCM.SUP_DC_RTAMT,0) AS GSHS_SUP_DC_RTAMT   /*쿠폰할인율액(당사+협력사)*/
+                  ,CCD.CHANL_CD             AS CHANL_CD                      /*채널코드*/
+                  ,CCM.CHANL_LIMIT_TYP_CD   AS CHANL_LIMIT_TYP_CD            /*채널제한유형코드*/
+                  ,decode(CCD.CHANL_DTL_CD,'0','PA',CCD.CHANL_DTL_CD)   AS CHANL_DTL_CD        /*채널상세코드*/
+                  ,CCM.MAX_DC_AMT           AS MAX_DC_AMT                    /*최대할인금액*/
+                  ,CCM.CPN_GBN_CD           AS CPN_GBN_CD                    /*쿠폰구분코드*/
+                  ,CCM.CPN_EXPOS_YN         AS CPN_EXPOS_FLG                 /*쿠폰노출여부*/
+                  ,CCM.UNLMT_USE_YN         AS UNLMT_USE_FLG                 /*무제한사용여부*/
+                  ,CCM.VALID_STR_DTM        AS VALID_STR_DTM                 /*유효시작일시*/
+                  ,CCM.VALID_END_DTM        AS VALID_END_DTM                 /*유효종료일시*/
+                  ,CCM.CPN_TGT_TYP_CD       AS CPN_TGT_TYP_CD                /*쿠폰대상유형코드*/
+                  ,CCM.CPN_SNTNC_CNTNT      AS CPN_SNTNC_CNTNT               /*쿠폰문구내용*/
+              FROM CPN_CPN_M    CCM
+                  ,CPN_CHANL_D  CCD
+                  ,CPN_TGT_D    CTD
+             WHERE CTD.PRD_CD = #{prdCd}
+               AND CCM.CPN_NO = CCD.CPN_NO
+               AND CCD.CHANL_CD = #{commonChannelModel.cmmBaseChanl}         /*채널코드-기본:P*/
+               AND CCD.CHANL_DTL_CD = '0'
+               AND CCM.CPN_NO = CTD.CPN_NO
+               AND SYSDATE BETWEEN CCM.VALID_STR_DTM 
+                               AND CCM.VALID_END_DTM
+               AND CCM.CPN_TYP_CD IN ('1', '2')
+               AND TRIM (CCM.CHANL_LIMIT_TYP_CD) = 'Y'
+              <if test="cpnApplyTypCd  != null and '03'.equals(cpnApplyTypCd)">
+               AND CCM.CPN_TGT_TYP_CD = 'YC'                                 /*쿠폰대상유형코드*/
+              </if>
+              <if test="cpnApplyTypCd  == null or !'03'.equals(cpnApplyTypCd)">
+               AND CCM.CPN_TGT_TYP_CD IN ('YC', 'YY')                        /*쿠폰대상유형코드*/
+              </if>
+               AND CCM.DOWN_PSBL_YN = 'Y'
+               AND CCM.CPN_EVENT_KIND_CD != 'CC01'
+               AND CCM.CPN_EXPOS_YN = 'Y'
+               AND CCM.CPN_APRV_ST_CD = '03'
+               AND DECODE(CCM.EXPOS_USE_YN, 'Y',TO_CHAR(SYSDATE,'hh24miss'),'1') 
+                   BETWEEN DECODE(CCM.EXPOS_USE_YN, 'Y', TO_CHAR(CCM.EXPOS_STR_DTM,'hh24miss'), '1')
+                       AND DECODE(CCM.EXPOS_USE_YN, 'Y', TO_CHAR(CCM.EXPOS_END_DTM,'hh24miss'), '1' )
+               AND ROWNUM = 1
+             UNION ALL
+            SELECT 'prd'                    AS GBN
+                  ,CCM.CPN_NO               AS CPN_NO                        /*쿠폰번호*/
+                  ,CCM.CPN_TYP_CD           AS CPN_TYP_CD                    /*쿠폰유형코드*/
+                  ,NVL (CCM.GSHS_DC_RTAMT,0) + NVL (CCM.SUP_DC_RTAMT,0) AS GSHS_SUP_DC_RTAMT   /*쿠폰할인율액(당사+협력사)*/
+                  ,CCD.CHANL_CD             AS CHANL_CD                      /*채널코드*/
+                  ,CCM.CHANL_LIMIT_TYP_CD   AS CHANL_LIMIT_TYP_CD            /*채널제한유형코드*/
+                  ,DECODE(CCD.CHANL_DTL_CD,'0','PA',CCD.CHANL_DTL_CD)   AS CHANL_DTL_CD        /*채널상세코드*/
+                  ,CCM.MAX_DC_AMT           AS MAX_DC_AMT                    /*최대할인금액*/
+                  ,CCM.CPN_GBN_CD           AS CPN_GBN_CD                    /*쿠폰구분코드*/
+                  ,CCM.CPN_EXPOS_YN         AS CPN_EXPOS_FLG                 /*쿠폰노출여부*/
+                  ,CCM.UNLMT_USE_YN         AS UNLMT_USE_FLG                 /*무제한사용여부*/
+                  ,CCM.VALID_STR_DTM        AS VALID_STR_DTM                 /*유효시작일시*/
+                  ,CCM.VALID_END_DTM        AS VALID_END_DTM                 /*유효종료일시*/
+                  ,CCM.CPN_TGT_TYP_CD       AS CPN_TGT_TYP_CD                /*쿠폰대상유형코드*/
+                  ,CCM.CPN_SNTNC_CNTNT      AS CPN_SNTNC_CNTNT               /*쿠폰문구내용*/
+              FROM CPN_CPN_M    CCM
+                  ,CPN_CHANL_D  CCD
+                  ,CPN_TGT_D    CTD
+             WHERE CTD.SUP_CD   = #{supCd}
+               AND CCM.CPN_NO   = CCD.CPN_NO
+               AND CCD.CHANL_CD = #{commonChannelModel.cmmBaseChanl}                /*채널코드-기본:P*/
+               AND CCM.CPN_NO   = CTD.CPN_NO
+               AND SYSDATE BETWEEN CCM.VALID_STR_DTM 
+                               AND CCM.VALID_END_DTM
+               AND CCM.CPN_TYP_CD IN ('1', '2')
+               AND TRIM (CCM.CHANL_LIMIT_TYP_CD) = 'Y'
+               AND CCM.CPN_TGT_TYP_CD IN ('YS')
+               AND CCM.DOWN_PSBL_YN   = 'Y'
+               AND CCM.CPN_APRV_ST_CD = '03'
+               AND DECODE(CCM.EXPOS_USE_YN, 'Y',TO_CHAR(SYSDATE,'hh24miss'),'1') 
+                   BETWEEN DECODE(CCM.EXPOS_USE_YN, 'Y', TO_CHAR(CCM.EXPOS_STR_DTM,'hh24miss'), '1')
+                       AND DECODE(CCM.EXPOS_USE_YN, 'Y', TO_CHAR(CCM.EXPOS_END_DTM,'hh24miss'), '1' )
+               AND ROWNUM = 1 ) X
+      WHERE ROWNUM = 1
+	</select>
+	
+	
+</mapper>

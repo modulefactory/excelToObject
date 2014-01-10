@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.promotion.webdb.repository.prc.PrcPmoSqlMapRepository">
+
+	<resultMap type="iceberg.capi.promotion.model.prc.CloseMallMngMst" id="resultCloseMallMngMst"  >
+		<result property = "medTyp" 				column = "MED_TYP"/>
+		<result property = "useFlg" 				column = "USE_FLG"/>
+		<result property = "custTyp" 				column = "CUST_TYP"/>
+		<result property = "medNm" 				column = "MED_NM"/>
+		<result property = "custChkFlg" 			column = "CUST_CHK_FLG"/>
+		<result property = "shopChkFlg" 			column = "ShOP_CHK_FLG"/>
+	</resultMap>
+	
+	<select id="findOneMedInfo" parameterType="String" resultMap="resultCloseMallMngMst">
+	<!-- 
+		DBMS : WEBDB
+		분야 : 프로모션 findOneMedInfo
+		API  : 폐쇄몰 정보 조회
+		설명 : 폐쇄몰 정보 조회
+		
+		#{medTyp} = zv
+	-->
+	   SELECT MEDIA_TYPE AS MED_TYP                                                       
+	         ,DBSTS      AS USE_FLG                                                            
+	         ,CUS_CLASS  AS CUST_TYP                                                       
+	         ,MEDIA_NAME AS MED_NM                                                        
+	         ,CUS_CHK    AS CUST_CHK_FLG                                                     
+	         ,SECT_CHK   AS SHOP_CHK_FLG                                                    
+	     FROM LGEC_AFFL_DCMST                                                            
+	    WHERE MEDIA_TYPE = #{medTyp}                                                      
+	      AND DBSTS = 'A'  
+	</select>
+	
+	<select id="findOneFnPrdAccm" parameterType="criteria" resultType="long">
+		<!-- 
+		DBMS : WEBDB
+		분야 : 프로모션 findOneFnPrdAccm
+		API  : 적립금 합산(프로모션+기본) 금액 조회
+		설명 : 적립금 합산(프로모션+기본) 금액 조회
+		
+		#{_c.prdCd[0].value} = 4185624
+		#{_c.customPrice[0].value} = 100
+		#{_c.immAccmDcRt[0].value} = 0
+		#{_c.cmmBaseChanl[0].value} = P
+	-->
+	   SELECT TRUNC(PG_PMO_PRD_PMO.FN_PRD_ACCM(#{_c.prdCd[0].value}, #{_c.cmmBaseChanl[0].value}, SYSDATE ,#{_c.customPrice[0].value}) 
+	                * (CASE WHEN #{_c.immAccmDcRt[0].value} = 0 
+	                        THEN (SELECT TO_NUMBER(VAL) FROM EC_REFSETVAL WHERE REFSETID = 1800 AND CODE = 'A1')
+	                        ELSE #{_c.immAccmDcRt[0].value} END), -1) AS ACCM_ADDUP_AMT
+	     FROM DUAL		
+	</select>
+</mapper>

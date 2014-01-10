@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.productreview.webdb.repository.PrdrevwLimitSqlMapRepository">
+
+<resultMap type="iceberg.capi.productreview.model.PrdrevwLimit" id="prdrevwTestIdMap" >
+		<result property="postnSeq" column = "POSTN_SEQ" />	<!-- 위치순번 -->
+		<!--result property="connectionGubun" column = "CONCT_GBN" />
+		<result property="explanation" column = "EXPLN"     /-->
+		<result property="itm1" 	column = "ITM_1"     />	<!-- 항목1 -->
+		<result property="itm2" 	column = "ITM_2"     />	<!-- 항목2 -->
+		<!--result property="item3" column = "ITM_3"     />
+		<result property="item4" column = "ITM_4"     />
+		<result property="item5" column = "ITM_5"     />
+		<result property="item6" column = "ITM_6"     />
+		<result property="item7" column = "ITM_7"     />
+		<result property="item8" column = "ITM_8"     />
+		<result property="item9" column = "ITM_9"     />
+		<result property="item10" column = "ITM_10"    />
+		<result property="banner1" column = "BANNR_1"   />
+		<result property="banner2" column = "BANNR_2"   />
+		<result property="banner3" column = "BANNR_3"   />
+		<result property="banner4" column = "BANNR_4"   />
+		<result property="url" column = "URL"       	/-->
+	</resultMap>
+	<select id="getProductReviewTesterId" parameterType="criteria" resultMap="prdrevwTestIdMap">
+		
+			<!--  
+			DBMS : WEBDB
+			분야 : 단품 getProductReviewTesterId
+			API  : 상품평
+			설명 : 상품평 작성 해피테서트Id 확인
+			
+			#{_c.postnSeq[0].value} = 350128
+			#{_c.productCode[0].value} = 72033806
+			-->	
+			<![CDATA[
+			SELECT GSD.LOC_SEQ  AS POSTN_SEQ
+			      /*,GSD.LINK_GB  AS CONCT_GBN
+			      ,GSD.TITLE    AS EXPLN*/
+			      ,GSD.REMARK1  AS ITM_1
+			      ,GSD.REMARK2  AS ITM_2
+			      /*,GSD.REMARK3  AS ITM_3
+			      ,GSD.REMARK4  AS ITM_4
+			      ,GSD.REMARK5  AS ITM_5
+			      ,GSD.REMARK6  AS ITM_6
+			      ,GSD.REMARK7  AS ITM_7
+			      ,GSD.REMARK8  AS ITM_8
+			      ,GSD.REMARK9  AS ITM_9
+			      ,GSD.REMARK10 AS ITM_10
+			      ,GSD.BANNER1  AS BANNR_1
+			      ,GSD.BANNER2  AS BANNR_2
+			      ,GSD.BANNER3  AS BANNR_3
+			      ,GSD.BANNER4  AS BANNR_4
+			      ,GSD.URL      AS URL*/
+			  FROM GS_DISPLAY GD
+			      ,GS_SECT_DISPLAY GSD
+			 WHERE GD.LOC_SEQ  = GSD.LOC_SEQ
+			   AND GD.LOC_SEQ  = #{_c.postnSeq[0].value}
+			   AND GD.DBSTS    = 'A'
+			   AND GSD.REMARK1 = #{_c.productCode[0].value}
+			   AND GD.DBSTS    = 'A'
+			   AND SYSDATE BETWEEN GSD.ST_DATE 
+			                   AND GSD.EN_DATE
+			   AND ROWNUM     <= 3
+		]]>
+	</select>
+
+	<resultMap type="java.util.Map" id="prdrevwMstIdMap" >
+		<result property="ecCustNo" 	column="EC_CUST_NO"/>	<!-- EC고객번호 -->
+		<result property="custNm" 		column="LOGIN_NM" />	<!-- 고객명 -->
+		<result property="stCd" 		column="ST" />			<!-- 상태코드 -->
+		<result property="regDtm" 		column="REG_DTM" />		<!-- 등록일시 -->
+		<result property="regrId" 		column="REGR" />		<!-- 등록자ID -->
+		<result property="note" 		column="NOTE" />		<!-- 비고 -->
+	</resultMap>
+	<select id="getProductReviewMasterId" parameterType="long" resultMap="prdrevwMstIdMap">
+        SELECT 
+              ECUSERID AS EC_CUST_NO
+            , LOGINNAME AS LOGIN_NM
+            , DBSTS AS ST
+            , CREDATE AS REG_DTM
+            , CREUSER AS REGR
+            , BIGO AS NOTE
+         FROM GS_KNOW_MASTERID
+        WHERE ECUSERID = #{ecCustNo}
+          AND DBSTS = 'A'
+	</select>
+</mapper>

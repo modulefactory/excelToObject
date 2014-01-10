@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.product.Smart4cProductSqlMapRepository">
+
+	<!--
+   	내용 : 세트상품여부
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 03
+
+   	#{_c.prdCd[0].value} = 11130036
+   	-->
+	<select id = "findIsBundPrdYn" parameterType = "criteria" resultType = "String">
+	<![CDATA[
+	SELECT 1
+	FROM PRD_PRD_M PPM                                   	
+	WHERE PPM.PRD_CD = #{_c.prdCd[0].value}                                     	
+		AND BUNDL_PRD_GBN_CD = '20'
+	]]>
+	</select>
+
+	<!--
+   	내용 : GS&POINT 사용불가 상품여부 확인
+   	작성자 : 마윤민
+   	작성일 : 2014. 01. 03
+
+   	#{_c.prdCd[0].value} = 11130036
+   	-->
+	<select id = "findGSPointDtl" parameterType = "criteria" resultType = "int">
+	<![CDATA[
+	SELECT COUNT(*) QTY		
+	  FROM SMTC_OWN.PRD_UDA_C PUC
+		      , SMTC_OWN.PRD_UDA_D PUD
+	WHERE PUC.UDA_GBN_CD = PUD.UDA_GBN_CD
+	    AND PUC.UDA_NO = PUD.UDA_NO 
+		AND PUC.UDA_GBN_CD 	= 10	
+		AND PUC.UDA_NO 		= 21	
+		AND PUC.USE_YN 		= 'Y'
+		AND PUD.USE_YN 		= 'Y'
+		AND SYSDATE BETWEEN PUD.VALID_STR_DTM AND PUD.VALID_END_DTM
+		AND PUD.PRD_CD = #{_c.prdCd[0].value}
+	]]>
+	</select>
+	
+</mapper>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://img.real.gsenext.com/iceberg.uifactory.static/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.member.webdb.repository.cust.CustSqlMapRepository">
+  
+ 	<resultMap type="iceberg.capi.member.model.cust.Cust" id="custMap" >
+ 			<result property="gsnpntCustNo" 	column="GSNPNT_CUST_NO"/>
+ 			<result property="ecCustNo"       	column="EC_CUST_NO"/>
+  			<result property="custNo" 			column="CUST_NO"/>
+  			<result property="chgBefCustNo" 			column="CHG_BEF_CUST_NO"/>
+  			<result property="chgAftCustNo" 			column="CHG_AFT_CUST_NO"/>
+ 	</resultMap>
+   
+	<!-- 
+	내용 : 비밀번호를 변경해야 하는 GS&POINT 회원인지 체크  findGsnpntcustPasswdChgFlg
+	작성자 : yhchoi
+	작성일 : 2013. 11. 28 
+
+    #{_c.id[0].value} = ectest0001
+    #{_c.passwd[0].value} =  3ddc1ff96bab63039e1d098bbb082c0a0df483bf1cac7c7ece6993811e642603
+	-->
+    <select id="findGsnpntcustPasswdChgFlg" parameterType="criteria" resultMap="custMap">
+    SELECT GUGP.INTGR_CUST_NO      AS GSNPNT_CUST_NO
+          ,CCAM.EC_CUST_NO         AS EC_CUST_NO
+          ,GUGP.CATVID             AS CUST_NO
+     FROM  CST_CUST_M                   CCM   
+          ,CST_CUST_ACCNT_M             CCAM   
+          ,CST_GSNPNT_CUST_M            CGCM   
+          ,GS_USER_GSNPOINT_PASSWORD    GUGP  
+     WHERE CCM.CUST_NO             = CCAM.CUST_NO    
+       AND CCM.CUST_NO             = CGCM.CUST_NO 
+       AND CGCM.GSNPNT_CUST_NO     = GUGP.INTGR_CUST_NO  
+       AND CCM.CUST_ST_CD          = 'Y'
+       AND CCAM.CUST_ACCNT_GBN_CD  = 'GSEC' 
+       AND CCAM.CUST_ACCNT_ST_CD   = 'A'  
+       AND CGCM.GSNPNT_CUST_ST_CD  = '01' 
+       AND CCAM.LOGIN_ID           = #{_c.id[0].value}
+       AND CCAM.PASSWD             = #{_c.passwd[0].value}  
+       AND GUGP.DISPLAY_YN IS NULL 
+    </select>
+ 
+
+ 
+
+</mapper>

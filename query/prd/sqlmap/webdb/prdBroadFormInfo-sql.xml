@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.product.webdb.repository.prd.PrdBroadFormInfoSqlMapRepository">
+
+	<resultMap type="iceberg.capi.product.model.prd.add.PrdBroadFormInfo" id="prdBroadInfo">
+		<result property="prdOpenStDtFlg" 	    column="PRD_OPEN_ST_DT_FLG"/> <!-- 상품노출 시작일  -->
+		<result property="preOrderDtFlg" 		column="PRE_ORD_DT_FLG"/>   <!-- 미리주문 노출일  -->
+		<result property="broadType" 			column="BROAD_TYP"/>           <!-- 방송타입 -->
+		<result property="prdOpenFlg" 			column="PRD_OPEN_FLG"/>         <!-- 상품노출 여부 -->
+		<result property="preOrderFlg" 			column="PRE_ORD_FLG"/>        <!-- 미리주문 여부 -->
+		<result property="pgmId" 				column="PGM_ID"/>               <!-- 프로그램 ID -->
+		<result property="pmoPrdCdCnt" 			column="PMO_PRD_CD_CNT"/>       <!-- 프로모션 상품 코드 조회 -->
+		<result property="rsrvSalePrdFlg" 		column="RSRV_SALE_PRD_FLG"/>    <!-- 예약판매 상품 여부 -->
+		<result property="ordMnfcTypCd" 		column="ORD_MNFC_TYP_CD"/>      <!-- 주문제작 유형 코드 -->
+	</resultMap>
+	
+	<select id="getPrdBroadFormInfo" resultMap="prdBroadInfo" parameterType="criteria">
+	<!-- 
+		DBMS : WEBDB
+		분야 : getPrdBroadFormInfo
+		API  : 상품 방송 정보 조회
+		설명 : 상품 방송 정보 조회
+		
+		#{_c.pgmId[0].value} = 132304
+		#{_c.prdCd[0].value} = 11694589
+		#{_c.cmmBaseChanl[0].value} = P
+		#{_c.cmmCurrChanl[0].value} = B	
+	-->	
+	
+	<![CDATA[
+	SELECT CASE WHEN NVL(LPD.PRD_OPEN_ST_DATE,SYSDATE)< SYSDATE THEN 'Y' 
+	            ELSE 'N' END                                             AS PRD_OPEN_ST_DT_FLG   
+	      ,CASE WHEN NVL(LPD.PRE_ORDER_DATE, SYSDATE)< SYSDATE  THEN 'Y' 
+		        ELSE 'N'  END                                             AS PRE_ORD_DT_FLG      
+		  ,CASE WHEN LPD.BROAD_DATE  < SYSDATE AND LP.CLOSING_DATE < SYSDATE THEN 'PA'
+	            WHEN LPD.BROAD_DATE  > SYSDATE AND LP.CLOSING_DATE < SYSDATE THEN 'LI'
+	            WHEN LPD.BROAD_DATE  > SYSDATE AND LP.CLOSING_DATE > SYSDATE THEN 'PE'
+	            ELSE 'PA'END                                             AS BROAD_TYP            
+	      ,NVL(LPD.PRD_OPEN_YN,'N')                                      AS PRD_OPEN_FLG
+	      ,NVL(LPD.PRE_ORDER_FLAG,'N')                                   AS PRE_ORD_FLG          
+	      ,NVL(LPD.PGM_ID,0)                                             AS PGM_ID
+	      ,(SELECT COUNT(*) 
+		      FROM LGEC_PGM_DTL 
+			 WHERE GOODS_CODE = #{_c.prdCd[0].value} 
+			   AND BROAD_DATE < SYSDATE  
+			   AND BROAD_DATE > SYSDATE - 28)                            AS PMO_PRD_CD_CNT
+	      ,NVL(PPM.RSRV_SALE_PRD_YN,'N')                                 AS RSRV_SALE_PRD_FLG
+	      ,CASE WHEN PPM.ORD_MNFC_TYP_CD = '10' THEN 'Y' 
+		        ELSE 'N' END                                            AS ORD_MNFC_TYP_CD
+	  FROM LGEC_PGM     LP
+	      ,LGEC_PGM_DTL LPD
+	      ,PRD_PRD_M    PPM
+	      ,PRD_CHANL_D  PCD
+	 WHERE LP.BROAD_DATE  = LPD.BROAD_DATE
+	   AND LPD.GOODS_CODE = PPM.PRD_CD
+	   AND LPD.GOODS_CODE = #{_c.prdCd[0].value}
+	   AND PPM.PRD_CD     = PCD.PRD_CD
+	   AND PCD.CHANL_CD   = #{_c.cmmCurrChanl[0].value}         -- 채널코드수정
+	   AND ROWNUM = 1
+	]]>
+	<if test="_c.pgmId[0].value != 0">
+	   AND LPD.PGM_ID 	  = #{_c.pgmId[0].value}
+	</if>
+	<if test="_c.pgmId[0].value == 0 and _c.broadDtm[0].value != null and !('').equals(_c.broadDtm[0].value)">
+	   AND LPD.BROAD_DATE = TO_DATE(#{_c.broadDtm[0].value},'YYYYMMDD') 
+	</if> 
+	
+	</select>
+	
+	
+</mapper>

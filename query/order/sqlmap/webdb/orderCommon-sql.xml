@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.common.OrderCommonSqlMapRepository">
+	               
+	
+	
+	 <!-- 
+		내용	: 일시불할인 정보가 있는지 갯수 체크.
+		작성자	: 윤병찬
+		작성일	: 2013.11.13 신규작성
+		
+		#{_c.noticeGbn[0].value} = '22';
+		#{_c.regiGbn[0].value} = 'NR';
+	-->
+	<resultMap id="ordShtNoticeListMap" type="iceberg.capi.order.model.common.LgecNotice">
+	<result property="contents"                 column="CONTENTS"/>
+	<result property="notifyGbn"                 column="NOTIFY_GUBUN"/>
+	</resultMap>
+	<select id="findOrdShtNoticeList" parameterType="criteria"  resultMap="ordShtNoticeListMap">
+		<![CDATA[
+			 SELECT CONTENTS,            
+			        NOTIFY_GUBUN
+			   FROM LGEC_NOTICE
+			  WHERE NOTICE_GUBUN = #{_c.noticeGbn[0].value}
+			    AND DBSTS != 'D'
+			    AND ST_DATE <= SYSDATE
+			    AND EN_DATE >= SYSDATE
+			    AND REGI_GUBUN = #{_c.regiGbn[0].value}
+		 ]]>  
+	</select>
+	
+	
+	
+	 <!-- 
+		내용	: 주문생성시간 측정용 GS_ORD_TIMECHECK_SEQ.nextval 조회
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+	-->
+	<select id="findGsOrdTimeCheckSeq" resultType="long">
+		SELECT GS_ORD_TIMECHECK_SEQ.NEXTVAL AS SEQNO
+		  FROM DUAL
+	</select>	
+	
+	 
+	
+	<!-- 
+		내용	: 주문생성시간 측정 - start
+		작성자	: 윤병찬
+		작성일	: 2013.11.16 신규작성
+		
+		#{ecOrdNo} = 280;  
+		#{chanlDtlCd} = 'PA';  //MC간편주문 결제
+		
+	-->
+	<insert id="insertJumunTime" parameterType="iceberg.capi.order.model.common.TimeCheck">
+	  INSERT INTO GS_ORD_TIMECHECK 
+            (               
+			       LOG_SEQ            /* 1 순번       */ 
+			      ,ORDID            /* 2 ORDID      */ 
+			      ,G_NUM            /* 3 구간구분   */ 
+			      ,ST_DATE          /* 4 시작일시   */ 
+			      ,INS_NAME         /* 5 INSTANCE명 */ 
+			) VALUES (                                   
+			        #{timeLogSeq}
+                   ,#{ordId}
+                   ,#{index}
+                   ,LOCALTIMESTAMP + INTERVAL '9' HOUR(1)
+                   ,#{insName} 
+			)  
+	</insert>	
+	
+	
+	
+	<!-- 
+	내용	: 주문생성시간 측정 - end
+	작성자	: 윤병찬
+	작성일	: 2013.11.16 신규작성
+	
+	#{timeLogSeq} = 177
+	
+	-->
+	<update id="updateJumunTime" parameterType="long">
+			UPDATE GS_ORD_TIMECHECK
+			   SET EN_DATE = localtimestamp + interval '9' hour(1) /* 종료일시 */
+			 WHERE LOG_SEQ  = #{timeLogSeq}                  /* 순번     */
+	</update>		
+	
+	
+	
+	 <!-- 
+		내용	: Affl_type 으로 LGEC_AFFL_COM 건수 가져오기.
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+		
+		#{mediaType} = 'PH'
+		
+	-->
+	<select id="findLgecAfflComCount" parameterType="String" resultType="int">
+			SELECT COUNT(*) 
+			  FROM LGEC_AFFL_COM 
+			 WHERE AFFL_TYPE = #{mediaType}
+	</select>		
+	
+	
+	
+	 <!-- 
+		내용	: ordid 로 count(seqno)  가져오기 ,
+	              mobile은 ordid(ec_ord_no)을 미리 생성하므로 중복으로 ordid 생성건 발생.. 이를 방지키위해
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+		
+		#{ordId} = 141396526
+		
+	-->
+	<select id="findCountByOrdid" parameterType="long" resultType="int">
+			SELECT COUNT(*)
+			  FROM LGEC_LOG_MEDIATYPE
+			 WHERE ORDID = #{ordId}
+	</select>		
+	
+	
+	
+	 <!-- 
+		내용	: ordid 로 seqno  가져오기 ,
+	              mobile은 ordid(ec_ord_no)을 미리 생성하므로 중복으로 ordid 생성건 발생.. 이를 방지키위해
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+		
+		#{ordId} = 141396526
+		
+	-->
+	<select id="findSeqnoByOrdid" parameterType="long" resultType="long">
+			SELECT SEQNO
+			  FROM LGEC_LOG_MEDIATYPE
+			 WHERE  ORDID = #{ordId}
+	</select>	
+	
+	
+	 <!-- 
+		내용	: 주문매체로그 LGEC_LOG_MEDIATYPE_SEQ.NEXTVAL 시퀀스 조회
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+	-->
+	<select id="findLgecLogMediatypeSeq" resultType="long">
+			SELECT LGEC_LOG_MEDIATYPE_SEQ.NEXTVAL AS SEQNO
+			  FROM DUAL
+	</select>		
+		
+	
+	
+	<!-- 
+		내용	: 주문매체로그(LGEC_LOG_MEDIATYPE) Insert
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+	-->
+	<insert id="insertLgecLogMediatype" parameterType="iceberg.capi.order.model.ordersheet.LgecLogMediatype">
+		   INSERT INTO LGEC_LOG_MEDIATYPE 
+			   (  SEQNO
+			     ,ORDID
+			     ,CATVID
+			     ,MEDIA_PARAM
+			     ,MEDIA_COOKIE
+			     ,MEDIA_ORD
+			     ,CREDATE
+			     ,AFFL_KEYWORD
+			     ,MEMBERSHIP_FLAG
+			     ,TMP_KEY_COOKIE
+			     ,CC_NUM_ENC
+			     ,ORD_NO
+			     ,AFFL_ACCT_YN
+			   )
+			VALUES 
+			    (  #{seqNo}  SEQNO
+			      ,#{ordId}  ORDID
+			      ,#{custNo}  CATVID
+			      ,#{medParam}  MEDIA_PARAM
+			      ,#{medCooki}  MEDIA_COOKIE
+			      ,#{medOrd}  MEDIA_ORD
+			      ,#{regDtm}  CREDATE
+			      ,#{aliaSrchKey}  AFFL_KEYWORD
+			      ,#{memshpSt}  MEMBERSHIP_FLAG
+			      ,#{tmpKeyCooki}  TMP_KEY_COOKIE
+			      ,#{cardNoEcp}  CC_NUM_ENC
+			      ,#{ordNo}  ORD_NO
+			      ,#{aliaCalcFlg}  AFFL_ACCT_YN
+			   )
+	</insert>	
+	
+	 <!-- 
+		내용	: 제휴사별 정산포함시간을 가져온다
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+		
+		#{afflType} = '25'
+	-->
+	<select id="findAfflMinute" parameterType="String" resultType="int">
+			  SELECT DECODE(NVL(SESSION_TIME, 0) ,0 ,30, SESSION_TIME) AFFL_MINUTE
+			    FROM LGEC_AFFL_COM                                     
+			   WHERE AFFL_TYPE = #{afflType}
+	</select>			
+	
+	
+	 <!-- 
+		내용	: 쿠키값으로 제휴사별 정산 체크시간을 가져온다
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+		
+		#{withActionTime} = '20131226'
+	-->
+	<select id="findAfflChkMinute" parameterType="String" resultType="int">
+			  SELECT NVL(FLOOR( ( SYSDATE - TO_DATE(#{withActionTime}, 'YYYYMMDDHH24MISS'))*24*60 ), 0) AFFL_TIME 
+			    FROM DUAL
+	</select>		
+	
+	
+	 <!-- 
+		내용	: 쿠키값으로 제휴사별 정산 체크시간을 가져온다
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+		
+		#{mediaType} = 'zv'
+	-->
+	<resultMap id="lgecAfflDcmstMap" type="iceberg.capi.order.model.ordersheet.LgecAfflDcmst">
+	<result property="media_type"                 column="MEDIA_TYPE"/>
+	<result property="dbsts"                 column="DBSTS"/>
+	<result property="sect_chk"                 column="SECT_CHK"/>
+	<result property="credate"                 column="CREDATE"/>
+	<result property="creuser"                 column="CREUSER"/>
+	<result property="upddate"                 column="UPDDATE"/>
+	<result property="upduser"                 column="UPDUSER"/>
+	<result property="media_name"                 column="MEDIA_NAME"/>
+	<result property="cus_class"                 column="CUS_CLASS"/>
+	<result property="cus_chk"                 column="CUS_CHK"/>
+	</resultMap>
+	<select id="findLgecAfflDcmst" parameterType="String" resultMap="lgecAfflDcmstMap">
+			SELECT   MEDIA_TYPE
+			        ,DBSTS
+			        ,SECT_CHK
+			        ,CREDATE
+			        ,CREUSER
+			        ,UPDDATE
+			        ,UPDUSER
+			        ,MEDIA_NAME
+			        ,CUS_CLASS
+			        ,CUS_CHK
+			 FROM LGEC_AFFL_DCMST
+			WHERE MEDIA_TYPE = #{mediaType}
+			  AND DBSTS = 'A'
+	</select>		
+	
+	
+	<!-- 
+	내용	: LGEC_LOG_MEDIATYPE 데이터 한건 수정
+	작성자	: 윤병찬
+	작성일	: 2013.12.16 신규작성
+	
+	#{ordId} = 68177585
+	#{medOrd} = 'PA'
+	#{seqNo} = 23233533
+	-->
+	<update id="updateLgecLogMediatype" parameterType="iceberg.capi.order.model.ordersheet.LgecLogMediatype">
+			UPDATE LGEC_LOG_MEDIATYPE
+			   SET  SEQNO = SEQNO
+			  <if test="ordId > 0 ">
+			       ,ORDID = #{ordId}
+			  </if>      
+			  <if test="medOrd != null ">
+			       ,MEDIA_ORD = #{medOrd}
+			  </if>     
+			  <if test="ordNo > 0 ">
+			       ,ORD_NO = #{ordNo}
+			  </if>
+			  <if test="aliaCalcFlg != null ">
+			       ,AFFL_ACCT_YN = #{aliaCalcFlg}
+			  </if>
+			 WHERE SEQNO = #{seqNo}
+	</update>		
+	
+	
+	 <!-- 
+		내용	: EC분석정보 쿠키로그 테이블 GS_CRM_CLOG shcrtitmid 존재여부 확인
+		작성자	: 윤병찬
+		작성일	: 2013.12.16 신규작성
+		
+		#{shcrtitmId} = 104735269
+	-->
+	<select id="findGsCrmClogCnt" parameterType="long" resultType="int">
+			  SELECT COUNT(*) CNT
+			    FROM GS_CRM_CLOG
+			   WHERE SHCRTITMID = #{shcrtitmId}
+	</select>		
+	
+	<!-- 
+	내용	: GS_CRM_CLOG_ORD 테이블에 장바구니 아이템번호,주문번호,LINENUM등을 insert 한다
+	작성자	: 윤병찬
+	작성일	: 2013.12.16 신규작성
+	
+	#{_c.shcrtitmId[0].value} = 290747972
+	#{_c.sm4cOrdNo[0].value} = 618236202
+	#{_c.linenum[0].value} = 1
+	-->
+	<insert id="insertCrmOrdLog" parameterType="criteria">
+			 INSERT INTO GS_CRM_CLOG_ORD
+			                          ( 
+			                               SHCRTITMID
+			                             , ORDID
+			                             , LINENUM
+			                             , CREDATE
+			                           ) 
+			                     VALUES(
+			                                ?
+			                              , ?
+			                              , ?
+			                              , SYSDATE
+			                           ) 
+	</insert>		
+	
+	
+	
+</mapper>

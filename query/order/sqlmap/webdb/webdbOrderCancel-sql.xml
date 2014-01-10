@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.webdb.repository.ordercancel.WebdbOrderCancelSqlMapRepository">
+	<resultMap type="iceberg.capi.order.model.ordercancel.MyGiftEmail" id="lastGiftEmail">
+		<result property = "sequence"               column= "SEQ"    />
+		<result property = "acceptYesOrNo"          column= "ACCEPT_FLAG"    />
+	</resultMap>
+	<resultMap id="bankInfo" type="iceberg.capi.order.model.payment.BankItem">
+		<result property="bankCd"                      column="BANK_CD"                />
+		<result property="bankNm"                      column="BANK_NM"                />
+	</resultMap>
+	<resultMap id="postNoCode" type="iceberg.capi.order.model.ordercancel.PostNoCode">
+		<result property="cd"                      column="CD"                />
+	</resultMap>
+	<resultMap id="erSmsAsignrTelnoInfo" type="iceberg.capi.order.model.ordercancel.ErSmsAsignrTelnoInfo">
+		<result property="custNo"                      column="CUST_NO"                />
+		<result property="asignrTelno"                 column="ASIGNR_TELNO"           />
+	</resultMap>
+
+	<!--
+		내용	: SAP 작업여부 조회
+		작성자	: 신슬기
+		작성일	: 2013.11.06 신규작성
+    -->
+	<select id="findSapTf" resultType="long">
+		<![CDATA[
+			 SELECT COUNT(1) AS CNT
+			   FROM EC_REFSETVAL
+			  WHERE REFSETVALID = 130832
+			    AND REFSETID = '1422'
+			    AND DBSTS = 'A'
+			    AND SYSDATE BETWEEN TO_DATE(CODE, 'YYYY-MM-DD HH24:MI:SS') AND TO_DATE(VAL, 'YYYY-MM-DD HH24:MI:SS')
+		 ]]>
+	</select>
+
+	<!--
+		내용	: 이메일 상품권 정보 조회
+		작성자	: Seulgi
+		작성일	: 2013.11.08 신규작성
+		da 확인 완료
+		#{_c.ecCustomerNumber[0].value} = 30481119
+		#{_c.orderNumber[0].value} =  599882195
+	-->
+	<select id="findLastGiftEmail" parameterType="criteria" resultMap="lastGiftEmail">
+		<![CDATA[
+			SELECT SEQ
+            ,DECODE(BATCHDATE,null,'X',ACCEPT_FLAG) AS ACCEPT_FLAG
+			  FROM LGEC_GIFT_MAIL
+			 WHERE ECUSERID + 0 = #{_c.ecCustNo[0].value}
+			   AND ORD_NO       = #{_c.ordNo[0].value}
+			   AND NVL(RESEND_FLAG, 'N') = 'N'
+			 ORDER BY 1 DESC
+		]]>
+	</select>
+
+	<!--
+		내용	: 대카테고리 정보 조회
+		작성자	: Seulgi
+		작성일	: 2013.11.08 신규작성
+	    da 확인 완료
+	    #{_c.productCode[0].value} =  11731301
+	-->
+	<select id="findLargeSectIdInfo" parameterType="long" resultType="long">
+		<![CDATA[
+			SELECT COUNT(*)
+			  FROM EC_SECT ES
+			      ,EC_SECT ES1
+			      ,EC_SECT ES2
+			      ,EC_SECT ES3
+			      ,EC_SECT_PRDLST ESP
+			 WHERE ES.SECT_GUBUN = 'G'
+			   AND ES.DBSTS  = 'A'
+			   AND ES1.DBSTS = 'A'
+			   AND ES2.DBSTS = 'A'
+			   AND ES3.DBSTS = 'A'
+			   AND ES.SECTID > 0
+			   AND ES1.SECTID > 0
+			   AND ES.SECTPRSTID IS NULL
+			   AND ES.SECTID  = ES1.SECTPRSTID
+			   AND ES1.SECTID = ES2.SECTPRSTID
+			   AND ES2.SECTID = ES3.SECTPRSTID
+			   AND ES3.SECTID = ESP.SECTID
+			   AND ESP.DBSTS  = 'A'
+			   AND ESP.PRDID  = #{prdCd}
+			   AND ES.SECTID  = 3324
+		 ]]>
+	</select>
+
+
+		<!--
+		내용	: 주문제작여부를 조회한다.
+		작성자	: 신슬기
+		작성일	: 2013.11.06 신규작성
+
+		#{_c.productCode[0].value} = 11731301
+    -->
+	<select id="findOrderCheck"  parameterType="long" resultType="String">
+		<![CDATA[
+		SELECT  ORD_MNFC_YN AS ORD_MNFC_YN
+		  FROM 	PRD_PRD_M
+		 WHERE 	PRD_CD = #{prdCd}
+		 ]]>
+	</select>
+
+	<!--
+		내용	: 은행 코드와 은행명 리스트를 조회한다.
+		작성자	: 신슬기
+		작성일	: 2013.11.08 신규작성
+		da 확인 완료
+    -->
+	<select id="findBankInfo" resultMap="bankInfo">
+			SELECT CODE   AS BANK_CD
+			      ,VAL    AS BANK_NM
+			  FROM EC_REFSETVAL
+			 WHERE REFSETID = 1409
+			   AND DBSTS    = 'A'
+	</select>
+
+	<!--
+		내용	: 사용불가 우편번호를 조회한다.
+		작성자	: 신슬기
+		작성일	: 2013.11.06 신규작성
+    -->
+	<select id="findUseNoadmtPostNo" resultMap="postNoCode">
+		<![CDATA[
+			/* orderCancle-sql.xml findUseNoadmtPostNo, 작성시기 2013.11.08 */
+			SELECT CODE AS CD
+			FROM EC_REFSETVAL
+			WHERE REFSETID = '5253'
+		]]>
+	</select>
+
+	<!--
+		내용	: 주문 에러 로그 조회
+		작성자	: 신슬기
+		작성일	: 2013.11.15 신규작성
+
+		#{_c.reserved[0].value} = ""
+    -->
+	<select id="findOrderErrorLogCount" parameterType="String" resultType="long">
+		/* orderCancle-sql.xml findOrderErrorLogCount, 작성시기 2013.11.11 */
+		 SELECT COUNT(*) AS CNT
+		   FROM GS_ORD_JUMUN_ERRLOG
+		  WHERE CREDATE BETWEEN SYSDATE - (10)/(24*60)
+		                    AND SYSDATE
+		    AND (
+		         (TRIM(ERR_TYPE) = '0003' AND ERR_DESC IS NULL)
+		         OR
+		         ERR_DESC LIKE 'ld.so.1%'
+		        )
+		    AND RESERVED1 is null
+		    AND RESERVED2 = #{reserved}
+	</select>
+
+	<!--
+		내용	: 긴급 sms 담당자 전화번호 정보
+		작성자	: 신슬기
+		작성일	: 2013.11.15 신규작성
+
+		#{haltTypCd} = 'ISP'
+    -->
+  	<select id="findErSmsAsignrTelnoInfo" parameterType="String" resultMap="erSmsAsignrTelnoInfo">
+		/* orderCancle-sql.xml findErSmsAsignrTelnoInfo, 작성시기 2013.11.15 */
+		SELECT VAL             AS ASIGNR_TELNO
+		     , RESERVED2       AS CUST_NO
+		  FROM EC_REFSETVAL
+		 WHERE REFSETID = 5369
+		   AND DBSTS = 'A'
+		   AND RESERVED1 = #{haltTypCd}
+	</select>
+
+	<!--
+		내용	: 주문자동취소 로그를 입력한다.
+		작성자	: 신슬기
+		작성일	: 2013.11.11 신규작성
+
+		#{ordNo,jdbcType=NUMERIC} = "599882195"
+		#{esbRetCd,jdbcType=VARCHAR} = "S"
+		#{esbRetMsg,jdbcType=VARCHAR} = null
+		#{custNo,jdbcType=NUMERIC} = "30481119"
+		#{custNo,jdbcType=NUMERIC} = "30481119"
+		#{strTime,jdbcType=DATE} = "2013-11-13 01:56:42.0"
+		#{endTime,jdbcType=DATE} = "2013-11-13 01:56:40.0"
+
+    -->
+	<update id="createOrderCancelLog" parameterType="iceberg.capi.order.model.ordercancel.OrdAutoCnlLog" >
+				INSERT INTO LGEC_LOG_ORDERCANCEL(
+		                         SEQNO
+		                        ,ORDERNUM
+		                        ,ERRNO
+		                        ,ERRMSG
+		                        ,CATVID
+		                        ,CRECATVID
+		                        ,CALLDATE
+		                        ,CREDATE
+				             )  VALUES (
+								 LGEC_LOG_ORDERCANCEL_SEQ.NEXTVAL
+								,#{ordNo,jdbcType=NUMERIC}
+								,#{esbRetCd,jdbcType=VARCHAR}
+								,#{esbRetMsg,jdbcType=VARCHAR}
+								,#{custNo,jdbcType=NUMERIC}
+								,#{custNo,jdbcType=NUMERIC}
+								,#{strTime,jdbcType=DATE}
+								,#{endTime,jdbcType=DATE}
+				            )
+	</update>
+</mapper>

@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iceberg.capi.order.smtcdb.repository.returnexchange.RtpExchCmmSmtcDBSqlMapRepository">
+	               
+	<resultMap id="rtpExchCostAmtInfoMap" type="iceberg.capi.order.model.returnexchange.RtpExchCostAmtInfo">
+		<result property="ordItemId"                column="ORD_ITEM_ID" />
+		<result property="dlvcCd"                   column="DLVC_CD" />
+		<result property="dlvcAmt"                  column="DLVC_AMT" />
+		<result property="rtpOnewyRndtrpCd"         column="RTP_ONEWY_RNDTRP_CD" />
+		<result property="exchOnewyRndtrpCd"        column="EXCH_ONEWY_RNDTRP_CD" />
+		<result property="minRtpcAmt"               column="MIN_RTPC_AMT" />
+		<result property="minExchcAmt"              column="MIN_EXCHC_AMT" />
+		<result property="supCd"                    column="SUP_CD" />
+		<result property="bundlDlvCd"               column="BUNDL_DLV_CD" />
+		<result property="exchRtpChrYn"             column="EXCH_RTP_CHR_YN" />
+		<result property="bundlGrpVal"              column="BUNDL_GRP_VAL" />
+	</resultMap>
+
+	<resultMap id="srcInfoMap" type="iceberg.capi.order.model.returnexchange.SrcInfo">
+		<result property="payNo"      column="PAY_NO" />
+		<result property="rfnPsblAmt" column="RFN_PSBL_AMT" />
+		<result property="payTypCd"   column="PAY_TYP_CD" />
+		<result property="metaAttr8"  column="META_ATTR8" />
+	</resultMap>
+
+	<resultMap id="assetInfoMap" type="iceberg.capi.order.model.returnexchange.AssetInfo">
+		<result property="assetTxnNo"      column="ASSET_TXN_NO" />
+		<result property="retPsblAmt"      column="RET_PSBL_AMT" />
+		<result property="assetTypCd"      column="ASSET_TYP_CD" />
+	</resultMap>
+
+	<resultMap id="ordEcCardMap" type="iceberg.capi.order.model.returnexchange.OrdEcCard">
+		<result property="ansimClsNm"      column="ANSIM_CLS_NM" />
+		<result property="aliaCardYn"      column="ALIA_CARD_YN" />
+		<result property="cardNm"          column="CARD_NM" />
+		<result property="repCardNo"       column="REP_CARD_NO" />
+	</resultMap>
+
+	<!--
+	   	내용 : 반품/교환 비용금액 정보 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 28
+	   
+	   	#{custNo} = 40766020
+	   	#{ordNo} = 599987302
+	   	#{ordItemId} = '5629758851'
+	-->
+		
+	<select id="findRtpExchCostAmtInfo" parameterType="criteria" resultMap="rtpExchCostAmtInfoMap">
+		SELECT ORD_ITEM_ID
+		      ,DLVC_CD
+		      ,DLVC_AMT
+		      ,RTP_ONEWY_RNDTRP_CD
+		      ,EXCH_ONEWY_RNDTRP_CD
+		      ,MIN(DLVC_AMT * TO_NUMBER(RTP_ONEWY_RNDTRP_CD)) OVER(PARTITION BY BUNDL_GRP_ID) AS MIN_RTPC_AMT
+		      ,MIN(DLVC_AMT * TO_NUMBER(EXCH_ONEWY_RNDTRP_CD)) OVER(PARTITION BY BUNDL_GRP_ID) AS MIN_EXCHC_AMT
+		      ,SUP_CD
+		      ,BUNDL_DLV_CD
+		      ,EXCH_RTP_CHR_YN 
+		      ,DENSE_RANK() OVER(ORDER BY BUNDL_GRP_ID) AS BUNDL_GRP_VAL -- 주문기준 그룹별로 같은 시퀀스값(1, 2, ..)
+		  FROM (SELECT SDD.DLVC_AMT AS DLVC_AMT    --배송비 금액(판매가)
+		              ,SDD.DLVC_CD  AS DLVC_CD     --배송비코드
+		              ,NVL(X.EXCH_RTP_CHR_YN,'0') AS EXCH_RTP_CHR_YN --교환/반품비 부과 여부
+		              ,X.RTP_ONEWY_RNDTRP_CD       --반품편도왕복코드(PRD018)
+		              ,X.EXCH_ONEWY_RNDTRP_CD      --교환편도왕복코드(PRD018)
+		              ,X.ORD_ITEM_NO, X.PRD_CD, X.SUP_CD
+		              ,NVL(X.OBOX_CD,'0') AS OBOX_CD  -- 합포장유형(PRD012)(1:EC합포장, 2:도서합포장)
+		              ,X.BUNDL_DLV_CD                 -- 묶음배송코드
+		              ,X.PRD_RETP_ADDR_CD
+		              ,(CASE WHEN NVL(X.OBOX_CD,'0') <![CDATA[<>]]> '0' THEN TO_CHAR(SDD.DLVC_CD)
+		                     WHEN X.BUNDL_DLV_CD = 'A01' THEN X.SUP_CD||X.PRD_RETP_ADDR_CD
+		                     WHEN X.BUNDL_DLV_CD IN ('A02','A03') THEN TO_CHAR(X.ORD_ITEM_NO) END) AS BUNDL_GRP_ID
+		              ,X.ORD_ITEM_ID  -- 본품 아이템ID
+		          FROM SUP_DLVC_D SDD   --협력사 배송비 정보
+		              ,(SELECT NVL(PPM.EXCH_RTP_CHR_YN, 'N') AS EXCH_RTP_CHR_YN      --교환반품비부과여부
+		                      ,DECODE((PPM.EXCH_RTP_CHR_YN || PPM.RTP_DLVC_CD)
+		                                 , 'Y', DECODE(NVL(PPM.APNT_DLVS_IMPLM_YN,'N') ,'N', SSM.CHR_DLVC_CD
+		                                                                                   , SSM.APNT_DLVS_DLVC_CD)
+		                                 , PPM.RTP_DLVC_CD)   AS RTP_DLVC_CD          --반품배송비코드
+		                      ,NVL(PPM.RTP_ONEWY_RNDTRP_CD, 1)  AS RTP_ONEWY_RNDTRP_CD  --반품편도왕복코드(PRD018)
+		                      ,NVL(PPM.EXCH_ONEWY_RNDTRP_CD, 2) AS EXCH_ONEWY_RNDTRP_CD --교환편도왕복코드(PRD018)
+		                      ,OID.ORD_ITEM_NO
+		                      ,OID.ORD_ITEM_ID
+		                      ,PPM.PRD_CD             --상품코드
+		                      ,SSM.SUP_CD             --협력사코드
+		                      ,NVL(OID.OBOX_CD,'0') AS OBOX_CD       -- 합포장유형(PRD012)(1:EC합포장, 2:도서합포장)
+		                      ,DECODE(SUBSTR(OID.DLV_PICK_MTHOD_CD,1,1),'3',NVL(OID.BUNDL_DLV_CD, 'A01'),'A02') AS BUNDL_DLV_CD  --묶음배송코드
+		                      ,DECODE(NVL(PPM.PRD_RETP_ADDR_CD,'00'),'00'
+		                                    ,NVL((SELECT SUP_ADDR_CD        --협력사 주소코드(상품에 반송지코드정보 없으면 기본반송지사용) 
+		                                            FROM SUP_ADDR_D  ORGXM  --협력사 주소정보
+		                                           WHERE ORGXM.SUP_CD = SSM.SUP_CD 
+		                                             AND NVL(ORGXM.BASE_RETP_YN,'N') = 'Y'    -- 기본반송지여부 (ORGXM.BASE_RELSP_YN='Y' 기본출고지)
+		                                             AND DECODE(NVL(ORGXM.DEL_YN,'N'),'Y','D','A') = 'A'
+		                                             AND CNTC_TYP_CD = 'SUP'                  --연락처유형코드
+		                                             AND ROWNUM = 1),'00')
+		                                    ,PPM.PRD_RETP_ADDR_CD) AS PRD_RETP_ADDR_CD        -- 상품 반송지 주소코드
+		                  FROM  ORD_ORD_M  OOM
+		                       ,ORD_ITEM_D OID
+		                       ,PRD_PRD_M PPM -- 기본상품
+		                       ,SUP_SUP_M SSM -- 협력사
+		                 WHERE OOM.ORD_NO = #{_c.ordNo[0].value}
+		                   AND OID.ORD_ITEM_ID IN
+					           <foreach collection="_c.ordItemId[0].value" item="item" index="index" open="(" separator="," close=")">
+							   	#{item}
+							   </foreach>
+		                   AND OOM.CUST_NO     = #{_c.custNo[0].value}
+		                   AND OOM.ORD_NO      = OID.ORD_NO 
+		                   AND OID.LINE_TYP_CD = '00'   -- 일반상품
+		                   AND OID.PRD_CD = PPM.PRD_CD
+		                   AND PPM.SUP_CD = SSM.SUP_CD  -- 거래처 코드
+		               ) X
+		         WHERE SDD.DLVC_CD = X.RTP_DLVC_CD      --배송비 코드
+		        ORDER BY X.EXCH_RTP_CHR_YN, X.OBOX_CD DESC, X.BUNDL_DLV_CD, X.SUP_CD ,X.PRD_RETP_ADDR_CD) TA
+	</select>
+	
+	<!--
+	   	내용 : 카드,통장,포인트,제휴포인트 정보 갖고 오기
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 28
+	   
+	   	#{custNo} = 40766020
+	   	#{ordNo} = 599927191
+	-->
+	
+	<select id="findSrcInfo" parameterType="criteria" resultMap="srcInfoMap">
+		SELECT POPD.PAY_NO
+		     , NVL(POPD.RFN_PSBL_AMT, 0) AS RFN_PSBL_AMT
+		     , POPD.PAY_TYP_CD
+		     , POPD.META_ATTR8
+		  FROM ORD_ORD_M OOM
+		     , PAY_ORD_PAYMT_D POPD
+		 WHERE OOM.ORD_NO                = #{_c.ordNo[0].value}
+		   AND OOM.CUST_NO               = #{_c.custNo[0].value}
+		   AND OOM.PAY_ORD_NO            = POPD.PAY_ORD_NO
+		   AND NVL(POPD.RFN_PSBL_AMT, 0) > 0
+	</select>
+	
+	<!--
+	   	내용 : 상품권,예치금,상품권,E캐쉬 정보 갖고 오기
+	   	작성자 : 박노정
+	   	작성일 : 2013. 11. 28
+	   
+	   	#{custNo} = 7608979
+	   	#{ordNo} = 500000219
+	-->
+	
+	<select id="findAssetInfo" parameterType="criteria" resultMap="assetInfoMap">
+		SELECT CATD.ASSET_TXN_NO
+		     , NVL(CATD.RET_PSBL_AMT, 0) AS RET_PSBL_AMT
+		     , CAM.ASSET_TYP_CD
+		  FROM ORD_ORD_M OOM
+		     , CST_ASSET_TXN_D CATD
+		     , CST_ASSET_M CAM
+		 WHERE OOM.ORD_NO                = #{_c.ordNo[0].value}
+		   AND OOM.CUST_NO               = #{_c.custNo[0].value}
+		   AND OOM.PAY_ORD_NO            = CATD.PAY_ORD_NO
+		   AND CATD.ASSET_NO             = CAM.ASSET_NO
+		   AND NVL(CATD.RET_PSBL_AMT, 0) > 0
+	</select>
+	
+	<!--
+	   	내용 : 임직원용 반품비/교환비 결제 가능 카드 목록 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 12. 10
+	-->
+	
+	<select id="findFmlyOrdEcCardList" parameterType="criteria" resultMap="ordEcCardMap">
+		SELECT ANSIM_CLS_NM
+		     , ALIA_CARD_YN
+		     , CARD_NM
+		     , REP_CARD_NO
+		  FROM ORD_EC_CARD_BY_VAN_D
+		 WHERE ST_CD              = 'A'
+		   AND CRDIT_CARD_KIND_CD = 'LG'
+		   AND ISSUE_CO_CD        = 'LG'
+		   AND ISP_PAY_GBN_CD     = 'ANSIM'
+		 ORDER BY EXPOS_NO
+	</select>
+	
+	<!--
+	   	내용 : 반품비/교환비 결제 가능 신한카드 목록 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 12. 10
+	-->
+	
+	<select id="findShOrdEcCardList" parameterType="criteria" resultMap="ordEcCardMap">
+		SELECT ANSIM_CLS_NM
+		     , ALIA_CARD_YN
+		     , CARD_NM
+		     , REP_CARD_NO
+		     , EXPOS_NO
+		  FROM ORD_EC_CARD_BY_VAN_D
+		 WHERE ST_CD   = 'A'
+		   AND CARD_NM = '신한카드'
+	</select>
+	
+	<!--
+	   	내용 : 반품비/교환비 결제 가능 삼성카드 목록 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 12. 10
+	-->
+	
+	<select id="findSsOrdEcCardList" parameterType="criteria" resultMap="ordEcCardMap">
+		SELECT ANSIM_CLS_NM
+		     , ALIA_CARD_YN
+		     , CARD_NM
+		     , REP_CARD_NO
+		  FROM
+		       (SELECT ANSIM_CLS_NM
+		             , ALIA_CARD_YN
+		             , CARD_NM
+		             , REP_CARD_NO
+		             , EXPOS_NO
+		          FROM ORD_EC_CARD_BY_VAN_D
+		         WHERE ST_CD   = 'A'
+		           AND CARD_NM = '삼성카드'
+		         UNION ALL
+		        SELECT ANSIM_CLS_NM
+		             , ALIA_CARD_YN
+		             , CARD_NM||'-간편결제' AS CARD_NM
+		             , REP_CARD_NO
+		             , EXPOS_NO
+		          FROM ORD_EC_CARD_BY_VAN_D
+		         WHERE ST_CD   = 'A'
+		           AND CARD_NM = '삼성카드'
+		       )
+		 ORDER BY EXPOS_NO ASC, CARD_NM ASC
+	</select>
+	
+	<!--
+	   	내용 : 반품비/교환비 결제 가능 현대(다이너스)카드 목록 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 12. 10
+	-->
+	
+	<select id="findHdOrdEcCardList" parameterType="criteria" resultMap="ordEcCardMap">
+		SELECT ANSIM_CLS_NM
+		     , ALIA_CARD_YN
+		     , CARD_NM
+		     , REP_CARD_NO
+		  FROM
+		       (SELECT ANSIM_CLS_NM
+		             , ALIA_CARD_YN
+		             , CARD_NM
+		             , REP_CARD_NO
+		             , EXPOS_NO
+		          FROM ORD_EC_CARD_BY_VAN_D
+		         WHERE ST_CD   = 'A'
+		           AND CARD_NM = '현대(다이너스)카드'
+		         UNION ALL
+		        SELECT ANSIM_CLS_NM
+		             , ALIA_CARD_YN
+		             , CARD_NM||'-간편결제' AS CARD_NM
+		             , REP_CARD_NO
+		             , EXPOS_NO
+		          FROM ORD_EC_CARD_BY_VAN_D
+		         WHERE ST_CD   = 'A'
+		           AND CARD_NM = '현대(다이너스)카드'
+		       )
+		 ORDER BY EXPOS_NO ASC, CARD_NM ASC
+	</select>
+	
+	<!--
+	   	내용 : 반품비/교환비 결제 가능 롯데(아멕스)카드 목록 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 12. 10
+	-->
+	
+	<select id="findLtOrdEcCardList" parameterType="criteria" resultMap="ordEcCardMap">
+		SELECT ANSIM_CLS_NM
+		     , ALIA_CARD_YN
+		     , CARD_NM
+		     , REP_CARD_NO
+		     , EXPOS_NO
+		  FROM ORD_EC_CARD_BY_VAN_D
+		 WHERE ST_CD   = 'A'
+		   AND CARD_NM = '롯데(아멕스)카드'
+	</select>
+	
+	<!--
+	   	내용 : 반품비/교환비 결제 가능 ISP카드 목록 조회
+	   	작성자 : 박노정
+	   	작성일 : 2013. 12. 10
+	-->
+	
+	<select id="findTotISPOrdEcCardList" parameterType="criteria" resultMap="ordEcCardMap">
+		SELECT ANSIM_CLS_NM
+		     , ALIA_CARD_YN
+		     , CARD_NM
+		     , REP_CARD_NO
+		  FROM
+		       (SELECT ANSIM_CLS_NM
+		             , ALIA_CARD_YN
+		             , CARD_NM
+		             , REP_CARD_NO
+		             , EXPOS_NO
+		          FROM ORD_EC_CARD_BY_VAN_D
+		         WHERE ST_CD    = 'A'
+		           AND CARD_NM IN ('신한카드', '삼성카드', '현대(다이너스)카드', '롯데(아멕스)카드')
+		         UNION ALL
+		        SELECT ANSIM_CLS_NM
+		             , ALIA_CARD_YN
+		             , CARD_NM||'-간편결제' AS CARD_NM
+		             , REP_CARD_NO
+		             , EXPOS_NO
+		          FROM ORD_EC_CARD_BY_VAN_D
+		         WHERE ST_CD    = 'A'
+		           AND CARD_NM IN ('삼성카드', '현대(다이너스)카드')
+		       )
+		 ORDER BY EXPOS_NO ASC, CARD_NM ASC
+	</select>
+	
+</mapper>
