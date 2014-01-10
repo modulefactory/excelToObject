@@ -15,5 +15,9 @@ public class EmployeeFactoryImplTest {
 		record.setType(0);
 		Employee employee = employeeFactory.makeEmployee(record);
 		System.out.println(employee.getName());
+		
+		Class<?>[] classes = Class.forName(Employee.class.getCanonicalName()).getClasses();
+		for (Class<?> clazz : classes) {
+		}
 	}
 }
